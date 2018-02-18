@@ -19,13 +19,21 @@ other Omeka module and follow the config instructions.
 
 See general end user documentation for [Installing a module].
 
+*** Upgrade from Omeka Classic
+
+The routes have been changed to singular, for example `reference/subject`
+instead of `references/subject`. To keep or to create an alias for old plural
+routes, simply add/update it directly in the file `config/module.config.php`.
+
 
 Usage
 -----
 
 The plugin adds a page and a block, that can be added to the navigation:
-* "Browse by Reference" (http://www.example.com/references).
+* "Browse by Reference" (http://www.example.com/reference).
 * "Hierarchy of Subjects" (http://www.example.com/subjects/tree).
+
+The results are available via json too: simply add `?output=json` to the url.
 
 For the list view, the references are defined in the config page.
 

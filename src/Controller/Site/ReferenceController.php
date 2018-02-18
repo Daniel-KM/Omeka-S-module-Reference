@@ -2,6 +2,7 @@
 namespace Reference\Controller\Site;
 
 use Zend\Mvc\Controller\AbstractActionController;
+use Zend\View\Model\JsonModel;
 use Zend\View\Model\ViewModel;
 
 class ReferenceController extends AbstractActionController
@@ -46,6 +47,13 @@ class ReferenceController extends AbstractActionController
         }
 
         $references = $this->reference()->getList($slug);
+
+        $output = $this->params()->fromQuery('output');;
+
+        if ($output === 'json') {
+            $view = new JsonModel($references);
+            return $view;
+        }
 
         $view = new ViewModel();
         $view->setVariable('slug', $slug);

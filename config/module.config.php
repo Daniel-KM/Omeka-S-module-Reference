@@ -6,6 +6,9 @@ return [
         'template_path_stack' => [
             __DIR__ . '/../view',
         ],
+        'strategies' => [
+            'ViewJsonStrategy',
+        ],
     ],
     'view_helpers' => [
         'factories' => [
@@ -34,7 +37,7 @@ return [
                     'reference' => [
                         'type' => 'Literal',
                         'options' => [
-                            'route' => '/references',
+                            'route' => '/reference',
                             'defaults' => [
                                 '__NAMESPACE__' => 'Reference\Controller\Site',
                                 'controller' => Controller\Site\ReferenceController::class,
@@ -57,7 +60,7 @@ return [
                     'reference_tree' => [
                         'type' => 'Literal',
                         'options' => [
-                            'route' => '/subjects/tree',
+                            'route' => '/subject/tree',
                             'defaults' => [
                                 '__NAMESPACE__' => 'Reference\Controller\Site',
                                 'controller' => Controller\Site\ReferenceController::class,
@@ -84,8 +87,8 @@ return [
             'reference_slugs' => [
                 // 3 is the property id of Dublin Core Terms Subject, forced during install.
                 'subject' => [
-                    'id' => 3,
                     'type' => 'properties',
+                    'id' => 3,
                     'label' => 'Subject',
                     'active' => true,
                 ],

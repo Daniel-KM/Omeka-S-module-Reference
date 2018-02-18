@@ -58,7 +58,7 @@ if (count($references)):
         <?php if (empty($options['raw'])):
             if ($linkSingle && $referenceData['total'] === 1):
                 // TODO Use the resource name.
-                $resource = $this->api->read('items', $referenceData['first_id'])->getContent();
+                $resource = $this->api()->read('items', $referenceData['first_id'])->getContent();
                 echo $this->hyperlink($reference, $resource->siteUrl());
             else:
                 $query = [

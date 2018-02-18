@@ -93,6 +93,8 @@ class Reference extends AbstractPlugin
 
         if ($slugs[$slug]['type'] === 'properties') {
             $references = $this->getReferencesList($slugs[$slug]['id'], $entityClass);
+        } else {
+            $references = null;
         }
         return $references;
      }
@@ -382,11 +384,17 @@ class Reference extends AbstractPlugin
              case 'list':
              case 'withFirst':
                  $result = $qb->getQuery()->getScalarResult();
-                 return array_combine(array_column($result, 'value'), $result);
+                 $result = array_map(function ($v) {
+                     $v['total'] = (int) $v['total'];
+                     return $v;
+                 }, $result);
+                 $result = array_combine(array_column($result, 'value'), $result);
+                 return $result;
              case 'associative':
              default:
                  $result = $qb->getQuery()->getScalarResult();
-                 return array_column($result, 'total', 'value');
+                 $result = array_column($result, 'total', 'value');
+                 return array_map('intval', $result);
          }
      }
 
