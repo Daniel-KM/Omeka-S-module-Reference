@@ -25,6 +25,10 @@ The routes have been changed to singular, for example `reference/subject`
 instead of `references/subject`. To keep or to create an alias for old plural
 routes, simply add/update it directly in the file `config/module.config.php`.
 
+Furthemore, the default slugs use the full term, with the vocabulary prefix, so
+`reference/dcterms:subject` instead of `references/subject`. It can be changed
+in the config form.
+
 
 Usage
 -----
@@ -147,7 +151,7 @@ Copyright
 ---------
 
 * Copyright William Mayo, 2011
-* Copyright Daniel Berthereau, 2014-2017
+* Copyright Daniel Berthereau, 2014-2018
 * Copyright Philip Collins, 2013 ([jQuery tree view])
 
 

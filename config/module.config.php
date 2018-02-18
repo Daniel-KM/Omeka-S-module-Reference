@@ -84,10 +84,12 @@ return [
     ],
     'reference' => [
         'config' => [
+            'reference_query_type' => 'eq',
+            'reference_link_to_single' => true,
             // Pages ("properties" or "resource_classes") to provide, by slug.
             'reference_slugs' => [
                 // 3 is the property id of Dublin Core Terms Subject, forced during install.
-                'subject' => [
+                'dcterms:subject' => [
                     'type' => 'properties',
                     'id' => 3,
                     'label' => 'Subject',
@@ -96,11 +98,9 @@ return [
             ],
             'reference_list_skiplinks' => true,
             'reference_list_headings' => true,
-            'reference_link_to_single' => true,
             'reference_tree_enabled' => false,
             'reference_tree_expanded' => true,
             'reference_tree_hierarchy' => '',
-            'reference_query_type' => 'eq',
         ],
     ],
 ];

@@ -32,9 +32,6 @@ class Module extends AbstractModule
 
     public function install(ServiceLocatorInterface $serviceLocator)
     {
-        $api = $serviceLocator->get('Omeka\ApiManager');
-        $t = $serviceLocator->get('MvcTranslator');
-
         $this->manageSettings($serviceLocator->get('Omeka\Settings'), 'install');
     }
 
@@ -77,15 +74,77 @@ class Module extends AbstractModule
         $config = $services->get('Config');
         $settings = $services->get('Omeka\Settings');
         $formElementManager = $services->get('FormElementManager');
+        $api = $services->get('Omeka\ApiManager');
+
+        // Because there may be more than 1000 input values, that is the default
+        // "max_input_vars" limit in php.ini, a js merges all resource classes
+        // and properties before submit.
+        $renderer->headScript()->appendFile($renderer->assetUrl('js/reference-config.js', __NAMESPACE__));
 
         $data = [];
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
         foreach ($defaultSettings as $name => $value) {
-            $data[$name] = $settings->get($name);
+            //  TODO Manage the values of the config form via the config form.
+            switch ($name) {
+                case 'reference_slugs':
+                    $referenceSlugs = $settings->get($name);
+
+                    $fields = [];
+                    $resourceClasses = $api->search('resource_classes')->getContent();
+                    foreach ($resourceClasses as $resourceClass) {
+                        $fields['resource_classes'][$resourceClass->id()] = $resourceClass;
+                    }
+                    $properties = $api->search('properties')->getContent();
+                    foreach ($properties as $property) {
+                        $fields['properties'][$property->id()] = $property;
+                    }
+
+                    // Set all default values to manage new properties.
+                    foreach ($fields as $type => $typeData) {
+                        foreach ($typeData as $id => $field) {
+                            $id = $field->id();
+                            $prefix = $field->vocabulary()->prefix();
+                            $referenceSlug = [
+                                $type . '[' . $id . ']' . '[active]' => false,
+                                $type . '[' . $id . ']' . '[label]' => $field->label(),
+                                $type . '[' . $id . ']' . '[slug]' => $field->term(),
+                            ];
+                            $data['fieldset_reference_list_indexes'][$type][$type . '[' . $prefix . ']'][$type . '[' . $id . ']'] = $referenceSlug;
+                        }
+                    }
+
+                    // Set true values.
+                    foreach ($referenceSlugs as $slug => $slugData) {
+                        $type = $slugData['type'];
+                        $id = $slugData['id'];
+                        // Manage removed vocabularies.
+                        if (empty($fields[$type][$id])) {
+                            continue;
+                        }
+                        $prefix = $fields[$type][$id]->vocabulary()->prefix();
+                        $referenceSlug = [
+                            $type . '[' . $id . ']' . '[active]' => $slugData['active'],
+                            $type . '[' . $id . ']' . '[label]' => $slugData['label'],
+                            $type . '[' . $id . ']' . '[slug]' => $slug,
+                        ];
+                        $data['fieldset_reference_list_indexes'][$type][$type . '[' . $prefix . ']'][$type . '[' . $id . ']'] = $referenceSlug;
+                    }
+                    break;
+                case strpos($name, 'reference_list_') === 0:
+                    $data['fieldset_reference_list_params'][$name] = $settings->get($name);
+                    break;
+                case strpos($name, 'reference_tree_') === 0:
+                    $data['fieldset_reference_tree'][$name] = $settings->get($name);
+                    break;
+                default:
+                    $data['fieldset_reference_general'][$name] = $settings->get($name);
+                    break;
+            }
         }
 
         $form = $formElementManager->get(ConfigForm::class);
         $form->init();
+        // TODO Fix the setData() with sub-subfieldset..
         $form->setData($data);
         $html = $renderer->formCollection($form);
         return $html;
@@ -107,6 +166,34 @@ class Module extends AbstractModule
             $controller->messenger()->addErrors($form->getMessages());
             return false;
         }
+
+        // TODO Manage the data filtered by the config form.
+        // $params = $form->getData();
+
+        // Recreate the array that was json encoded via js.
+        $fieldsData = [];
+        foreach (['resource_classes', 'properties'] as $type) {
+            $fields = json_decode($params[$type], true);
+            foreach ($fields as $key => $fieldData) {
+                $type = strtok($fieldData['name'], '[]');
+                $id = strtok('[]');
+                $name = strtok('[]');
+                $fieldsData[$type][$id][$name] = $fieldData['value'];
+            }
+        }
+        // Normalize reference slugs by slug to simplify access to pages.
+        $referenceSlugs = [];
+        foreach ($fieldsData as $type => $typeData) {
+            foreach ($typeData as $id => $field) {
+                $referenceSlug = [];
+                $referenceSlug['type'] = $type;
+                $referenceSlug['id'] = $id;
+                $referenceSlug['label'] = $field['label'];
+                $referenceSlug['active'] = $field['active'];
+                $referenceSlugs[$field['slug']] = $referenceSlug;
+            }
+        }
+        $params['reference_slugs'] = $referenceSlugs;
 
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
         foreach ($params as $name => $value) {

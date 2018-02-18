@@ -35,6 +35,7 @@
 }
 .reference-pagination li.pagination_range a:hover {
     background-color: #CCCCCC;
+    color: #000;
     text-decoration: none;
 }
 
