@@ -10,21 +10,20 @@ class ReferenceController extends AbstractActionController
     public function browseAction()
     {
         $slugs = $this->settings()->get('reference_slugs') ?: [];
+        $types = [];
 
-        // Remove disabled slugs.
+        // Remove disabled slugs and prepare types.
         foreach ($slugs as $slug => $slugData) {
             if (empty($slugData['active'])) {
                 unset($slugs[$slug]);
+            } else {
+                $types[$slugData['type']] = true;
             }
         }
-        if (empty($slugs)) {
-            $this->getResponse()->setStatusCode(404);
-            return;
-        }
 
-        $types = [];
-        foreach ($slugs as $slug => $slugData) {
-            $types[$slugData['type']] = true;
+        if (empty($slugs)) {
+            $this->notFoundAction();
+            return;
         }
 
         $view = new ViewModel();
@@ -42,7 +41,7 @@ class ReferenceController extends AbstractActionController
 
         $slug = $this->params('slug');
         if (!isset($slugs[$slug]) || empty($slugs[$slug]['active'])) {
-            $this->getResponse()->setStatusCode(404);
+            $this->notFoundAction();
             return;
         }
 
@@ -65,7 +64,7 @@ class ReferenceController extends AbstractActionController
     public function treeAction()
     {
         if (!$this->settings()->get('reference_tree_enabled')) {
-            $this->getResponse()->setStatusCode(404);
+            $this->notFoundAction();
             return;
         }
 
