@@ -1,11 +1,11 @@
 Reference (module for Omeka S)
 ==============================
 
-[Reference] is a module for [Omeka S] that allows to serve an alphabetized index
-of links to records or to searches for all resources classes (item types) and
-properties (metadata fields) of all resources of an Omeka S instance, or an
-expandable hierarchical list of specified subjects. These lists can be displayed
-in any page via a helper or a block.
+[Reference] is a module for [Omeka S] that allows to serve a glossary (an
+alphabetized index) of links to records or to searches for all resources classes
+(item types) and properties (metadata fields) of all resources of an Omeka S
+instance, or an expandable hierarchical list of specified subjects. These lists
+can be displayed in any page via a helper or a block.
 
 This [Omeka S] module is a rewrite of the [Reference plugin] for [Omeka] and
 intends to provide the same features as the original plugin.
@@ -19,7 +19,7 @@ other Omeka module and follow the config instructions.
 
 See general end user documentation for [Installing a module].
 
-*** Upgrade from Omeka Classic
+### Upgrade from Omeka Classic
 
 The default slugs use the full term, with the vocabulary prefix, so the default
 route for subjects is now `reference/dcterms:subject` instead of `references/subject`.
@@ -28,7 +28,8 @@ It can be changed in the config form.
 Furthermore, the base route has been changed to singular `reference` instead of
 `reference`. To keep or to create an alias for old plural routes, simply
 add/update it directly in your `local.config.php`, via a copy of the route part
-of  the file `config/module.config.php`.
+of the file `config/module.config.php`. Any word can be used, like `lexicon`,
+`glossary`, etc.
 
 
 Usage
@@ -37,6 +38,8 @@ Usage
 The plugin adds a page and a block, that can be added to the navigation:
 * "Browse by Reference" (http://www.example.com/reference).
 * "Hierarchy of Subjects" (http://www.example.com/subjects/tree).
+
+Note: the block layout is not yet implemented.
 
 The results are available via json too: simply add `?output=json` to the url.
 
@@ -65,17 +68,24 @@ level.
 - A subject cannot begin with a "-" or a space.
 - Empty lines are not considered.
 
-These contents can be displayed on any page via the helper `reference()`:
+These contents can be displayed on any page via the view helper `reference()`:
 
 ```
-$slug = 'subject';
-$references = $this->reference()->getList($slug);
-echo $this->reference()->displayList($references, array(
-    'skiplinks' => true,
-    'headings' => true,
-    'strip' => true,
-    'raw' => false,
-));
+// With default values.
+$references = $this->reference()->getList($property);
+echo $this->reference()->displayList($references,
+    [
+        'property' => $property,
+        'type' => 'properties',
+        'resource_name' => 'items',
+    ],
+    [
+        'skiplinks' => true,
+        'headings' => true,
+        'strip' => true,
+        'raw' => false,
+    ]
+);
 ```
 
 For tree view:
@@ -89,7 +99,7 @@ echo $this->reference()->displayTree($subjects, array(
 ```
 
 All arguments are optional and the default ones are set in the config page, but
-they can be overridden in the theme. So a simple `echo $this->reference();`
+they can be overridden in the theme. So a simple `echo $this->reference($property);`
 is enough. For list, the default is the "Dublin Core : Subject".
 
 

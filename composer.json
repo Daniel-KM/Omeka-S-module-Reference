@@ -1,6 +1,34 @@
 {
+    "name": "daniel-km/omeka-s-module-reference",
+    "description": "Reference (module for Omeka S)",
+    "type": "library",
+    "license": "CECILL-2.1",
+    "authors": [
+        {
+            "name": "Daniel Berthereau",
+            "email": "Daniel.packagist@Berthereau.net"
+        }
+    ],
+    "homepage": "https://github.com/Daniel-KM/Omeka-S-module-Reference",
+    "support": {
+        "issues": "https://github.com/Daniel-KM/Omeka-S-module-Reference/issues",
+        "forum": "https://forum.omeka.org/"
+    },
+    "keywords": [
+        "Omeka S",
+        "module",
+        "indexing",
+        "glossary",
+        "tree view",
+        "lexicon"
+    ],
     "require-dev": {
         "biblibre/omeka-s-test-helper": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "Reference\\": "src/"
+        }
     },
     "autoload-dev": {
         "psr-4": {
