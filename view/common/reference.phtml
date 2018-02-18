@@ -1,0 +1,12 @@
+<?php
+$references = $this->reference($property);
+?>
+<?php if ($references): ?>
+    <ul>
+    <?php foreach ($references as $reference => $count): ?>
+    <li>
+        <?php echo $reference . ' (' . $count . ')'; ?>
+    </li>
+    <?php endforeach; ?>
+    </ul>
+<?php endif; ?>

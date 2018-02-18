@@ -1,0 +1,242 @@
+# Translation for the Reference module for Omeka S.
+# This file is distributed under the same license as the Omeka S module.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Reference\n"
+"Report-Msgid-Bugs-To: http://github.com/Daniel-KM/Omeka-S-module-Reference/issues\n"
+"POT-Creation-Date: 2017-09-18 00:00+0200\n"
+"PO-Revision-Date: 2017-09-18 15:19+0200\n"
+"Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.0.3\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: ReferencePlugin.php:244
+msgid "Some slugs are empty."
+msgstr "Certains identifiants sont vides."
+
+#: ReferencePlugin.php:245 ReferencePlugin.php:251
+msgid "Changes were reverted."
+msgstr "Les modifications ont été annulées."
+
+#: ReferencePlugin.php:250
+msgid "Some slugs are not single."
+msgstr "Certains identifiants ne sont pas uniques."
+
+#: ReferencePlugin.php:306 views/public/index/browse.php:2
+msgid "References"
+msgstr "Références"
+
+#: ReferencePlugin.php:312
+msgid "Subjects Tree"
+msgstr "Arborescence des sujets"
+
+#: ReferencePlugin.php:328
+msgid "Browse References"
+msgstr "Parcourir les références"
+
+#: ReferencePlugin.php:334 views/public/index/tree.php:2
+#: views/admin/plugins/reference-config-form.php:144
+msgid "Hierarchy of Subjects"
+msgstr "Arborescence des sujets"
+
+#: views/public/index/list.php:2
+#, php-format
+msgid "Browse Items by \"%s\""
+msgstr "Parcourir les documents par \"%s\""
+
+#: views/public/index/list.php:8
+#, php-format
+msgid "Browse Items By \"%s\" (%d Headings)"
+msgstr "Parcourir les documents par \"%s\" (%d sujets)"
+
+#: views/public/index/list.php:18
+#, php-format
+msgid "There is no references for \"%s\"."
+msgstr "Il n’y a aucune référence pour \"%s\"."
+
+#: views/public/index/tree.php:8
+#, php-format
+msgid "Hierarchy of Subjects (%d total)"
+msgstr "Arborescence des sujets (total : %d)"
+
+#: views/public/index/tree.php:16
+msgid "There is no hierarchy of subjects."
+msgstr "Il n’y a pas d’arborescence des sujets."
+
+#: views/public/index/browse.php:14
+msgid "No references available."
+msgstr "Aucune référence disponible."
+
+#: views/public/index/browse.php:22 views/public/index/browse.php:49
+#, php-format
+msgid "Browse %s"
+msgstr "Parcourir %s"
+
+#: views/public/index/browse.php:43
+msgid "Main Types of Items"
+msgstr "Principaux types de documents"
+
+#: views/public/index/browse.php:43
+msgid "Metadata"
+msgstr "Métadonnées"
+
+#: views/admin/plugins/reference-config-form.php:9
+msgid "Reference"
+msgstr "Référence"
+
+#: views/admin/plugins/reference-config-form.php:11
+msgid ""
+"Most of these options for list and for tree can be overridden in the theme."
+msgstr ""
+"La plupart des options pour la liste et l’arborescence peuvent être "
+"surpassées dans le thème."
+
+#: views/admin/plugins/reference-config-form.php:14
+msgid "References Indexes"
+msgstr "Index des références"
+
+#: views/admin/plugins/reference-config-form.php:17
+msgid "Display References"
+msgstr "Afficher les références"
+
+#: views/admin/plugins/reference-config-form.php:21
+msgid ""
+"Select the elements to display and define a slug so the references will be "
+"available at \"references/:slug\"."
+msgstr ""
+"Choisir les éléments à afficher et définir un mot-clé afin que les "
+"références soient disponible à \"references/:slug\"."
+
+#: views/admin/plugins/reference-config-form.php:22
+msgid "Slugs should be single."
+msgstr "Certains slugs ne sont pas uniques."
+
+#: views/admin/plugins/reference-config-form.php:27
+msgid "Item Type / Element"
+msgstr "Type de contenu / élément"
+
+#: views/admin/plugins/reference-config-form.php:28
+msgid "Display"
+msgstr "Affichage"
+
+#: views/admin/plugins/reference-config-form.php:29
+msgid "Slug"
+msgstr "Slug"
+
+#: views/admin/plugins/reference-config-form.php:30
+msgid "Label"
+msgstr "Label"
+
+#: views/admin/plugins/reference-config-form.php:90
+msgid "Print skip links"
+msgstr "Afficher les raccourcis"
+
+#: views/admin/plugins/reference-config-form.php:96
+msgid ""
+"Print skip links at the top and bottom of each page, which link to the "
+"alphabetical headers."
+msgstr ""
+"Afficher les raccourcis en haut et en bas de chaque page, avec des liens "
+"vers les entêtes alphabétiques."
+
+#: views/admin/plugins/reference-config-form.php:97
+msgid "Note that if headers are turned off, skiplinks do not work."
+msgstr ""
+"Notez que si les entêtes sont désactivées, les raccourcis ne fonctionneront "
+"pas."
+
+#: views/admin/plugins/reference-config-form.php:104
+msgid "Print headings"
+msgstr "Afficher les entêtes"
+
+#: views/admin/plugins/reference-config-form.php:110
+msgid "Print headers for each section (#0-9 and symbols, A, B, etc.)"
+msgstr ""
+"Afficher les entêtes pour chaque section (#0-9 et symboles, A, B, etc.)"
+
+#: views/admin/plugins/reference-config-form.php:116
+msgid "Query Type"
+msgstr "Type de requête"
+
+#: views/admin/plugins/reference-config-form.php:121
+msgid "Is Exactly"
+msgstr "Est exactement"
+
+#: views/admin/plugins/reference-config-form.php:122
+msgid "Contains"
+msgstr "Contient"
+
+#: views/admin/plugins/reference-config-form.php:126
+msgid ""
+"The type of query defines how elements are regrouped (see the advanced "
+"search)."
+msgstr ""
+"Le type de requête définit comment les éléments sont regroupés (voir la "
+"recherche avancée)."
+
+#: views/admin/plugins/reference-config-form.php:133
+msgid "Link to Single Records"
+msgstr "Lien vers les documents isolés"
+
+#: views/admin/plugins/reference-config-form.php:139
+msgid ""
+"When a reference has only one item, link to it directly instead of to the "
+"items/browse page."
+msgstr ""
+"Quand une référence contient un seul document, faire le lien directement "
+"vers lui plutôt que vers la page items/browse."
+
+#: views/admin/plugins/reference-config-form.php:148
+msgid "Enable tree view"
+msgstr "Activer la vue par arborescence"
+
+#: views/admin/plugins/reference-config-form.php:154
+#, php-format
+msgid ""
+"Enable the page and display the link \"%s\" to the hierarchical view in the "
+"navigation bar."
+msgstr ""
+"Activer la page et afficher le lien \"%s\" vers la vue par arborescence dans "
+"la barre de navigation."
+
+#: views/admin/plugins/reference-config-form.php:162
+msgid "Expand tree"
+msgstr "Développer l’arborescence"
+
+#: views/admin/plugins/reference-config-form.php:168
+#, fuzzy
+msgid "Check this box to display the tree expanded."
+msgstr "Cliquez cette case pour développer l’arborescence."
+
+#: views/admin/plugins/reference-config-form.php:169
+msgid "This option can be overridden by the theme."
+msgstr "Cette option peut être surpassée par le thème."
+
+#: views/admin/plugins/reference-config-form.php:176
+msgid "Set the hierarchy of subjects"
+msgstr "Définir l’arborescence des sujets"
+
+#: views/admin/plugins/reference-config-form.php:203
+msgid ""
+"If any, write the hierarchy of all your subjects in order to display them in "
+"the \"Hierarchy of Subjects\" page."
+msgstr ""
+"Si défini, permet d'indiquer l’arborescence de tous les sujets de façon à "
+"les afficher dans la page \"Arborescence des sujets\"."
+
+#: views/admin/plugins/reference-config-form.php:204
+msgid ""
+"Format is: one subjet by line, preceded by zero, one or more \"-\" to "
+"indicate the hierarchy level. Separate the \"-\" and the subject with a "
+"space. Empty lines are not considered."
+msgstr ""
+"Le format est : un sujet par ligne, précédé par zéro, un ou plusieurs \"-\" "
+"pour indiquer le niveau de hiérarchie. Séparer le \"-\" et le sujet avec une "
+"espace. Les lignes vides ne sont pas prises en compte."
