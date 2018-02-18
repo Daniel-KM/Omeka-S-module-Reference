@@ -76,14 +76,15 @@ return [
         'translation_file_patterns' => [
             [
                 'type' => 'gettext',
-                'base_dir' => __DIR__ . '/../language',
+                'base_dir' => dirname(__DIR__) . '/language',
                 'pattern' => '%s.mo',
                 'text_domain' => null,
             ],
         ],
     ],
     'reference' => [
-        'settings' => [
+        'config' => [
+            // Pages ("properties" or "resource_classes") to provide, by slug.
             'reference_slugs' => [
                 // 3 is the property id of Dublin Core Terms Subject, forced during install.
                 'subject' => [
