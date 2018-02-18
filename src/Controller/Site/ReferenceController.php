@@ -44,9 +44,11 @@ class ReferenceController extends AbstractActionController
             $this->notFoundAction();
             return;
         }
+        $slugData = $slugs[$slug];
 
         // TODO Currently, the "items" are forced.
-        $references = $this->reference()->getList($slug, 'items');
+        $resourceName = 'items';
+        $references = $this->reference()->getList($slugData['id'], $slugData['type'], $resourceName);
         $output = $this->params()->fromQuery('output');;
 
         if ($output === 'json') {
@@ -56,7 +58,10 @@ class ReferenceController extends AbstractActionController
 
         $view = new ViewModel();
         $view->setVariable('slug', $slug);
-        $view->setVariable('slugData', $slugs[$slug]);
+        $view->setVariable('property', $slugData['id']);
+        $view->setVariable('type', $slugData['type']);
+        $view->setVariable('label', $slugData['label']);
+        $view->setVariable('resourceName', $resourceName);
         $view->setVariable('references', $references);
         return $view;
     }

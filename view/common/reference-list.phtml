@@ -3,8 +3,9 @@ $resourceName = 'items';
 $this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Reference'));
 if (count($references)):
     $queryType = isset($options['query_type']) ? $options['query_type'] : 'eq';
+    $type = isset($type) && $type === 'resource_classes' ? 'resource_classes' : 'properties';
     // Dublin Core Title is always 1.
-    $referenceId = $slugData['type'] == 'properties' ? $slugData['id'] : 1;
+    $referenceId = $type == 'resource_classes' ? 1 : $propertyId;
     // Prepare and display skip links.
     if ($options['skiplinks']):
         // Get the list of headers.
@@ -66,7 +67,7 @@ if (count($references)):
                 $query = [
                     'property' => [['property' => $referenceId, 'type' => $queryType, 'text' => $reference]],
                 ];
-                if ($slugData['type'] == 'resource_classes'):
+                if ($type === 'resource_classes'):
                     $query['resource_class_id'] = 26;
                 endif;
                 echo $this->hyperlink(

@@ -15,7 +15,7 @@ $resourceName = 'items';
         <?php foreach ($references as $slug => $slugData): ?>
             <li><?php
                 echo $this->hyperlink(
-                    sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slug, $resourceName)),
+                    sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slugData['id'], $slugData['type'], $resourceName)),
                     $this->url('site/reference/list', ['site-slug' => $siteSlug, 'slug' => $slug]),
                     ['title' => sprintf($this->translate('Browse %s'), $slugData['label'])]
                 );
@@ -30,7 +30,7 @@ $resourceName = 'items';
         $type = null;
         $first = true;
         foreach ($references as $slug => $slugData):
-            $changedType = $slugData['type'] != $type;
+        $changedType = $slugData['type'] != $type;
             if ($changedType):
                 if ($first):
                     $first = false;
@@ -44,7 +44,7 @@ $resourceName = 'items';
             <?php endif; ?>
             <li><?php
                 echo $this->hyperlink(
-                    sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slug, $resourceName)),
+                    sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slugData['id'], $slugData['type'], $resourceName)),
                     $this->url('site/reference/list', ['site-slug' => $siteSlug, 'slug' => $slug]),
                     ['title' => sprintf($this->translate('Browse %s'), $slugData['label'])]
                 );
