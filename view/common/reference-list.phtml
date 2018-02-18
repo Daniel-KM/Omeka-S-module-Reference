@@ -1,4 +1,5 @@
 <?php
+$resourceName = 'items';
 $this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Reference'));
 if (count($references)):
     $queryType = isset($options['query_type']) ? $options['query_type'] : 'eq';
@@ -8,24 +9,22 @@ if (count($references)):
     if ($options['skiplinks']):
         // Get the list of headers.
         $letters = ['number' => false] + array_fill_keys(range('A', 'Z'), false);
-        foreach ($references as $reference => $referenceData) {
-            $first_char = substr($reference, 0, 1);
-            if (preg_match('/\W|\d/', $first_char)) {
+        foreach ($references as $reference => $referenceData):
+            $first_char = function_exists('mb_substr') ? mb_substr($reference, 0, 1) : substr($reference, 0, 1);
+            if (strlen($first_char) == 0 || preg_match('/\W|\d/u', $first_char)):
                 $letters['number'] = true;
-            }
-            else {
+            else:
                 $letters[strtoupper($first_char)] = true;
-            }
-        }
+            endif;
+        endforeach;
         $pagination_list = '<ul class="pagination_list">';
         foreach ($letters as $letter => $isSet):
             $letterDisplay = $letter == 'number' ? '#0-9' : $letter;
-            if ($isSet) {
+            if ($isSet):
                 $pagination_list .= sprintf('<li class="pagination_range"><a href="#%s">%s</a></li>', $letter, $letterDisplay);
-            }
-            else {
+            else:
                 $pagination_list .= sprintf('<li class="pagination_range"><span>%s</span></li>', $letterDisplay);
-            }
+            endif;
         endforeach;
         $pagination_list .= '</ul>';
     ?>
@@ -40,26 +39,29 @@ if (count($references)):
     $current_heading = '';
     $current_id = '';
     foreach ($references as $reference => $referenceData):
+        $referenceValue = is_null($referenceData['value']) ? '[Untitled]' : $referenceData['value'];
         // Add the first character as header if wanted.
         if ($options['headings']):
-            $first_char = substr($reference, 0, 1);
-            if (preg_match('/\W|\d/', $first_char)) {
+            $first_char = function_exists('mb_substr') ? mb_substr($reference, 0, 1) : substr($reference, 0, 1);
+            if (strlen($first_char) == 0 || preg_match('/\W|\d/u', $first_char)) {
                 $first_char = '#0-9';
             }
             $current_first_char = strtoupper($first_char);
             if ($current_heading !== $current_first_char):
                 $current_heading = $current_first_char;
-                $current_id = $current_heading === '#0-9' ? 'number' : $current_heading; ?>
+                $current_id = $current_heading === '#0-9' ? 'number' : $current_heading;
+    ?>
     <h3 class="reference-heading" id="<?php echo $current_id; ?>"><?php echo $current_heading; ?></h3>
-            <?php endif;
-        endif; ?>
+    <?php
+            endif;
+        endif;
+    ?>
 
     <p class="reference-record">
         <?php if (empty($options['raw'])):
             if ($linkSingle && $referenceData['total'] === 1):
-                // TODO Use the resource name.
-                $resource = $this->api()->read('items', $referenceData['first_id'])->getContent();
-                echo $this->hyperlink($reference, $resource->siteUrl());
+                $resource = $this->api()->read($resourceName, $referenceData['first_id'])->getContent();
+                echo $this->hyperlink($referenceValue, $resource->siteUrl());
             else:
                 $query = [
                     'property' => [['property' => $referenceId, 'type' => $queryType, 'text' => $reference]],
@@ -67,7 +69,10 @@ if (count($references)):
                 if ($slugData['type'] == 'resource_classes'):
                     $query['resource_class_id'] = 26;
                 endif;
-                echo $this->hyperlink($reference, $this->url('site/resource', ['controller' => 'item', 'action' => 'browse'], ['query' => $query], true));
+                echo $this->hyperlink(
+                    $referenceValue,
+                    $this->url('site/resource', ['controller' => 'item', 'action' => 'browse'], ['query' => $query], true)
+                );
                 // Can be null when references are set directly.
                 if ($referenceData['total']):
                     echo ' (' . $referenceData['total'] . ')';
