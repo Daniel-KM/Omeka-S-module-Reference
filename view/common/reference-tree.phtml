@@ -1,12 +1,15 @@
 <?php
 if (count($subjects)):
-    $queryType = get_option('reference_query_type') == 'contains' ? 'contains' : 'is+exactly';
-    // Dublin Core Subject is always 49.
-    $referenceId = 49;
+    // $resourceName = 'items';
+    $controllerName = 'item';
+    $queryType = isset($options['query_type']) ? $options['query_type'] : $this->setting('reference_query_type', 'eq');
+    $expanded = isset($options['expanded']) ? $options['expanded'] : $this->setting('reference_tree_expanded');
+    // Dublin Core Subject is always 3.
+    $referenceId = 3;
+    $this->headLink()->appendStylesheet($this->assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));
+    $this->headScript()->appendFile($this->assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'));
 ?>
-<link href="<?php echo css_src('jquery-simple-folders'); ?>" media="all" rel="stylesheet" type="text/css" />
 <div id="reference-headings">
-    <?php echo js_tag('jquery-simple-folders'); ?>
     <ul class="tree">
         <?php
             // Create the tree.
@@ -37,20 +40,21 @@ if (count($subjects)):
                 // Start the line with or without a new sub-list.
                 if ($level > $previous_level) {
                     // Deeper level is always the next one.
-                    echo PHP_EOL . '<div class="expander' . (empty($options['expanded']) ? '' : ' expanded' ) . '"></div>';
-                    echo '<ul' . (empty($options['expanded']) ? '' : ' class="expanded"') . '><li>';
+                    echo PHP_EOL . '<div class="expander' . ($expanded ? ' expanded' : '') . '"></div>';
+                    echo '<ul' . ($expanded ? ' class="expanded"' : '') . '><li>';
                 }
                 else {
                     echo '<li>';
                 }
 
                 if (empty($options['raw'])):
-                    echo '<a href="'
-                        . url(sprintf('items/browse?advanced[0][element_id]=%s&amp;advanced[0][type]=%s&amp;advanced[0][terms]=%s',
-                            $referenceId, $queryType, urlencode($subject)))
-                        . '">'
-                        . $subject
-                        . '</a>';
+                    $query = [
+                        'property' => [['property' => $referenceId, 'type' => $queryType, 'text' => $subject]],
+                    ];
+                    echo $this->hyperlink(
+                        $subject,
+                        $this->url('site/resource', ['controller' => $controllerName, 'action' => 'browse'], ['query' => $query], true)
+                    );
                 else:
                     echo $subject;
                 endif;

@@ -146,7 +146,8 @@ class Module extends AbstractModule
         $form->init();
         // TODO Fix the setData() with sub-subfieldset..
         $form->setData($data);
-        $html = $renderer->formCollection($form);
+        $html = '<p>' . $renderer->translate('The references are available for all resources, but enabled only for items by default.') . '</p>';
+        $html .= $renderer->formCollection($form);
         return $html;
     }
 

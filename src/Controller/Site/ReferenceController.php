@@ -28,7 +28,7 @@ class ReferenceController extends AbstractActionController
 
         $view = new ViewModel();
         $view->setVariable('references', $slugs);
-        $view->setVariable('types', $types);
+        $view->setVariable('types', array_keys($types));
         return $view;
     }
 
@@ -45,8 +45,8 @@ class ReferenceController extends AbstractActionController
             return;
         }
 
-        $references = $this->reference()->getList($slug);
-
+        // TODO Currently, the "items" are forced.
+        $references = $this->reference()->getList($slug, 'items');
         $output = $this->params()->fromQuery('output');;
 
         if ($output === 'json') {
@@ -71,7 +71,7 @@ class ReferenceController extends AbstractActionController
         $subjects = $this->reference()->getTree();
 
         $view = new ViewModel();
-        $view->setVariable('subjects', $slug);
+        $view->setVariable('subjects', $subjects);
         return $view;
     }
 

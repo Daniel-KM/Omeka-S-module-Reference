@@ -21,13 +21,14 @@ See general end user documentation for [Installing a module].
 
 *** Upgrade from Omeka Classic
 
-The routes have been changed to singular, for example `reference/subject`
-instead of `references/subject`. To keep or to create an alias for old plural
-routes, simply add/update it directly in the file `config/module.config.php`.
+The default slugs use the full term, with the vocabulary prefix, so the default
+route for subjects is now `reference/dcterms:subject` instead of `references/subject`.
+It can be changed in the config form.
 
-Furthemore, the default slugs use the full term, with the vocabulary prefix, so
-`reference/dcterms:subject` instead of `references/subject`. It can be changed
-in the config form.
+Furthermore, the base route has been changed to singular `reference` instead of
+`reference`. To keep or to create an alias for old plural routes, simply
+add/update it directly in your `local.config.php`, via a copy of the route part
+of  the file `config/module.config.php`.
 
 
 Usage

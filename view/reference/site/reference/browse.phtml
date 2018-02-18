@@ -1,27 +1,25 @@
 <?php
-$pageTitle = __('References');
-echo head(array(
-    'title' => $pageTitle,
-    'bodyclass' => 'reference',
-));
+$escape = $this->plugin('escapeHtml');
+$this->htmlElement('body')->appendAttribute('class', 'reference browse list');
+$siteSlug = $this->params()->fromRoute('site-slug');
+$resourceName = 'items';
 ?>
-<div id="primary">
-    <h1><?php echo $pageTitle; ?></h1>
-    <nav class="items-nav navigation secondary-nav">
-        <?php echo public_nav_items(); ?>
-    </nav>
+<div id="primary" class="reference">
+    <h2><?php echo $this->translate('References'); ?></h2>
     <?php if (empty($types)): ?>
-        <p><?php echo __('No references available.'); ?></p>
+        <p><?php echo $this->translate('No references available.'); ?></p>
     <?php else: ?>
         <?php
     if (count($types) == 1): ?>
         <ul class='references'>
         <?php foreach ($references as $slug => $slugData): ?>
-            <li><?php echo sprintf('<a href="%s" title="%s">%s (%d)</a>',
-                html_escape(url(array('slug' => $slug), 'reference_list')),
-                __('Browse %s', $slugData['label']),
-                $slugData['label'],
-                $this->reference()->count($slug)); ?>
+            <li><?php
+                echo $this->hyperlink(
+                    sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slug, $resourceName)),
+                    $this->url('site/reference/list', ['site-slug' => $siteSlug, 'slug' => $slug]),
+                    ['title' => sprintf($this->translate('Browse %s'), $slugData['label'])]
+                );
+            ?>
             </li>
         <?php endforeach; ?>
         </ul>
@@ -40,15 +38,17 @@ echo head(array(
                     </ul></li>
                 <?php endif; ?>
             <li><?php
-                echo $slugData['type'] == 'ItemType' ?  __('Main Types of Items') : __('Metadata');
+                echo $slugData['type'] === 'resource_classes' ? $this->translate('Main types') : $this->translate('Metadata');
                 $type = $slugData['type'];
             ?><ul>
             <?php endif; ?>
-            <li><?php echo sprintf('<a href="%s" title="%s">%s (%d)</a>',
-                url(array('slug' => $slug), 'reference_list'),
-                __('Browse %s', $slugData['label']),
-                $slugData['label'],
-                $this->reference()->count($slug)); ?>
+            <li><?php
+                echo $this->hyperlink(
+                    sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slug, $resourceName)),
+                    $this->url('site/reference/list', ['site-slug' => $siteSlug, 'slug' => $slug]),
+                    ['title' => sprintf($this->translate('Browse %s'), $slugData['label'])]
+                );
+            ?>
             </li>
         <?php endforeach; ?>
         </ul></li>
@@ -56,4 +56,3 @@ echo head(array(
     </ul>
     <?php endif; ?>
 </div>
-<?php echo foot();

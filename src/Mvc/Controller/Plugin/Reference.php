@@ -2,27 +2,37 @@
 namespace Reference\Mvc\Controller\Plugin;
 
 use Doctrine\ORM\EntityManager;
-use Omeka\Api\Manager as ApiManager;
 use Omeka\Api\Representation\PropertyRepresentation;
+use Omeka\Mvc\Controller\Plugin\Api;
 use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 
 class Reference extends AbstractPlugin
 {
+    /**
+     * @var int
+     */
+    protected $DC_Title_id = 1;
+
+    /**
+     * @var int
+     */
+    protected $DC_Subject_id = 3;
+
     /**
      * @param EntityManager
      */
     protected $entityManager;
 
     /**
-     * @param ApiManager
+     * @param Api
      */
     protected $api;
 
     /**
      * @param EntityManager $entityManager
-     * @param ApiManager $api
+     * @param Api $api
      */
-    public function __construct(EntityManager $entityManager, ApiManager $api)
+    public function __construct(EntityManager $entityManager, Api $api)
     {
         $this->entityManager = $entityManager;
         $this->api = $api;
@@ -67,7 +77,7 @@ class Reference extends AbstractPlugin
              return;
          }
 
-         $references = $this->getReferencesList($propertyId, $entityClass, $perPage, $page);
+         $references = $this->getReferencesList($propertyId, $entityClass, 'properties', $perPage, $page);
          return $references;
      }
 
@@ -91,11 +101,7 @@ class Reference extends AbstractPlugin
             return;
         }
 
-        if ($slugs[$slug]['type'] === 'properties') {
-            $references = $this->getReferencesList($slugs[$slug]['id'], $entityClass);
-        } else {
-            $references = null;
-        }
+        $references = $this->getReferencesList($slugs[$slug]['id'], $entityClass, $slugs[$slug]['type']);
         return $references;
      }
 
@@ -106,7 +112,9 @@ class Reference extends AbstractPlugin
       */
      public function getTree()
      {
-         if (!$this->setting('reference_tree_enabled')) {
+         $settings = $this->getController()->settings();
+         $slugs = $settings->get('reference_tree_enabled');
+         if (!$settings->get('reference_tree_enabled')) {
              return [];
          }
          $subjects = $this->getSubjectsTree();
@@ -116,17 +124,27 @@ class Reference extends AbstractPlugin
      /**
       * Count the total of distinct element texts for a slug.
       *
+      * @todo Manage multiple resource names (items, item sets, medias) at once.
+      *
       * @param string $slug
-      * @return int
+      * @param string $resourceName
+      * @return int The number of references if only one resource name is set.
       */
-     public function count($slug)
+     public function count($slug, $resourceName = null)
      {
-         $slugs = $this->getView()->setting('reference_slugs') ?: [];
+         $controller = $this->getController();
+         $settings = $controller->settings();
+         $slugs = $settings->get('reference_slugs') ?: [];
          if (empty($slug) || empty($slugs) || empty($slugs[$slug]['active'])) {
              return;
          }
 
-         return $this->countReferences($slugs[$slug]);
+         $entityClass = $this->mapResourceNameToEntity($resourceName);
+         if (empty($entityClass)) {
+             return;
+         }
+
+         return $this->countReferences($slugs[$slug]['id'], $entityClass, $slugs[$slug]['type']);
      }
 
      /**
@@ -156,13 +174,15 @@ class Reference extends AbstractPlugin
              return;
          }
 
-         $entityClass = \Omeka\Entity\Item::class;
-
-         if ($slugs[$slug]['type'] === 'properties') {
-             $references = $this->getReferencesList($slugs[$slug]['id'], $entityClass, null, null, 'withFirst');
-         } else {
+         $resourceName = isset($options["resource_name"]) ? $options["resource_name"] : null;
+         $entityClass = $this->mapResourceNameToEntity($resourceName);
+         if (empty($entityClass)) {
              return;
          }
+
+         $entityClass = \Omeka\Entity\Item::class;
+
+         $references = $this->getReferencesList($slugs[$slug]['id'], $entityClass, $slugs[$slug]['type'], null, null, 'withFirst');
 
          if ($options['strip']) {
              $total = count($references);
@@ -266,10 +286,12 @@ class Reference extends AbstractPlugin
          $options = $this->cleanOptions($options);
 
          if ($options['strip']) {
-             $subjects = array_map('strip_formatting', $subjects);
+             $subjects = array_map('strip_tags', $subjects);
          }
 
-         $html = $this->getView()->partial('common/reference-tree.php', [
+         $controller = $this->getController();
+         $partial = $controller->viewHelpers()->get('partial');
+         $html = $partial('common/reference-tree', [
              'subjects' => $subjects,
              'options' => $options,
          ]);
@@ -282,21 +304,22 @@ class Reference extends AbstractPlugin
       */
      protected function cleanOptions($options)
      {
+         $settings = $this->getController()->settings();
+
          $mode = isset($options['mode']) && $options['mode'] == 'tree' ? 'tree' : 'list';
 
          $cleanedOptions = [
              'mode' => $mode,
              'raw' => isset($options['raw']) && $options['raw'],
-             'strip' => isset($options['strip']) ? (boolean) $options['strip'] : true,
+             'strip' => isset($options['strip']) ? (bool) $options['strip'] : true,
          ];
 
          switch ($mode) {
              case 'list':
-                 $settings = $this->getController()->settings();
-                 $cleanedOptions['headings'] = (boolean) (isset($options['headings'])
+                 $cleanedOptions['headings'] = (bool) (isset($options['headings'])
                      ? $options['headings']
                      : $settings->get('reference_list_headings'));
-                 $cleanedOptions['skiplinks'] = (boolean) (isset($options['skiplinks'])
+                 $cleanedOptions['skiplinks'] = (bool) (isset($options['skiplinks'])
                      ? $options['skiplinks']
                      : $settings->get('reference_list_skiplinks'));
                  $cleanedOptions['slug'] = empty($options['slug'])
@@ -305,15 +328,15 @@ class Reference extends AbstractPlugin
                  $cleanedOptions['query_type'] = isset($options['query_type'])
                      ? ($options['query_type'] == 'in' ? 'in' : 'eq')
                      : $settings->get('reference_query_type', 'eq');
-                 $cleanedOptions['link_single'] = (boolean) (isset($options['link_single'])
+                 $cleanedOptions['link_single'] = (bool) (isset($options['link_single'])
                      ? $options['link_single']
                      : $settings->get('reference_link_to_single'));
                  break;
 
              case 'tree':
-                 $cleanedOptions['expanded'] = (boolean) (isset($options['expanded'])
-                 ? $options['expanded']
-                 : $this->getController()->settings()->get('reference_tree_expanded'));
+                 $cleanedOptions['expanded'] = (bool) (isset($options['expanded'])
+                     ? $options['expanded']
+                     : $settings->get('reference_tree_expanded', false));
                  break;
          }
 
@@ -323,54 +346,91 @@ class Reference extends AbstractPlugin
      /**
       * Get the list of references, the total for each one and the first item.
       *
-      * When the type is not an element, a filter is added and the list of titles
-      * are returned.
+      * When the type is not a property, a filter is added and the list of
+      * titles is returned. If there are multiple title, they are returned all.
       *
-      * @param int $propertyId
+      * @param int $propertyId May be the resource class id.
       * @param string $entityClass
+      * @param string $type "properties" (default) or "resource_classes".
       * @param int $perPage
       * @param int $page One-based page number.
       * @param string $output May be "associative" (default), "list" or "withFirst".
       * @return array Associative list of references, with the total and the
       * first record.
       */
-     protected function getReferencesList($propertyId, $entityClass, $perPage = null, $page = null, $output = null)
-     {
+     protected function getReferencesList(
+         $propertyId,
+         $entityClass,
+         $type = 'properties',
+         $perPage = null,
+         $page = null,
+         $output = null
+     ) {
          $entityManager = $this->entityManager;
-
-         $valuesRepository = $entityManager->getRepository(\Omeka\Entity\Value::class);
-         $values = $valuesRepository->findBy([
-             'property' => $propertyId,
-             'type' => 'literal',
-         ]);
-
          $qb = $entityManager->createQueryBuilder();
+
+         switch ($type) {
+             case 'resource_classes':
+                 $resourceClassId = $propertyId;
+                 $propertyId = $this->DC_Title_id;
+
+                 $qb
+                     ->select([
+                         'DISTINCT value.value',
+                         // "Distinct" avoids to count duplicate values in properties in
+                         // a resource: we count resources, not properties.
+                         $qb->expr()->countDistinct('resource.id') . ' AS total',
+                     ])
+                     // This checks visibility automatically.
+                     ->from(\Omeka\Entity\Resource::class, 'resource')
+                     ->leftJoin(
+                         \Omeka\Entity\Value::class,
+                         'value',
+                         'WITH',
+                         'value.resource = resource AND value.property = :property_id'
+                     )
+                     ->setParameter('property_id', $propertyId)
+                     ->where($qb->expr()->eq('resource.resourceClass', ':resource_class'))
+                     ->setParameter('resource_class', (int) $resourceClassId)
+                     ->groupBy('value.value')
+                     ->orderBy('value.value', 'ASC')
+                     ->addOrderBy('resource.id', 'ASC');
+
+                 if ($entityClass !== \Omeka\Entity\Resource::class) {
+                     $qb
+                         ->innerJoin($entityClass, 'res', 'WITH', 'resource.id = res.id');
+                 }
+                 break;
+
+             case 'properties':
+             default:
+                 $qb
+                     ->select([
+                         'value.value',
+                         // "Distinct" avoids to count duplicate values in properties in
+                         // a resource: we count resources, not properties.
+                         $qb->expr()->countDistinct('resource.id') . ' AS total',
+                     ])
+                     ->from(\Omeka\Entity\Value::class, 'value')
+                     // This join allow to check visibility automatically too.
+                     ->innerJoin($entityClass, 'resource', 'WITH', 'value.resource = resource')
+                     ->groupBy('value.value')
+                     ->addGroupBy('resource.id')
+                     ->orderBy('value.value', 'ASC')
+                     ->addOrderBy('resource.id', 'ASC')
+                     ->andWhere($qb->expr()->eq('value.property', ':property'))
+                     ->setParameter('property', $propertyId)
+                     // Only literal values.
+                     ->andWhere($qb->expr()->isNotNull('value.value'));
+                 break;
+         }
+
          if ($output === 'withFirst') {
              $qb
-                 ->select([
-                     'value.value',
-                     $qb->expr()->countDistinct('resource.id') . ' AS total',
-                     'resource.id as first_id',
-                 ]);
-         } else {
-             $qb
-                 ->select([
-                     'value.value',
-                     // "Distinct" avoids to count duplicate values in properties in
-                     // a resource: we count resources, not properties.
-                     $qb->expr()->countDistinct('resource.id') . ' AS total',
+                 ->addSelect([
+                     'resource.id AS first_id',
                  ]);
          }
-         $qb
-             ->from(\Omeka\Entity\Value::class, 'value')
-             // This join allow to check visibility automatically too.
-             ->innerJoin($entityClass, 'resource', 'WITH', 'value.resource = resource')
-             ->andWhere($qb->expr()->eq('value.property', ':property'))
-             ->setParameter('property', $propertyId)
-             ->groupBy('value.value')
-             ->orderBy('value.value', 'ASC')
-             ->addOrderBy('resource.id', 'ASC')
-         ;
 
          if ($perPage) {
              $qb->setMaxResults($perPage);
@@ -393,8 +453,14 @@ class Reference extends AbstractPlugin
              case 'associative':
              default:
                  $result = $qb->getQuery()->getScalarResult();
-                 $result = array_column($result, 'total', 'value');
-                 return array_map('intval', $result);
+                // Array column cannot be used in one step, because the null
+                // value (no title) should be converted to "", not to "0".
+                // $result = array_column($result, 'total', 'value');
+                $result = array_combine(
+                    array_column($result, 'value'),
+                    array_column($result, 'total')
+                );
+                return array_map('intval', $result);
          }
      }
 
@@ -403,7 +469,8 @@ class Reference extends AbstractPlugin
       */
      protected function getSubjectsTree()
      {
-         $subjects = get_option('reference_tree_hierarchy');
+         $settings = $this->getController()->settings();
+         $subjects = $settings->get('reference_tree_hierarchy');
          $subjects = array_filter(explode(PHP_EOL, $subjects));
          return $subjects;
      }
@@ -411,38 +478,63 @@ class Reference extends AbstractPlugin
      /**
       * Count the references for a slug.
       *
-      * When the type is not an element, a filter is added and the list of titles
-      * are returned.
+      * When the type is not a property, a filter is added and the list of
+      * titles is returned.
       *
-      * @param array $slugData
-      * @return int
+      * @todo Manage multiple entity classes (items, item sets, medias) at once.
+      *
+     * @param int $propertyId May be the resource class id.
+     * @param string $entityClass
+     * @param string $type "properties" or "resource_classes".
+      * @return int The number of references if only one entity class is set.
       */
-     protected function countReferences($slugData)
+     protected function countReferences($propertyId, $entityClass, $type)
      {
-         $elementId = $slugData['type'] == 'Element' ? $slugData['id'] : $this->DC_Title_id;
+         $entityManager = $this->entityManager;
+         $qb = $entityManager->createQueryBuilder();
 
-         $db = get_db();
-         $elementTextsTable = $db->getTable('ElementText');
-         $elementTextsAlias = $elementTextsTable->getTableAlias();
-         $select = $elementTextsTable->getSelect()
-             ->reset(Zend_Db_Select::COLUMNS)
-             ->from([], [$elementTextsAlias . '.text'])
-             ->joinInner(['items' => $db->Item], $elementTextsAlias . ".record_type = 'Item' AND items.id = $elementTextsAlias.record_id", [])
-             ->where($elementTextsAlias . ".record_type = 'Item'")
-             ->where($elementTextsAlias . '.element_id = ' . (integer) $elementId)
-             ->group($elementTextsAlias . '.text');
+         switch ($type) {
+             case 'resource_classes':
+                 $qb
+                     ->select([
+                         $qb->expr()->countDistinct('resource.id'),
+                     ])
+                     ->from(\Omeka\Entity\Resource::class, 'resource')
+                     ->andWhere($qb->expr()->eq('resource.resourceClass', ':resource_class'))
+                     ->setParameter('resource_class', (int) $propertyId);
+                 break;
 
-         if ($slugData['type'] == 'ItemType') {
-             $select->where('items.item_type_id = ' . (integer) $slugData['id']);
+             case 'properties':
+             default:
+                 $qb
+                     ->select([
+                         // Here, this is the count of references, not resources.
+                         $qb->expr()->countDistinct('value.value'),
+                     ])
+                     ->from(\Omeka\Entity\Value::class, 'value')
+                     // This join allow to check visibility automatically too.
+                     ->innerJoin(\Omeka\Entity\Resource::class, 'resource', 'WITH', 'value.resource = resource')
+                     ->andWhere($qb->expr()->eq('value.property', ':property'))
+                     ->setParameter('property', (int) $propertyId)
+                     ->andWhere($qb->expr()->isNotNull('value.value'));
+                 break;
          }
 
-         $permissions = new Omeka_Db_Select_PublicPermissions('Items');
-         $permissions->apply($select, 'items');
+         if ($entityClass !== \Omeka\Entity\Resource::class) {
+             $qb
+                 ->innerJoin($entityClass, 'res', 'WITH', 'resource.id = res.id');
+         }
 
-         $totalRecords = $db->query($select . " COLLATE 'utf8_unicode_ci'")->rowCount();
+         $totalRecords = $qb->getQuery()->getSingleScalarResult();
          return $totalRecords;
      }
 
+     /**
+      * Convert a value into a property id.
+      *
+      * @param mixed $property May be the property id, the term, or the object.
+      * @return int
+      */
      protected function getPropertyId($property)
      {
          if (is_numeric($property)) {
@@ -457,16 +549,19 @@ class Reference extends AbstractPlugin
              return;
          }
 
-         $result = $this->api->search('properties', [
-             'vocabulary_prefix' => strtok($property, ':'),
-             'local_name' => strtok(':'),
-         ])->getContent();
+         $result = $this->api->searchOne('properties', ['term' => $property])->getContent();
          if (empty($result)) {
              return;
          }
-         return $result[0]->id();
+         return $result->id();
      }
 
+     /**
+      * Normalize the resource name as an entity class.
+      *
+      * @param string $resourceName
+      * @return string
+      */
      protected function mapResourceNameToEntity($resourceName)
      {
          $resourceEntityMap = [
@@ -475,14 +570,18 @@ class Reference extends AbstractPlugin
              'item_sets' => \Omeka\Entity\ItemSet::class,
              'items' => \Omeka\Entity\Item::class,
              'media' => \Omeka\Entity\Media::class,
-             \Omeka\Entity\Resource::class => \Omeka\Entity\Resource::class,
-             \Omeka\Entity\ItemSet::class => \Omeka\Entity\ItemSet::class,
-             \Omeka\Entity\Item::class => \Omeka\Entity\Item::class,
-             \Omeka\Entity\Media::class => \Omeka\Entity\Media::class,
              'o:Resource' => \Omeka\Entity\Resource::class,
              'o:ItemSet' => \Omeka\Entity\ItemSet::class,
              'o:Item' => \Omeka\Entity\Item::class,
              'o:Media' => \Omeka\Entity\Media::class,
+             \Omeka\Entity\Resource::class => \Omeka\Entity\Resource::class,
+             \Omeka\Entity\ItemSet::class => \Omeka\Entity\ItemSet::class,
+             \Omeka\Entity\Item::class => \Omeka\Entity\Item::class,
+             \Omeka\Entity\Media::class => \Omeka\Entity\Media::class,
+             \Omeka\Api\Representation\AbstractResourceRepresentation::class => \Omeka\Entity\Resource::class,
+             \Omeka\Api\Representation\ItemSetRepresentation::class => \Omeka\Entity\ItemSet::class,
+             \Omeka\Api\Representation\ItemRepresentation::class => \Omeka\Entity\Item::class,
+             \Omeka\Api\Representation\MediaRepresentation::class => \Omeka\Entity\Media::class,
          ];
          if (isset($resourceEntityMap[$resourceName])) {
              return $resourceEntityMap[$resourceName];

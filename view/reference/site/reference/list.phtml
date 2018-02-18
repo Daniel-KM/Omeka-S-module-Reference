@@ -1,6 +1,8 @@
 <?php
 $escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
+// TODO Currently, the items are forced in the controller for this action.
+$resourceName = 'items';
 ?>
 <div id="primary" class="reference">
     <h2><?php echo sprintf($this->translate('Browse Items By "%s" (%d Headings)'), $slugData['label'], count($references)); ?></h2>
@@ -8,6 +10,7 @@ $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
     <?php
         echo $this->reference()->displayList($references, [
             'slug' => $slug,
+            'resource_name' => $resourceName,
         ]);
     ?>
     <?php else: ?>
