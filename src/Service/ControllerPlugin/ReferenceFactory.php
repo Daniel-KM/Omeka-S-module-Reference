@@ -11,7 +11,7 @@ class ReferenceFactory implements FactoryInterface
     {
         $entityManager = $services->get('Omeka\EntityManager');
         $controllerPluginManager = $services->get('ControllerPluginManager');
-        $api = $controllerPluginManager ->get('api');
+        $api = $controllerPluginManager->get('api');
         return new Reference(
             $entityManager,
             $api

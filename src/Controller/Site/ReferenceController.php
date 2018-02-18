@@ -49,7 +49,7 @@ class ReferenceController extends AbstractActionController
         // TODO Currently, the "items" are forced.
         $resourceName = 'items';
         $references = $this->reference()->getList($slugData['id'], $slugData['type'], $resourceName);
-        $output = $this->params()->fromQuery('output');;
+        $output = $this->params()->fromQuery('output');
 
         if ($output === 'json') {
             $view = new JsonModel($references);

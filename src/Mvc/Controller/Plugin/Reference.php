@@ -351,81 +351,81 @@ class Reference extends AbstractPlugin
         $page = null,
         $output = null
     ) {
-            $entityManager = $this->entityManager;
-            $qb = $entityManager->createQueryBuilder();
+        $entityManager = $this->entityManager;
+        $qb = $entityManager->createQueryBuilder();
 
-            switch ($type) {
-                case 'resource_classes':
-                    $resourceClassId = $propertyId;
-                    $propertyId = $this->DC_Title_id;
+        switch ($type) {
+            case 'resource_classes':
+                $resourceClassId = $propertyId;
+                $propertyId = $this->DC_Title_id;
 
-                    $qb
-                        ->select([
-                            'DISTINCT value.value',
-                            // "Distinct" avoids to count duplicate values in properties in
-                            // a resource: we count resources, not properties.
-                            $qb->expr()->countDistinct('resource.id') . ' AS total',
-                        ])
-                        // This checks visibility automatically.
-                        ->from(\Omeka\Entity\Resource::class, 'resource')
-                        ->leftJoin(
-                            \Omeka\Entity\Value::class,
-                            'value',
-                            'WITH',
-                            'value.resource = resource AND value.property = :property_id'
-                        )
-                        ->setParameter('property_id', $propertyId)
-                        ->where($qb->expr()->eq('resource.resourceClass', ':resource_class'))
-                        ->setParameter('resource_class', (int) $resourceClassId)
-                        ->groupBy('value.value')
-                        ->orderBy('value.value', 'ASC')
-                        ->addOrderBy('resource.id', 'ASC');
-
-                    if ($entityClass !== \Omeka\Entity\Resource::class) {
-                        $qb
-                            ->innerJoin($entityClass, 'res', 'WITH', 'resource.id = res.id');
-                    }
-                    break;
-
-                case 'properties':
-                default:
-                    $qb
-                        ->select([
-                            'value.value',
-                            // "Distinct" avoids to count duplicate values in properties in
-                            // a resource: we count resources, not properties.
-                            $qb->expr()->countDistinct('resource.id') . ' AS total',
-                        ])
-                        ->from(\Omeka\Entity\Value::class, 'value')
-                        // This join allow to check visibility automatically too.
-                        ->innerJoin($entityClass, 'resource', 'WITH', 'value.resource = resource')
-                        ->groupBy('value.value')
-                        ->addGroupBy('resource.id')
-                        ->orderBy('value.value', 'ASC')
-                        ->addOrderBy('resource.id', 'ASC')
-                        ->andWhere($qb->expr()->eq('value.property', ':property'))
-                        ->setParameter('property', $propertyId)
-                        // Only literal values.
-                        ->andWhere($qb->expr()->isNotNull('value.value'));
-                    break;
-            }
-
-            if ($output === 'withFirst') {
                 $qb
+                    ->select([
+                        'DISTINCT value.value',
+                        // "Distinct" avoids to count duplicate values in properties in
+                        // a resource: we count resources, not properties.
+                        $qb->expr()->countDistinct('resource.id') . ' AS total',
+                    ])
+                    // This checks visibility automatically.
+                    ->from(\Omeka\Entity\Resource::class, 'resource')
+                    ->leftJoin(
+                        \Omeka\Entity\Value::class,
+                        'value',
+                        'WITH',
+                        'value.resource = resource AND value.property = :property_id'
+                    )
+                    ->setParameter('property_id', $propertyId)
+                    ->where($qb->expr()->eq('resource.resourceClass', ':resource_class'))
+                    ->setParameter('resource_class', (int) $resourceClassId)
+                    ->groupBy('value.value')
+                    ->orderBy('value.value', 'ASC')
+                    ->addOrderBy('resource.id', 'ASC');
+
+                if ($entityClass !== \Omeka\Entity\Resource::class) {
+                    $qb
+                        ->innerJoin($entityClass, 'res', 'WITH', 'resource.id = res.id');
+                }
+                break;
+
+            case 'properties':
+            default:
+                $qb
+                    ->select([
+                        'value.value',
+                        // "Distinct" avoids to count duplicate values in properties in
+                        // a resource: we count resources, not properties.
+                        $qb->expr()->countDistinct('resource.id') . ' AS total',
+                    ])
+                    ->from(\Omeka\Entity\Value::class, 'value')
+                    // This join allow to check visibility automatically too.
+                    ->innerJoin($entityClass, 'resource', 'WITH', 'value.resource = resource')
+                    ->groupBy('value.value')
+                    ->addGroupBy('resource.id')
+                    ->orderBy('value.value', 'ASC')
+                    ->addOrderBy('resource.id', 'ASC')
+                    ->andWhere($qb->expr()->eq('value.property', ':property'))
+                    ->setParameter('property', $propertyId)
+                    // Only literal values.
+                    ->andWhere($qb->expr()->isNotNull('value.value'));
+                break;
+        }
+
+        if ($output === 'withFirst') {
+            $qb
                     ->addSelect([
                         'resource.id AS first_id',
                     ]);
-            }
+        }
 
-            if ($perPage) {
-                $qb->setMaxResults($perPage);
-                if ($page > 1) {
-                    $offset = ($page - 1) * $perPage;
-                    $qb->setFirstResult($offset);
-                }
+        if ($perPage) {
+            $qb->setMaxResults($perPage);
+            if ($page > 1) {
+                $offset = ($page - 1) * $perPage;
+                $qb->setFirstResult($offset);
             }
+        }
 
-            switch ($output) {
+        switch ($output) {
                 case 'list':
                 case 'withFirst':
                     $result = $qb->getQuery()->getScalarResult();
