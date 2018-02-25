@@ -23,7 +23,7 @@ See general end user documentation for [Installing a module].
 
 The default slugs use the full term, with the vocabulary prefix, so the default
 route for subjects is now `reference/dcterms:subject` instead of `references/subject`.
-It can be changed in the config form.
+It can be changed in the main config form or pages can be created with any slug.
 
 Furthermore, the base route has been changed to singular `reference` instead of
 `references`. To keep or to create an alias for old plural routes, simply
@@ -35,26 +35,24 @@ of the file `config/module.config.php`. Any word can be used, like `lexicon`,
 Usage
 -----
 
-The plugin adds a page and a block, that can be added to the navigation:
-* "Browse by reference" (http://www.example.com/reference).
-* "Hierarchy of references" (http://www.example.com/reference-tree).
+The plugin adds pages in all sites, that can be added to the navigation:
+* "Browse by reference" (http://www.example.com/s/my-site/reference).
+* "Hierarchy of references" (http://www.example.com/s/my-site/reference-tree).
 
-Note: the block layout is not yet implemented.
+The results are available via json too: simply add `?output=json` to the url
+(available only for lists).
 
-The results are available via json too: simply add `?output=json` to the url.
+The config is the same in the main config form or in the block form for pages.
 
-For the list view, the references are defined in the config page.
+For the tree view, the references are formatted like:
 
-For the tree view, the references are set in the config form with a simple
-static hierarchical list, formatted like:
 ```
 Europe
 - France
-- Germany
+-- Paris
 - United Kingdom
 -- England
--- Scotland
--- Wales
+--- London
 Asia
 - Japan
 ```
@@ -72,18 +70,19 @@ These contents can be displayed on any page via the view helper `reference()`:
 
 ```
 // With default values.
-$references = $this->reference()->getList($term);
-echo $this->reference()->displayList($references,
+echo $this->reference()->displayListForTerm($term,
     [
-        'term' => $term,
         'type' => 'properties',
         'resource_name' => 'items',
+        'per_page' => null,
+        'page' => null,
     ],
     [
+        'query_type' => 'eq',
+        'link_to_single' => true,
+        'total' => true,
         'skiplinks' => true,
         'headings' => true,
-        'strip' => true,
-        'total' => true,
         'raw' => false,
     ]
 );
@@ -99,6 +98,9 @@ echo $this->reference()->displayTree($references,
         'resource_name' => 'items',
     ],
     [
+        'query_type' => 'eq',
+        'link_to_single' => true,
+        'total' => true,
         'expanded' => true,
         'strip' => true,
         'total' => true,
@@ -107,9 +109,8 @@ echo $this->reference()->displayTree($references,
 );
 ```
 
-All arguments are optional and the default ones are set in the config page, but
-they can be overridden in the theme. So a simple `echo $this->reference($term);`
-is enough.
+All arguments are optional and the default ones are set in the config page or in
+the block, but they can be overridden in the theme.
 
 
 Warning

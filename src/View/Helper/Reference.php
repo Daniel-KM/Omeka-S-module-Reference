@@ -58,6 +58,8 @@ class Reference extends AbstractHelper
     /**
      * Get a list of references as tree.
      *
+     * @deprecated 3.4.5 Useless since tree is stored as array.
+     *
      * @param string $references The default one if null.
      * @return array.
      */
@@ -82,20 +84,20 @@ class Reference extends AbstractHelper
     }
 
     /**
-     * Display the list of references via a partial view.
+     * Display the list of the references of a term via a partial view.
      *
-     * @param array $references Array of references elements to show.
-     * @param array $args Specify the references with "term" and optionnaly
-     * "type" and "resource_name"
+     * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
+     * @param array $args Specify the references with "type", "resource_name",
+     * "per_page" and "page".
      * @param array $options Options to display references. Values are booleans:
      * - raw: Show references as raw text, not links (default to false)
      * - skiplinks: Add the list of letters at top and bottom of the page
      * - headings: Add each letter as headers
      * @return string Html list.
      */
-    public function displayList($references, array $args, array $options = [])
+    public function displayListForTerm($term, array $args = [], array $options = [])
     {
-        return $this->reference->displayList($references, $args, $options);
+        return $this->reference->displayListForTerm($term, $args, $options);
     }
 
     /**
@@ -103,33 +105,33 @@ class Reference extends AbstractHelper
      *
      * @uses http://www.jqueryscript.net/other/jQuery-Flat-Folder-Tree-Plugin-simplefolders.html
      *
-     *  Example for the mode "tree":
-     * @example
-     * $references = "
-     * Europe
-     * - France
-     * - Germany
-     * - United Kingdom
-     * -- England
-     * -- Scotland
-     * -- Wales
-     * Asia
-     * - Japan
-     * ";
+     * @see \Reference\Mvc\Controller\Plugin\Reference::convertTreeToLevels()
      *
-     * $hierarchy = "
+     * Note: Sql searches are case insensitive, so the all the values must be
+     * case-insisitively unique.
+     *
+     * Output via the default partial:
+     *
      * <ul class="tree">
      *     <li>Europe
      *         <div class="expander"></div>
      *         <ul>
-     *             <li>France</li>
-     *             <li>Germany</li>
+     *             <li>France
+     *                 <div class="expander"></div>
+     *                 <ul>
+     *                     <li>Paris</li>
+     *                 </ul>
+     *             </li>
      *             <li>United Kingdom
      *                 <div class="expander"></div>
      *                 <ul>
-     *                     <li>England</li>
+     *                     <li>England
+     *                         <div class="expander"></div>
+     *                         <ul>
+     *                             <li>London</li>
+     *                         </ul>
+     *                     </li>
      *                     <li>Scotland</li>
-     *                     <li>Wales</li>
      *                 </ul>
      *             </li>
      *         </ul>
@@ -141,11 +143,11 @@ class Reference extends AbstractHelper
      *         </ul>
      *     </li>
      * </ul>
-     * ";
      *
-     * @param array $references Array of references to show.
-     * @param array $args Specify the references with "term" and optionnaly
-     * "type" and "resource_name"
+     * @param array $referenceLevels Flat associative array of references to
+     * show with reference as key and level as value.
+     * @param array $args Specify the references with "term" (dcterms:subject by
+     * default), "type" and "resource_name"
      * @param array $options Options to display the references. Values are booleans:
      * - raw: Show subjects as raw text, not links (default to false)
      * - expanded: Show tree as expanded (defaul to config)

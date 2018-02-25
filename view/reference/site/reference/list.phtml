@@ -2,9 +2,9 @@
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 ?>
 <div id="primary" class="reference">
-    <h2><?php echo sprintf($this->translate('Browse Items By "%s" (%d Headings)'), $label, count($references)); ?></h2>
-    <?php if (count($references)): ?>
-    <?php echo $this->reference()->displayList($references, $args, $options); ?>
+    <h2><?php echo sprintf($this->translate('Browse Items By "%s" (%d Headings)'), $label, $total); ?></h2>
+    <?php if ($total): ?>
+    <?php echo $this->reference()->displayListForTerm($term, $args, $options); ?>
     <?php else: ?>
     <p><?php echo $this->escapeHtml(sprintf($this->translate('There is no references for "%s".'), $label)); ?></p>
     <?php endif; ?>

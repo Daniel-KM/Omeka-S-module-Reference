@@ -199,26 +199,22 @@ class Reference extends AbstractPlugin
     }
 
     /**
-     * Display the list of references via a partial view.
+     * Display the list of the references of a term via a partial view.
      *
-     * @param array $references Array of references elements to show.
-     * @param array $args Specify the references with "term" and optionnaly
-     * "type" and "resource_name"
+     * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
+     * @param array $args Specify the references with "type", "resource_name",
+     * "per_page" and "page".
      * @param array $options Options to display references. Values are booleans:
      * - raw: Show references as raw text, not links (default to false)
      * - skiplinks: Add the list of letters at top and bottom of the page
      * - headings: Add each letter as headers
      * @return string Html list.
      */
-    public function displayList($references, array $args, array $options = [])
+    public function displayListForTerm($term, array $args = [], array $options = [])
     {
-        if (empty($references) || empty($args['term'])) {
-            return;
-        }
-
         $type = isset($args['type']) && $args['type'] === 'resource_classes' ? 'resource_classes' : 'properties';
 
-        $termId = $this->getTermId($args['term'], $type);
+        $termId = $this->getTermId($term, $type);
         if (empty($termId)) {
             return;
         }
@@ -236,8 +232,11 @@ class Reference extends AbstractPlugin
 
         $options = $this->cleanOptions($options);
 
+        $perPage = empty($args['per_page']) ? null : (int) $args['per_page'];
+        $page = empty($args['page']) ? null : (int) $args['page'];
         $output = $options['link_to_single'] ? 'withFirst' : 'list';
-        $references = $this->getReferencesList($termId, $type, $entityClass, [], null, null, $output);
+
+        $references = $this->getReferencesList($termId, $type, $entityClass, [], $perPage, $page, $output);
 
         $controller = $this->getController();
         $partial = $controller->viewHelpers()->get('partial');
@@ -247,6 +246,8 @@ class Reference extends AbstractPlugin
             'type' => $type,
             'resourceName' => $resourceName,
             'options' => $options,
+            'perPage' => $perPage,
+            'page' => $page,
         ]);
 
         return $html;
@@ -298,8 +299,8 @@ class Reference extends AbstractPlugin
      *
      * @param array $referenceLevels Flat associative array of references to
      * show with reference as key and level as value.
-     * @param array $args Specify the references with "term" and optionnaly
-     * "type" and "resource_name"
+     * @param array $args Specify the references with "term" (dcterms:subject by
+     * default), "type" and "resource_name"
      * @param array $options Options to display the references. Values are booleans:
      * - raw: Show subjects as raw text, not links (default to false)
      * - expanded: Show tree as expanded (defaul to config)
@@ -307,12 +308,13 @@ class Reference extends AbstractPlugin
      */
     public function displayTree($references, array $args, array $options = [])
     {
-        if (empty($references) || empty($args['term'])) {
+        if (empty($references)) {
             return;
         }
 
         $type = isset($args['type']) && $args['type'] === 'resource_classes' ? 'resource_classes' : 'properties';
 
+        $term = empty($args['term']) ? $this->DC_Subject_id : $args['term'];
         $termId = $this->getTermId($args['term'], $type);
         if (empty($termId)) {
             return;
@@ -373,6 +375,8 @@ class Reference extends AbstractPlugin
             'type' => $type,
             'resourceName' => $resourceName,
             'options' => $options,
+            'perPage' => null,
+            'page' => null,
         ]);
 
         return $html;

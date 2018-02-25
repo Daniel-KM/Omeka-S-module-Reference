@@ -51,21 +51,24 @@ class ReferenceController extends AbstractActionController
         }
         $slugData = $slugs[$slug];
 
+        $term = $slugData['term'];
+        $type = $slugData['type'];
         $resourceName = $settings->get('reference_resource_name', 'resources');
-        $references = $this->reference()->getList($slugData['term'], $slugData['type'], $resourceName);
 
         $output = $this->params()->fromQuery('output');
         if ($output === 'json') {
+            $references = $this->reference()->getList($term, $type, $resourceName);
             $view = new JsonModel($references);
             return $view;
         }
 
+        $total = $this->reference()->count($term, $type, $resourceName);
+
         $view = new ViewModel();
-        $view->setVariable('slug', $slug);
-        $view->setVariable('references', $references);
+        $view->setVariable('total', $total);
         $view->setVariable('label', $slugData['label']);
+        $view->setVariable('term', $term);
         $view->setVariable('args', [
-            'term' => $slugData['term'],
             'type' => $slugData['type'],
             'resource_name' => $resourceName,
         ]);
@@ -76,6 +79,7 @@ class ReferenceController extends AbstractActionController
             'skiplinks' => $settings->get('reference_list_skiplinks', true),
             'headings' => $settings->get('reference_list_headings', true),
         ]);
+        $view->setVariable('slug', $slug);
         return $view;
     }
 

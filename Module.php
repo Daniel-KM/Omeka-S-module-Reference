@@ -191,7 +191,10 @@ class Module extends AbstractModule
         $form->init();
         // TODO Fix the setData() with sub-subfieldset..
         $form->setData($data);
-        $html = '<p>' . $renderer->translate('The references are available for all resources, but enabled only for items by default.') . '</p>';
+        $html = '<p>';
+        $html .= $renderer->translate('This config allows to create routed pages for all sites.'); // @translate
+        $html .= ' ' . $renderer->translate('References can be created inside pages via blocks too.'); // @translate
+        $html .= '</p>';
         $html .= $renderer->formCollection($form);
         return $html;
     }
