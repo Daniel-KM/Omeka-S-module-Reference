@@ -88,7 +88,6 @@ class Reference extends AbstractHelper
      * "type" and "resource_name"
      * @param array $options Options to display references. Values are booleans:
      * - raw: Show references as raw text, not links (default to false)
-     * - strip: Remove html tags (default to true)
      * - skiplinks: Add the list of letters at top and bottom of the page
      * - headings: Add each letter as headers
      * @return string Html list.
@@ -148,7 +147,6 @@ class Reference extends AbstractHelper
      * "type" and "resource_name"
      * @param array $options Options to display the references. Values are booleans:
      * - raw: Show subjects as raw text, not links (default to false)
-     * - strip: Remove html tags (default to true)
      * - expanded: Show tree as expanded (defaul to config)
      * @return string Html list.
      */

@@ -134,7 +134,6 @@ class Reference extends AbstractPlugin
      * "type" and "resource_name"
      * @param array $options Options to display references. Values are booleans:
      * - raw: Show references as raw text, not links (default to false)
-     * - strip: Remove html tags (default to true)
      * - skiplinks: Add the list of letters at top and bottom of the page
      * - headings: Add each letter as headers
      * @return string Html list.
@@ -166,36 +165,6 @@ class Reference extends AbstractPlugin
         $options = $this->cleanOptions($options);
 
         $references = $this->getReferencesList($termId, $type, $entityClass, null, null, 'withFirst');
-
-        if ($options['strip']) {
-            $total = count($references);
-            $referencesList = array_map('strip_tags', array_keys($references));
-            // List of subjects may need to be reordered after reformatting. The
-            // total may have been changed. In that case, total of each
-            // reference is lost.
-            if ($total == count($referencesList)) {
-                $references = array_combine($referencesList, $references);
-            }
-            // Should be done manually.
-            else {
-                $referenceList = array_combine($referenceList, array_fill(0, count($referenceList), null));
-                foreach ($referenceList as $referenceText => &$value) {
-                    foreach ($references as $reference => $referenceData) {
-                        if (is_null($value)) {
-                            $value = $referenceData;
-                        }
-                        // Keep the first record id.
-                        else {
-                            $value['total'] += $referenceData['total'];
-                        }
-                    }
-                }
-                $references = $referencesList;
-            }
-
-            // Reorder stripped data.
-            ksort($references, SORT_STRING | SORT_FLAG_CASE);
-        }
 
         $controller = $this->getController();
         $partial = $controller->viewHelpers()->get('partial');
@@ -260,7 +229,6 @@ class Reference extends AbstractPlugin
      * "type" and "resource_name"
      * @param array $options Options to display the references. Values are booleans:
      * - raw: Show subjects as raw text, not links (default to false)
-     * - strip: Remove html tags (default to true)
      * - expanded: Show tree as expanded (defaul to config)
      * @return string Html list.
      */
@@ -290,10 +258,6 @@ class Reference extends AbstractPlugin
 
         $options = $this->cleanOptions($options);
 
-        if ($options['strip']) {
-            $references = array_map('strip_tags', $references);
-        }
-
         $controller = $this->getController();
         $partial = $controller->viewHelpers()->get('partial');
         $html = $partial('common/reference-tree', [
@@ -319,7 +283,6 @@ class Reference extends AbstractPlugin
         $cleanedOptions = [
             'mode' => $mode,
             'raw' => isset($options['raw']) && $options['raw'],
-            'strip' => isset($options['strip']) ? (bool) $options['strip'] : true,
         ];
 
         $cleanedOptions['query_type'] = isset($options['query_type'])
