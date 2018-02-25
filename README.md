@@ -36,8 +36,8 @@ Usage
 -----
 
 The plugin adds a page and a block, that can be added to the navigation:
-* "Browse by Reference" (http://www.example.com/reference).
-* "Hierarchy of Subjects" (http://www.example.com/subjects/tree).
+* "Browse by reference" (http://www.example.com/reference).
+* "Hierarchy of references" (http://www.example.com/reference-tree).
 
 Note: the block layout is not yet implemented.
 

@@ -60,7 +60,7 @@ return [
                     'reference_tree' => [
                         'type' => 'Literal',
                         'options' => [
-                            'route' => '/subjects/tree',
+                            'route' => '/reference-tree',
                             'defaults' => [
                                 '__NAMESPACE__' => 'Reference\Controller\Site',
                                 'controller' => Controller\Site\ReferenceController::class,
