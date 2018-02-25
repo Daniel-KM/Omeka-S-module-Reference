@@ -82,12 +82,12 @@ class Reference extends AbstractPlugin
             return;
         }
 
-        $references = $this->getReferencesList($termId, $type, $entityClass, $perPage, $page);
+        $references = $this->getReferencesList($termId, $type, $entityClass, [], $perPage, $page);
         return $references;
     }
 
     /**
-     * Get the list of references as tree.
+     * Get a list of references as tree.
      *
      * @deprecated 3.4.5 Useless since tree is stored as array.
      *
@@ -236,7 +236,8 @@ class Reference extends AbstractPlugin
 
         $options = $this->cleanOptions($options);
 
-        $references = $this->getReferencesList($termId, $type, $entityClass, null, null, 'withFirst');
+        $output = $options['link_to_single'] ? 'withFirst' : 'list';
+        $references = $this->getReferencesList($termId, $type, $entityClass, [], null, null, $output);
 
         $controller = $this->getController();
         $partial = $controller->viewHelpers()->get('partial');
@@ -258,8 +259,11 @@ class Reference extends AbstractPlugin
      *
      * @see \Reference\Mvc\Controller\Plugin\Reference::convertTreeToLevels()
      *
+     * Note: Sql searches are case insensitive, so the all the values must be
+     * case-insisitively unique.
+     *
      * Output via the default partial:
-
+     *
      * <ul class="tree">
      *     <li>Europe
      *         <div class="expander"></div>
@@ -327,10 +331,44 @@ class Reference extends AbstractPlugin
 
         $options = $this->cleanOptions($options);
 
+        // Sql searches are case insensitive, so a convert should be done.
+        $hasMb = function_exists('mb_strtolower');
+        $lowerReferences = $hasMb
+            ? array_map('mb_strtolower', array_keys($references))
+            : array_map('strtolower', array_keys($references));
+        $output = $options['link_to_single'] ? 'withFirst' : 'list';
+        $totals = $this->getReferencesList($termId, $type, $entityClass, $lowerReferences, null, null, $output);
+        $lowerTotals = [];
+        if (function_exists('mb_strtolower')) {
+            foreach ($totals as $key => $value) {
+                $lowerTotals[mb_strtolower($key)] = $value;
+            }
+        } else {
+            foreach ($totals as $key => $value) {
+                $lowerTotals[strtolower($key)] = $value;
+            }
+        }
+
+        // Merge of the two references arrays.
+        $result = [];
+        foreach ($references as $reference => $level) {
+            $lowerReference = $hasMb ? mb_strtolower($reference) : sttolower($reference);
+            if (isset($lowerTotals[$lowerReference])) {
+                $result[$lowerReference] = [
+                    'total' => $lowerTotals[$lowerReference]['total'],
+                    'first_id' => $lowerTotals[$lowerReference]['first_id'],
+                ];
+            } else {
+                $result[$lowerReference] = ['total' => 0, 'first_id' => null];
+            }
+            $result[$lowerReference]['value'] = $reference;
+            $result[$lowerReference]['level'] = $level;
+        }
+
         $controller = $this->getController();
         $partial = $controller->viewHelpers()->get('partial');
         $html = $partial('common/reference-tree', [
-            'references' => $references,
+            'references' => $result,
             'term' => $termId,
             'type' => $type,
             'resourceName' => $resourceName,
@@ -396,16 +434,18 @@ class Reference extends AbstractPlugin
      * @param int $termId May be the resource class id.
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $entityClass
+     * @param array $values Allow to limit the answer to the specified values.
      * @param int $perPage
      * @param int $page One-based page number.
      * @param string $output May be "associative" (default), "list" or "withFirst".
      * @return array Associative list of references, with the total and the
-     * first record.
+     * first record, according to the output parameter.
      */
     protected function getReferencesList(
         $termId,
         $type,
         $entityClass,
+        $values = [],
         $perPage = null,
         $page = null,
         $output = null
@@ -458,13 +498,13 @@ class Reference extends AbstractPlugin
                     ->from(\Omeka\Entity\Value::class, 'value')
                     // This join allow to check visibility automatically too.
                     ->innerJoin($entityClass, 'resource', 'WITH', 'value.resource = resource')
-                    ->groupBy('value.value')
-                    ->orderBy('value.value', 'ASC')
-                    ->addOrderBy('resource.id', 'ASC')
                     ->andWhere($qb->expr()->eq('value.property', ':property'))
                     ->setParameter('property', $termId)
                     // Only literal values.
-                    ->andWhere($qb->expr()->isNotNull('value.value'));
+                    ->andWhere($qb->expr()->isNotNull('value.value'))
+                    ->groupBy('value.value')
+                    ->orderBy('value.value', 'ASC')
+                    ->addOrderBy('resource.id', 'ASC');
                 break;
         }
 
@@ -473,6 +513,12 @@ class Reference extends AbstractPlugin
                 ->addSelect([
                     'MIN(resource.id) AS first_id',
                 ]);
+        }
+
+        if ($values) {
+            $qb
+                ->andWhere('value.value IN (:values)')
+                ->setParameter('values', $values);
         }
 
         if ($perPage) {

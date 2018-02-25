@@ -3,6 +3,8 @@ if (count($references)):
     $this->headLink()->appendStylesheet($this->assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));
     $this->headScript()->appendFile($this->assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'));
 
+    $this->headStyle()->appendStyle('.tree .no-resource { font-style: italic; }');
+
     $termId = $term;
     $mapResourcesControllers = ['resources' => 'resource', 'items' => 'item', 'item_sets' => 'item-set', 'media' => 'media'];
     $controllerName = $mapResourcesControllers[$resourceName];
@@ -20,7 +22,10 @@ if (count($references)):
         <?php
             // Create the tree.
             $previous_level = null;
-            foreach ($references as $reference => $level):
+            foreach ($references as $lowerReference => $referenceData):
+                $reference = $referenceData['value'];
+                $level = $referenceData['level'];
+
                 // Close the previous line (done before, because next line is
                 // not known yet).
                 if (is_null($previous_level)):
@@ -47,22 +52,37 @@ if (count($references)):
                 endif;
 
                 if ($raw):
-                    echo $reference;
+                    $referenceText = $reference;
+                    $referenceNumber = true;
                 else:
-                    $query = [
-                        'property' => [['property' => $termId, 'type' => $queryType, 'text' => $reference]],
-                    ];
-                    echo $this->hyperlink(
-                        $reference,
-                        $this->url('site/resource', ['controller' => $controllerName, 'action' => 'browse'], ['query' => $query], true)
-                    );
+                    if (empty($referenceData['total'])):
+                        $referenceText = '<span class="no-resource">' . $reference . '</span>';
+                        $referenceNumber = false;
+                    elseif ($linkToSingle && $referenceData['total'] === 1):
+                        $resource = $this->api()->read($resourceName, $referenceData['first_id'])->getContent();
+                        $referenceText = $this->hyperlink($reference, $resource->siteUrl());
+                        $referenceNumber = false;
+                    else:
+                        $query = [
+                            'property' => [['property' => $termId, 'type' => $queryType, 'text' => $reference]],
+                        ];
+                        $referenceText = $this->hyperlink(
+                            $reference,
+                            $this->url('site/resource', ['controller' => $controllerName, 'action' => 'browse'], ['query' => $query], true)
+                        );
+                        $referenceNumber = true;
+                    endif;
                 endif;
 
-                // TODO Add total to the list.
+                echo $referenceText;
+                if ($total && $referenceNumber && @$referenceData['total']):
+                    echo ' (' . $referenceData['total'] . ')';
+                endif;
 
                 $previous_level = $level;
             endforeach;
-            // Manage last liine.
+
+            // Manage last line.
             echo '</li>' . PHP_EOL . str_repeat('</ul></li>' . PHP_EOL, $previous_level);
         ?>
     </ul>

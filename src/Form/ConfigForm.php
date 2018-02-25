@@ -71,6 +71,15 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             ],
         ]);
 
+        $generalFieldset->add([
+            'name' => 'reference_total',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Print total', // @translate
+                'info' => 'Print the total of resources for each reference.', // @translate
+            ],
+        ]);
+
         $this->add([
             'name' => 'fieldset_reference_list_params',
             'type' => Fieldset::class,
@@ -96,15 +105,6 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             'options' => [
                 'label' => 'Print headings', // @translate
                 'info' => 'Print headers for each section (#0-9 and symbols, A, B, etc.).', // @translate
-            ],
-        ]);
-
-        $referenceParamsFieldset->add([
-            'name' => 'reference_total',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Print total', // @translate
-                'info' => 'Print the total of resources for each reference.', // @translate
             ],
         ]);
 
@@ -155,10 +155,11 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             'name' => 'reference_tree_hierarchy',
             'type' => Element\Textarea::class,
             'options' => [
-                'label' => 'Set the hierarchy of subjects', // @translate
-                'info' => $this->translate('If any, write the hierarchy of all your subjects in order to display them in the "Hierarchy of Subjects" page.') // @translate
-                    . ' ' . $this->translate('Format is: one subjet by line, preceded by zero, one or more "-" to indicate the hierarchy level.') // @translate
-                    . ' ' . $this->translate('Separate the "-" and the subject with a space. Empty lines are not considered.'), // @translate
+                'label' => 'Static tree of references', // @translate
+                'info' => $this->translate('If any, write the hierarchy of all your references in order to display them in the "Tree of references" page.') // @translate
+                    . ' ' . $this->translate('Format is: one reference by line, preceded by zero, one or more "-" to indicate the hierarchy level.') // @translate
+                    . ' ' . $this->translate('Separate the "-" and the reference with a space. Empty lines are not considered.') // @translate
+                    . ' ' . $this->translate('Note: sql does case insensitive searches, so all references should be case-insensitively unique.'), // @translate
             ],
             'attributes' => [
                 'rows' => 20,
@@ -168,12 +169,11 @@ class ConfigForm extends Form implements TranslatorAwareInterface
                 'placeholder' => 'Europe ↵
 - France ↵
 -- Paris ↵
--- Lyon ↵
--- Marseille ↵
 - United Kingdom ↵
--- London ↵
--- Manchester ↵
+-- England ↵
+--- London ↵
 Asia ↵
+- Japan ↵
 ',
             ],
         ]);
