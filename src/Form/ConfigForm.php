@@ -99,6 +99,15 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             ],
         ]);
 
+        $referenceParamsFieldset->add([
+            'name' => 'reference_total',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Print total', // @translate
+                'info' => 'Print the total of resources for each reference.', // @translate
+            ],
+        ]);
+
         $this->add([
             'type' => Fieldset::class,
             'name' => 'fieldset_reference_tree',

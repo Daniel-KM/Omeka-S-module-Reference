@@ -54,6 +54,10 @@ class Module extends AbstractModule
                 'reference_resource_name',
                 $defaultConfig['reference_resource_name']
             );
+            $settings->set(
+                'reference_total',
+                $defaultConfig['reference_total']
+            );
         }
     }
 
