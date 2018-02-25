@@ -2,6 +2,7 @@
 namespace Reference\Form;
 
 use Omeka\Api\Manager as ApiManager;
+use Omeka\Form\Element\PropertySelect;
 use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
@@ -102,12 +103,12 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             'type' => Fieldset::class,
             'name' => 'fieldset_reference_tree',
             'options' => [
-                'label' => 'Hierarchy of subjects', // @translate
+                'label' => 'Reference tree', // @translate
             ],
         ]);
-        $subjectTreeFieldset = $this->get('fieldset_reference_tree');
+        $referenceTreeFieldset = $this->get('fieldset_reference_tree');
 
-        $subjectTreeFieldset->add([
+        $referenceTreeFieldset->add([
             'name' => 'reference_tree_enabled',
             'type' => Element\Checkbox::class,
             'options' => [
@@ -117,7 +118,22 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             ],
         ]);
 
-        $subjectTreeFieldset->add([
+        $referenceTreeFieldset->add([
+            'name' => 'reference_tree_term',
+            'type' => PropertySelect::class,
+            'options' => [
+                'label' => 'Property for the tree', // @translate
+                'info' => 'The references will use this property to create links.', // @translate
+                'empty_option' => 'Select a property…', // @translate
+                'term_as_value' => true,
+            ],
+            'attributes' => [
+                'required' => false,
+                'class' => 'chosen-select',
+            ],
+        ]);
+
+        $referenceTreeFieldset->add([
             'name' => 'reference_tree_expanded',
             'type' => Element\Checkbox::class,
             'options' => [
@@ -126,7 +142,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             ],
         ]);
 
-        $subjectTreeFieldset->add([
+        $referenceTreeFieldset->add([
             'name' => 'reference_tree_hierarchy',
             'type' => Element\Textarea::class,
             'options' => [

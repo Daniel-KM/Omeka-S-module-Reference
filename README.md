@@ -4,8 +4,8 @@ Reference (module for Omeka S)
 [Reference] is a module for [Omeka S] that allows to serve a glossary (an
 alphabetized index) of links to records or to searches for all resources classes
 (item types) and properties (metadata fields) of all resources of an Omeka S
-instance, or an expandable hierarchical list of specified subjects. These lists
-can be displayed in any page via a helper or a block.
+instance, or an expandable hierarchical tree of statically specified references.
+These lists can be displayed in any page via a helper or a block.
 
 This [Omeka S] module is a rewrite of the [Reference plugin] for [Omeka] and
 intends to provide the same features as the original plugin.
@@ -45,8 +45,8 @@ The results are available via json too: simply add `?output=json` to the url.
 
 For the list view, the references are defined in the config page.
 
-For the tree view, the subjects are set in the config form with the hierarchical
-list of subjects, formatted like:
+For the tree view, the references are set in the config form with a simple
+static hierarchical list, formatted like:
 ```
 Europe
 - France
@@ -65,7 +65,7 @@ So, the format is the config page for the tree view is:
 - Each reference is preceded by zero, one or more "-" to indicate the hierarchy
 level.
 - Separate the "-" and the reference with a space.
-- A subject cannot begin with a "-" or a space.
+- A reference cannot begin with a "-" or a space.
 - Empty lines are not considered.
 
 These contents can be displayed on any page via the view helper `reference()`:
@@ -109,7 +109,7 @@ echo $this->reference()->displayTree($references,
 
 All arguments are optional and the default ones are set in the config page, but
 they can be overridden in the theme. So a simple `echo $this->reference($term);`
-is enough. For list, the default is the "dcterms:subject".
+is enough.
 
 
 Warning

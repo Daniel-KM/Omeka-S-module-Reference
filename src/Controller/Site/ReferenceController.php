@@ -87,8 +87,7 @@ class ReferenceController extends AbstractActionController
             return;
         }
 
-        // TODO Currently, the arguments are forced.
-        $term = 'dcterms:subject';
+        $term = $settings->get('reference_tree_term', 'dcterms:subject');
         $type = 'properties';
         $resourceName = $settings->get('reference_resource_name', 'resources');
 
