@@ -29,6 +29,26 @@ class ConfigForm extends Form implements TranslatorAwareInterface
         $generalFieldset = $this->get('fieldset_reference_general');
 
         $generalFieldset->add([
+            'name' => 'reference_resource_name',
+            'type' => Element\Radio::class,
+            'options' => [
+                'label' => 'Resources to link', // @translate
+                'info' => 'Currently, only item sets and items are managed in public front-end.', // @translate
+                'value_options' => [
+                    // TODO Manage the list of reference separately.
+                    // '' => 'All resources (separately)', // @translate
+                    // 'resources' => 'All resources (together)',  // @translate
+                    'item_sets' => 'Item sets',  // @translate
+                    'items' => 'Items',  // @translate
+                    // 'media' => 'Media',  // @translate
+                ],
+            ],
+            'attributes' => [
+                'required' => true,
+            ],
+        ]);
+
+        $generalFieldset->add([
             'name' => 'reference_query_type',
             'type' => Element\Radio::class,
             'options' => [

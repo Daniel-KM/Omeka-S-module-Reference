@@ -39,6 +39,8 @@ class Module extends AbstractModule
         ServiceLocatorInterface $serviceLocator
     ) {
         $settings = $serviceLocator->get('Omeka\Settings');
+        $config = require __DIR__ . '/config/module.config.php';
+
         if (version_compare($oldVersion, '3.4.5', '<')) {
             $referenceSlugs = $settings->get('reference_slugs');
             foreach ($referenceSlugs as $slug => &$slugData) {
@@ -46,6 +48,12 @@ class Module extends AbstractModule
                 unset($slugData['id']);
             }
             $settings->set('reference_slugs', $referenceSlugs);
+
+            $defaultConfig = $config[strtolower(__NAMESPACE__)]['config'];
+            $settings->set(
+                'reference_resource_name',
+                $defaultConfig['reference_resource_name']
+            );
         }
     }
 

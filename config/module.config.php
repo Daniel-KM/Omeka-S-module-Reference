@@ -84,6 +84,7 @@ return [
     ],
     'reference' => [
         'config' => [
+            'reference_resource_name' => 'items',
             'reference_query_type' => 'eq',
             'reference_link_to_single' => true,
             'reference_total' => true,

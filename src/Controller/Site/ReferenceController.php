@@ -9,7 +9,8 @@ class ReferenceController extends AbstractActionController
 {
     public function browseAction()
     {
-        $slugs = $this->settings()->get('reference_slugs') ?: [];
+        $settings = $this->settings();
+        $slugs = $settings->get('reference_slugs') ?: [];
         $types = [];
 
         // Remove disabled slugs and prepare types.
@@ -26,8 +27,7 @@ class ReferenceController extends AbstractActionController
             return;
         }
 
-        // TODO Currently, the "items" are forced.
-        $resourceName = 'items';
+        $resourceName = $settings->get('reference_resource_name', 'resources');
 
         $view = new ViewModel();
         $view->setVariable('references', $slugs);
@@ -51,11 +51,10 @@ class ReferenceController extends AbstractActionController
         }
         $slugData = $slugs[$slug];
 
-        // TODO Currently, the "items" are forced.
-        $resourceName = 'items';
+        $resourceName = $settings->get('reference_resource_name', 'resources');
         $references = $this->reference()->getList($slugData['term'], $slugData['type'], $resourceName);
-        $output = $this->params()->fromQuery('output');
 
+        $output = $this->params()->fromQuery('output');
         if ($output === 'json') {
             $view = new JsonModel($references);
             return $view;
@@ -91,7 +90,7 @@ class ReferenceController extends AbstractActionController
         // TODO Currently, the arguments are forced.
         $term = 'dcterms:subject';
         $type = 'properties';
-        $resourceName = 'items';
+        $resourceName = $settings->get('reference_resource_name', 'resources');
 
         $references = $this->reference()->getTree();
 
