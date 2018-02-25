@@ -118,8 +118,8 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             'attributes' => [
                 'rows' => 20,
                 'cols' => 60,
-                // The place holder can't use end of line, so a symbol
-                // is used for it.
+                // The place holder may not use end of line on some browsers, so
+                // a symbol is used for it.
                 'placeholder' => 'Europe ↵
 - France ↵
 -- Paris ↵

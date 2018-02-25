@@ -1,66 +1,71 @@
 <?php
-if (count($subjects)):
-    // $resourceName = 'items';
-    $controllerName = 'item';
-    $queryType = isset($options['query_type']) ? $options['query_type'] : $this->setting('reference_query_type', 'eq');
-    $expanded = isset($options['expanded']) ? $options['expanded'] : $this->setting('reference_tree_expanded');
-    // Dublin Core Subject is always 3.
-    $referenceId = 3;
+if (count($references)):
     $this->headLink()->appendStylesheet($this->assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));
     $this->headScript()->appendFile($this->assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'));
+
+    $termId = $term;
+    $mapResourcesControllers = ['resources' => 'resource', 'items' => 'item', 'item_sets' => 'item-set', 'media' => 'media'];
+    $controllerName = $mapResourcesControllers[$resourceName];
+
+    // Set default values if needed.
+    $options += ['query_type' => 'eq', 'link_to_single' => true, 'total' => true, 'raw' => false, 'expanded' => true];
+    $queryType = $options['query_type'];
+    $linkToSingle = $options['link_to_single'];
+    $total = $options['total'];
+    $raw = $options['raw'];
+    $expanded = $options['expanded'];
 ?>
 <div id="reference-headings">
     <ul class="tree">
         <?php
             // Create the tree.
             $previous_level = 0;
-            foreach ($subjects as $key => $subject) {
-                $first = substr($subject, 0, 1);
-                $space = strpos($subject, ' ');
+            foreach ($references as $key => $reference):
+                $first = substr($reference, 0, 1);
+                $space = strpos($reference, ' ');
                 $level = ($first !== '-' || $space === false) ? 0 : $space;
-                $subject = trim($level == 0 ? $subject : substr($subject, $space));
+                $reference = trim($level == 0 ? $reference : substr($reference, $space));
 
                 // Close the previous line (done before, because next line is
                 // not known yet).
-                if ($key == 0) {
+                if ($key == 0):
                     // Nothing for the first level.
-                }
-                elseif ($level > $previous_level) {
-                    // Deeper level is always the next one.
-                }
+                // Deeper level is always the next one.
+                elseif ($level > $previous_level):
+                    // Nothing to do.
                 // Higher level.
-                elseif ($level < $previous_level) {
+                elseif ($level < $previous_level):
                     echo '</li>' . PHP_EOL . str_repeat('</ul></li>' . PHP_EOL, $previous_level - $level);
-                }
                 // First line, deeper or equal level.
-                else {
+                else:
                     echo '</li>' . PHP_EOL;
-                }
+                endif;
 
                 // Start the line with or without a new sub-list.
-                if ($level > $previous_level) {
+                if ($level > $previous_level):
                     // Deeper level is always the next one.
                     echo PHP_EOL . '<div class="expander' . ($expanded ? ' expanded' : '') . '"></div>';
                     echo '<ul' . ($expanded ? ' class="expanded"' : '') . '><li>';
-                }
-                else {
-                    echo '<li>';
-                }
-
-                if (empty($options['raw'])):
-                    $query = [
-                        'property' => [['property' => $referenceId, 'type' => $queryType, 'text' => $subject]],
-                    ];
-                    echo $this->hyperlink(
-                        $subject,
-                        $this->url('site/resource', ['controller' => $controllerName, 'action' => 'browse'], ['query' => $query], true)
-                    );
                 else:
-                    echo $subject;
+                    echo '<li>';
                 endif;
 
+                if ($raw):
+                    echo $reference;
+                else:
+                    $query = [
+                        'property' => [['property' => $termId, 'type' => $queryType, 'text' => $reference]],
+                    ];
+                    echo $this->hyperlink(
+                        $reference,
+                        $this->url('site/resource', ['controller' => $controllerName, 'action' => 'browse'], ['query' => $query], true)
+                    );
+                endif;
+
+                // TODO Add total to the list.
+
                 $previous_level = $level;
-            }
+            endforeach;
             // Manage last liine.
             echo '</li>' . PHP_EOL . str_repeat('</ul></li>' . PHP_EOL, $previous_level);
         ?>

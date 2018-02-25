@@ -22,9 +22,9 @@ class Reference extends AbstractHelper
     }
 
     /**
-     * Get the reference view object.
+     * Get the reference object.
      *
-     * @param int|string|PropertyRepresentation|ResourceClassRepresentation $property
+     * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $resourceName All resources types if empty.
      * @param int $perPage
@@ -32,31 +32,31 @@ class Reference extends AbstractHelper
      * @return Reference|array|null The result or null if called directly, else
      * this view helper.
      */
-    public function __invoke($property = null, $type = null, $resourceName = null, $perPage = null, $page = null)
+    public function __invoke($term = null, $type = null, $resourceName = null, $perPage = null, $page = null)
     {
-        if (empty($property)) {
+        if (empty($term)) {
             return $this;
         }
-        return $this->reference->getList($property, $type, $resourceName, $perPage, $page);
+        return $this->reference->getList($term, $type, $resourceName, $perPage, $page);
     }
 
     /**
      * Get the list of references of a property or a resource class.
      *
-     * @param int|string|PropertyRepresentation|ResourceClassRepresentation $property
+     * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $resourceName
      * @param int $perPage
      * @param int $page One-based page number.
      * @return array Associative array with total and first record ids.
      */
-    public function getList($property, $type = null, $resourceName = null, $perPage = null, $page = null)
+    public function getList($term, $type = null, $resourceName = null, $perPage = null, $page = null)
     {
-        return $this->reference->getList($property, $type, $resourceName, $perPage, $page);
+        return $this->reference->getList($term, $type, $resourceName, $perPage, $page);
     }
 
     /**
-     * Get the list of subjects.
+     * Get the list of references as tree.
      *
      * @return array.
      */
@@ -66,25 +66,25 @@ class Reference extends AbstractHelper
     }
 
     /**
-     * Count the total of distinct element texts for a slug.
+     * Count the total of distinct element texts for a term.
      *
      * @todo Manage multiple resource names (items, item sets, medias) at once.
      *
-     * @param int|string|PropertyRepresentation|ResourceClassRepresentation $property
+     * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $resourceName
      * @return int The number of references if only one resource name is set.
      */
-    public function count($property, $type = null, $resourceName = null)
+    public function count($term, $type = null, $resourceName = null)
     {
-        return $this->reference->count($property, $type, $resourceName);
+        return $this->reference->count($term, $type, $resourceName);
     }
 
     /**
      * Display the list of references via a partial view.
      *
      * @param array $references Array of references elements to show.
-     * @param array $args Specify the references with "property" and optionnaly
+     * @param array $args Specify the references with "term" and optionnaly
      * "type" and "resource_name"
      * @param array $options Options to display references. Values are booleans:
      * - raw: Show references as raw text, not links (default to false)
@@ -143,15 +143,17 @@ class Reference extends AbstractHelper
      * </ul>
      * ";
      *
-     * @param array $subjects Array of subjects elements to show.
+     * @param array $references Array of references to show.
+     * @param array $args Specify the references with "term" and optionnaly
+     * "type" and "resource_name"
      * @param array $options Options to display the references. Values are booleans:
      * - raw: Show subjects as raw text, not links (default to false)
      * - strip: Remove html tags (default to true)
      * - expanded: Show tree as expanded (defaul to config)
      * @return string Html list.
      */
-    public function displayTree($subjects, array $options = [])
+    public function displayTree($references, array $args, array $options = [])
     {
-        return $this->reference->displayTree($subjects, $options);
+        return $this->reference->displayTree($references, $args, $options);
     }
 }

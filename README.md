@@ -26,7 +26,7 @@ route for subjects is now `reference/dcterms:subject` instead of `references/sub
 It can be changed in the config form.
 
 Furthermore, the base route has been changed to singular `reference` instead of
-`reference`. To keep or to create an alias for old plural routes, simply
+`references`. To keep or to create an alias for old plural routes, simply
 add/update it directly in your `local.config.php`, via a copy of the route part
 of the file `config/module.config.php`. Any word can be used, like `lexicon`,
 `glossary`, etc.
@@ -61,10 +61,10 @@ Asia
 
 So, the format is the config page for the tree view is:
 
-- One subjet by line.
-- Each subject is preceded by zero, one or more "-" to indicate the hierarchy
+- One reference by line.
+- Each reference is preceded by zero, one or more "-" to indicate the hierarchy
 level.
-- Separate the "-" and the subject with a space.
+- Separate the "-" and the reference with a space.
 - A subject cannot begin with a "-" or a space.
 - Empty lines are not considered.
 
@@ -72,10 +72,10 @@ These contents can be displayed on any page via the view helper `reference()`:
 
 ```
 // With default values.
-$references = $this->reference()->getList($property);
+$references = $this->reference()->getList($term);
 echo $this->reference()->displayList($references,
     [
-        'property' => $property,
+        'term' => $term,
         'type' => 'properties',
         'resource_name' => 'items',
     ],
@@ -83,6 +83,7 @@ echo $this->reference()->displayList($references,
         'skiplinks' => true,
         'headings' => true,
         'strip' => true,
+        'total' => true,
         'raw' => false,
     ]
 );
@@ -90,17 +91,25 @@ echo $this->reference()->displayList($references,
 
 For tree view:
 ```
-$subjects = $this->reference()->getTree();
-echo $this->reference()->displayTree($subjects, array(
-    'expanded' => true,
-    'strip' => true,
-    'raw' => false,
-));
+$references = $this->reference()->getTree();
+echo $this->reference()->displayTree($references,
+    [
+        'term' => $term,
+        'type' => 'properties',
+        'resource_name' => 'items',
+    ],
+    [
+        'expanded' => true,
+        'strip' => true,
+        'total' => true,
+        'raw' => false,
+    ]
+);
 ```
 
 All arguments are optional and the default ones are set in the config page, but
-they can be overridden in the theme. So a simple `echo $this->reference($property);`
-is enough. For list, the default is the "Dublin Core : Subject".
+they can be overridden in the theme. So a simple `echo $this->reference($term);`
+is enough. For list, the default is the "dcterms:subject".
 
 
 Warning

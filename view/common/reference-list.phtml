@@ -1,13 +1,22 @@
 <?php
-$resourceName = 'items';
-$this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Reference'));
 if (count($references)):
-    $queryType = isset($options['query_type']) ? $options['query_type'] : 'eq';
-    $type = isset($type) && $type === 'resource_classes' ? 'resource_classes' : 'properties';
-    // Dublin Core Title is always 1.
-    $referenceId = $type == 'resource_classes' ? 1 : $propertyId;
+    $this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Reference'));
+
+    $termId = $term;
+    $mapResourcesControllers = ['resources' => 'resource', 'items' => 'item', 'item_sets' => 'item-set', 'media' => 'media'];
+    $controllerName = $mapResourcesControllers[$resourceName];
+
+    // Set default values if needed.
+    $options += ['query_type' => 'eq', 'link_to_single' => true, 'total' => true, 'raw' => false, 'skiplinks' => true, 'headings' => true];
+    $queryType = $options['query_type'];
+    $linkToSingle = $options['link_to_single'];
+    $total = $options['total'];
+    $raw = $options['raw'];
+    $skipLinks = $options['skiplinks'];
+    $headings = $options['headings'];
+
     // Prepare and display skip links.
-    if ($options['skiplinks']):
+    if ($skipLinks):
         // Get the list of headers.
         $letters = ['number' => false] + array_fill_keys(range('A', 'Z'), false);
         foreach ($references as $reference => $referenceData):
@@ -36,13 +45,13 @@ if (count($references)):
 
 <div id="reference-headings">
     <?php
-    $linkSingle = !empty($options['link_single']);
     $current_heading = '';
     $current_id = '';
     foreach ($references as $reference => $referenceData):
-        $referenceValue = is_null($referenceData['value']) ? '[Untitled]' : $referenceData['value'];
+        $emptyReferenceValue = is_null($referenceData['value']);
+        $referenceValue = $emptyReferenceValue ? '[Untitled]' : $referenceData['value'];
         // Add the first character as header if wanted.
-        if ($options['headings']):
+        if ($headings):
             $first_char = function_exists('mb_substr') ? mb_substr($reference, 0, 1) : substr($reference, 0, 1);
             if (strlen($first_char) == 0 || preg_match('/\W|\d/u', $first_char)) {
                 $first_char = '#0-9';
@@ -56,37 +65,47 @@ if (count($references)):
     <?php
             endif;
         endif;
-    ?>
 
-    <p class="reference-record">
-        <?php if (empty($options['raw'])):
-            if ($linkSingle && $referenceData['total'] === 1):
-                $resource = $this->api()->read($resourceName, $referenceData['first_id'])->getContent();
-                echo $this->hyperlink($referenceValue, $resource->siteUrl());
-            else:
-                $query = [
-                    'property' => [['property' => $referenceId, 'type' => $queryType, 'text' => $reference]],
-                ];
-                if ($type === 'resource_classes'):
-                    $query['resource_class_id'] = 26;
-                endif;
-                echo $this->hyperlink(
-                    $referenceValue,
-                    $this->url('site/resource', ['controller' => 'item', 'action' => 'browse'], ['query' => $query], true)
-                );
-                // Can be null when references are set directly.
-                if ($referenceData['total']):
-                    echo ' (' . $referenceData['total'] . ')';
-                endif;
-            endif;
+        if ($raw):
+            $referenceText = $reference;
+            $referenceNumber = true;
         else:
-            echo $reference;
-        endif; ?>
-    </p>
+            if ($linkToSingle && $referenceData['total'] === 1):
+                $resource = $this->api()->read($resourceName, $referenceData['first_id'])->getContent();
+                $referenceText = $this->hyperlink($referenceValue, $resource->siteUrl());
+                $referenceNumber = false;
+            else:
+                if ($type === 'resource_classes'):
+                    $query = [];
+                    $query['resource_class_id'] = $termId;
+                    $query['property'] = $emptyReferenceValue
+                        ? [['property' => 1 /* dcterms:title */, 'type' => 'nex']]
+                        : [['property' => 1 /* dcterms:title */, 'type' => $queryType, 'text' => $reference]];
+                else:
+                    $query = [
+                        'property' => [['property' => $termId, 'type' => $queryType, 'text' => $reference]],
+                    ];
+                endif;
+                $referenceText = $this->hyperlink(
+                    $referenceValue,
+                    $this->url('site/resource', ['controller' => $controllerName, 'action' => 'browse'], ['query' => $query], true)
+                );
+                $referenceNumber = true;
+            endif;
+        endif;
+        ?>
+    <div class="reference-record">
+        <?php echo $referenceText; ?>
+        <?php // Can be null when references are set directly.
+            if ($total && $referenceNumber && @$referenceData['total']):
+                echo ' (' . $referenceData['total'] . ')';
+            endif;
+        ?>
+    </div>
     <?php endforeach; ?>
 </div>
 
-    <?php if ($options['skiplinks']): ?>
+    <?php if ($skipLinks): ?>
 <div class="pagination reference-pagination" id="pagination-bottom">
     <?php echo $pagination_list; ?>
 </div>

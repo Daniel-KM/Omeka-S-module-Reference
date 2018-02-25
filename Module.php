@@ -35,6 +35,20 @@ class Module extends AbstractModule
         $this->manageSettings($serviceLocator->get('Omeka\Settings'), 'install');
     }
 
+    public function upgrade($oldVersion, $newVersion,
+        ServiceLocatorInterface $serviceLocator
+    ) {
+        $settings = $serviceLocator->get('Omeka\Settings');
+        if (version_compare($oldVersion, '3.4.5', '<')) {
+            $referenceSlugs = $settings->get('reference_slugs');
+            foreach ($referenceSlugs as $slug => &$slugData) {
+                $slugData['term'] = $slugData['id'];
+                unset($slugData['id']);
+            }
+            $settings->set('reference_slugs', $referenceSlugs);
+        }
+    }
+
     public function uninstall(ServiceLocatorInterface $serviceLocator)
     {
         $this->manageSettings($serviceLocator->get('Omeka\Settings'), 'uninstall');
@@ -116,7 +130,7 @@ class Module extends AbstractModule
                     // Set true values.
                     foreach ($referenceSlugs as $slug => $slugData) {
                         $type = $slugData['type'];
-                        $id = $slugData['id'];
+                        $id = $slugData['term'];
                         // Manage removed vocabularies.
                         if (empty($fields[$type][$id])) {
                             continue;
@@ -188,7 +202,7 @@ class Module extends AbstractModule
             foreach ($typeData as $id => $field) {
                 $referenceSlug = [];
                 $referenceSlug['type'] = $type;
-                $referenceSlug['id'] = $id;
+                $referenceSlug['term'] = $id;
                 $referenceSlug['label'] = $field['label'];
                 $referenceSlug['active'] = $field['active'];
                 $referenceSlugs[$field['slug']] = $referenceSlug;

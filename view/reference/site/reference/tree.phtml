@@ -1,14 +1,11 @@
 <?php
-$escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'reference browse hierarchy');
 ?>
 <div id="primary" class="reference">
-    <h2><?php echo sprintf($this->translate('Hierarchy of Subjects (%d total)'), count($subjects)); ?></h2>
-    <?php if (count($subjects)): ?>
-    <?php
-        echo $this->reference()->displayTree($subjects);
-    ?>
+    <h2><?php echo sprintf($this->translate('Tree of references (%d total)'), count($references)); ?></h2>
+    <?php if (count($references)): ?>
+    <?php echo $this->reference()->displayTree($references, $args, $options); ?>
     <?php else: ?>
-    <p><?php echo $this->translate('There is no hierarchy of subjects.'); ?></p>
+    <p><?php echo $this->escapeHtml($this->translate('There is no list of references.')); ?></p>
     <?php endif; ?>
 </div>

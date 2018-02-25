@@ -1,18 +1,11 @@
 <?php
-$escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 ?>
 <div id="primary" class="reference">
     <h2><?php echo sprintf($this->translate('Browse Items By "%s" (%d Headings)'), $label, count($references)); ?></h2>
     <?php if (count($references)): ?>
-    <?php
-        echo $this->reference()->displayList($references, [
-            'property' => $property,
-            'type' => $type,
-            'resource_name' => $resourceName,
-        ]);
-    ?>
+    <?php echo $this->reference()->displayList($references, $args, $options); ?>
     <?php else: ?>
-    <p><?php echo sprintf($this->translate('There is no references for "%s".'), $label); ?></p>
+    <p><?php echo $this->escapeHtml(sprintf($this->translate('There is no references for "%s".'), $label)); ?></p>
     <?php endif; ?>
 </div>

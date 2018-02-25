@@ -2,7 +2,7 @@
 $escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 $siteSlug = $this->params()->fromRoute('site-slug');
-$resourceName = 'items';
+$resourceName = empty($resourceName) ? 'resources' : $resourceName;
 ?>
 <div id="primary" class="reference">
     <h2><?php echo $this->translate('References'); ?></h2>
@@ -15,7 +15,7 @@ $resourceName = 'items';
         <?php foreach ($references as $slug => $slugData): ?>
             <li><?php
                 echo $this->hyperlink(
-                    sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slugData['id'], $slugData['type'], $resourceName)),
+                    sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slugData['term'], $slugData['type'], $resourceName)),
                     $this->url('site/reference/list', ['site-slug' => $siteSlug, 'slug' => $slug]),
                     ['title' => sprintf($this->translate('Browse %s'), $slugData['label'])]
                 );
@@ -44,7 +44,7 @@ $resourceName = 'items';
             <?php endif; ?>
             <li><?php
                 echo $this->hyperlink(
-                    sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slugData['id'], $slugData['type'], $resourceName)),
+                    sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slugData['term'], $slugData['type'], $resourceName)),
                     $this->url('site/reference/list', ['site-slug' => $siteSlug, 'slug' => $slug]),
                     ['title' => sprintf($this->translate('Browse %s'), $slugData['label'])]
                 );

@@ -26,15 +26,20 @@ class ReferenceController extends AbstractActionController
             return;
         }
 
+        // TODO Currently, the "items" are forced.
+        $resourceName = 'items';
+
         $view = new ViewModel();
         $view->setVariable('references', $slugs);
         $view->setVariable('types', array_keys($types));
+        $view->setVariable('resourceName', $resourceName);
         return $view;
     }
 
     public function listAction()
     {
-        $slugs = $this->settings()->get('reference_slugs') ?: [];
+        $settings = $this->settings();
+        $slugs = $settings->get('reference_slugs') ?: [];
         if (empty($slugs)) {
             return $this->forwardToItemBrowse();
         }
@@ -48,7 +53,7 @@ class ReferenceController extends AbstractActionController
 
         // TODO Currently, the "items" are forced.
         $resourceName = 'items';
-        $references = $this->reference()->getList($slugData['id'], $slugData['type'], $resourceName);
+        $references = $this->reference()->getList($slugData['term'], $slugData['type'], $resourceName);
         $output = $this->params()->fromQuery('output');
 
         if ($output === 'json') {
@@ -58,25 +63,51 @@ class ReferenceController extends AbstractActionController
 
         $view = new ViewModel();
         $view->setVariable('slug', $slug);
-        $view->setVariable('property', $slugData['id']);
-        $view->setVariable('type', $slugData['type']);
-        $view->setVariable('label', $slugData['label']);
-        $view->setVariable('resourceName', $resourceName);
         $view->setVariable('references', $references);
+        $view->setVariable('label', $slugData['label']);
+        $view->setVariable('args', [
+            'term' => $slugData['term'],
+            'type' => $slugData['type'],
+            'resource_name' => $resourceName,
+        ]);
+        $view->setVariable('options', [
+            'query_type' => $settings->get('reference_query_type', 'eq'),
+            'link_to_single' => $settings->get('reference_link_to_single', true),
+            'total' => $settings->get('reference_total', true),
+            'skiplinks' => $settings->get('reference_list_skiplinks', true),
+            'headings' => $settings->get('reference_list_headings', true),
+        ]);
         return $view;
     }
 
     public function treeAction()
     {
-        if (!$this->settings()->get('reference_tree_enabled')) {
+        $settings = $this->settings();
+        if (!$settings->get('reference_tree_enabled')) {
             $this->notFoundAction();
             return;
         }
 
-        $subjects = $this->reference()->getTree();
+        // TODO Currently, the arguments are forced.
+        $term = 'dcterms:subject';
+        $type = 'properties';
+        $resourceName = 'items';
+
+        $references = $this->reference()->getTree();
 
         $view = new ViewModel();
-        $view->setVariable('subjects', $subjects);
+        $view->setVariable('references', $references);
+        $view->setVariable('args', [
+            'term' => $term,
+            'type' => $type,
+            'resource_name' => $resourceName,
+        ]);
+        $view->setVariable('options', [
+            'query_type' => $settings->get('reference_query_type', 'eq'),
+            'link_to_single' => $settings->get('reference_link_to_single', true),
+            'total' => $settings->get('reference_total', true),
+            'expanded' => $settings->get('reference_tree_expanded', true),
+        ]);
         return $view;
     }
 
