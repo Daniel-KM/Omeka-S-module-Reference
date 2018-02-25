@@ -91,7 +91,7 @@ class ReferenceController extends AbstractActionController
         $type = 'properties';
         $resourceName = $settings->get('reference_resource_name', 'resources');
 
-        $references = $this->reference()->getTree();
+        $references = $settings->get('reference_tree_hierarchy', []);
 
         $view = new ViewModel();
         $view->setVariable('references', $references);

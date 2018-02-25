@@ -56,13 +56,14 @@ class Reference extends AbstractHelper
     }
 
     /**
-     * Get the list of references as tree.
+     * Get a list of references as tree.
      *
+     * @param string $references The default one if null.
      * @return array.
      */
-    public function getTree()
+    public function getTree($references = null)
     {
-        return $this->reference->getTree();
+        return $this->reference->getTree($references);
     }
 
     /**

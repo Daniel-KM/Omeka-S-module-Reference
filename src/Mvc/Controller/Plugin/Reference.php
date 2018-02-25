@@ -89,14 +89,86 @@ class Reference extends AbstractPlugin
     /**
      * Get the list of references as tree.
      *
-     * @return array.
+     * @deprecated 3.4.5 Useless since tree is stored as array.
+     *
+     * @param string $references The default one if null.
+     * @return array
      */
-    public function getTree()
+    public function getTree($references = null)
     {
-        $settings = $this->getController()->settings();
-        $references = $settings->get('reference_tree_hierarchy', '');
-        $references = array_filter(explode(PHP_EOL, $references));
-        return $references;
+        if (is_null($references)) {
+            $settings = $this->getController()->settings();
+            $tree = $settings->get('reference_tree_hierarchy', []);
+        } elseif (is_string($references)) {
+            $tree = array_filter(explode(PHP_EOL, $references));
+        } else {
+            $tree = $references;
+        }
+        return $tree;
+    }
+
+    /**
+     * Convert a tree from string format to a flat array of texts with level.
+     *
+     * Example of a dash tree:
+     *
+     * Europe
+     * - France
+     * -- Paris
+     * - United Kingdom
+     * -- England
+     * --- London
+     * -- Scotland
+     * Asia
+     * - Japan
+     *
+     * Converted into:
+     *
+     * [
+     *     Europe => 0,
+     *     France => 1
+     *     Paris => 2
+     *     United Kingdom => 1
+     *     England => 2
+     *     London => 3
+     *     Scotland => 2
+     *     Asia => 0
+     *     Japan => 1
+     * ]
+     *
+     * @param string $dashTree A tree with levels represented with dashes.
+     * All strings should be unique.
+     * @return array Flat associative array with text as key and level as value
+     * (0 based).
+     */
+    public function convertTreeToLevels($dashTree)
+    {
+        $values = array_filter(explode(PHP_EOL, $dashTree));
+        $levels = array_reduce($values, function ($result, $item) {
+            $first = substr($item, 0, 1);
+            $space = strpos($item, ' ');
+            $level = ($first !== '-' || $space === false) ? 0 : $space;
+            $value = trim($level == 0 ? $item : substr($item, $space));
+            $result[$value] = $level;
+            return $result;
+        }, []);
+        return $levels;
+    }
+
+    /**
+     * Convert a tree from flat array format to string format
+     *
+     * @see \Reference\Mvc\Controller\Plugin\Reference::convertTreeToLevels()
+     *
+     * @param array $levels A flat array with text as key and level as value.
+     * @return string
+     */
+    public function convertLevelsToTree(array $levels)
+    {
+        $tree = array_map(function ($v, $k) {
+            return $v ? str_repeat('-', $v) . ' ' . trim($k) : trim($k);
+        }, $levels, array_keys($levels));
+        return implode(PHP_EOL, $tree);
     }
 
     /**
@@ -184,33 +256,30 @@ class Reference extends AbstractPlugin
      *
      * @uses http://www.jqueryscript.net/other/jQuery-Flat-Folder-Tree-Plugin-simplefolders.html
      *
-     *  Example for the mode "tree":
-     * @example
-     * $references = "
-     * Europe
-     * - France
-     * - Germany
-     * - United Kingdom
-     * -- England
-     * -- Scotland
-     * -- Wales
-     * Asia
-     * - Japan
-     * ";
+     * @see \Reference\Mvc\Controller\Plugin\Reference::convertTreeToLevels()
      *
-     * $hierarchy = "
+     * Output via the default partial:
+
      * <ul class="tree">
      *     <li>Europe
      *         <div class="expander"></div>
      *         <ul>
-     *             <li>France</li>
-     *             <li>Germany</li>
+     *             <li>France
+     *                 <div class="expander"></div>
+     *                 <ul>
+     *                     <li>Paris</li>
+     *                 </ul>
+     *             </li>
      *             <li>United Kingdom
      *                 <div class="expander"></div>
      *                 <ul>
-     *                     <li>England</li>
+     *                     <li>England
+     *                         <div class="expander"></div>
+     *                         <ul>
+     *                             <li>London</li>
+     *                         </ul>
+     *                     </li>
      *                     <li>Scotland</li>
-     *                     <li>Wales</li>
      *                 </ul>
      *             </li>
      *         </ul>
@@ -222,9 +291,9 @@ class Reference extends AbstractPlugin
      *         </ul>
      *     </li>
      * </ul>
-     * ";
      *
-     * @param array $references Array of references to show.
+     * @param array $referenceLevels Flat associative array of references to
+     * show with reference as key and level as value.
      * @param array $args Specify the references with "term" and optionnaly
      * "type" and "resource_name"
      * @param array $options Options to display the references. Values are booleans:

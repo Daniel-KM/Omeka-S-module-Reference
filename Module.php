@@ -49,6 +49,18 @@ class Module extends AbstractModule
             }
             $settings->set('reference_slugs', $referenceSlugs);
 
+            // The reference plugin is not available during upgrade.
+            include_once __DIR__ . '/src/Mvc/Controller/Plugin/Reference.php';
+            $entityManager = $serviceLocator->get('Omeka\EntityManager');
+            $controllerPluginManager = $serviceLocator->get('ControllerPluginManager');
+            $api = $controllerPluginManager->get('api');
+            $referencePlugin = new Mvc\Controller\Plugin\Reference($entityManager, $api);
+            $tree = $settings->get('reference_tree_hierarchy', '');
+            $settings->set(
+                'reference_tree_hierarchy',
+                $referencePlugin->convertTreeToLevels($tree)
+            );
+
             $defaultConfig = $config[strtolower(__NAMESPACE__)]['config'];
             $settings->set(
                 'reference_resource_name',
@@ -100,7 +112,9 @@ class Module extends AbstractModule
         $config = $services->get('Config');
         $settings = $services->get('Omeka\Settings');
         $formElementManager = $services->get('FormElementManager');
+        $controllerPluginManager = $services->get('ControllerPluginManager');
         $api = $services->get('Omeka\ApiManager');
+        $referencePlugin = $controllerPluginManager->get('reference');
 
         // Because there may be more than 1000 input values, that is the default
         // "max_input_vars" limit in php.ini, a js merges all resource classes
@@ -111,9 +125,10 @@ class Module extends AbstractModule
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
         foreach ($defaultSettings as $name => $value) {
             //  TODO Manage the values of the config form via the config form.
+            $currentValue = $settings->get($name);
             switch ($name) {
                 case 'reference_slugs':
-                    $referenceSlugs = $settings->get($name);
+                    $referenceSlugs = $currentValue;
 
                     $fields = [];
                     $resourceClasses = $api->search('resource_classes')->getContent();
@@ -157,13 +172,17 @@ class Module extends AbstractModule
                     }
                     break;
                 case strpos($name, 'reference_list_') === 0:
-                    $data['fieldset_reference_list_params'][$name] = $settings->get($name);
+                    $data['fieldset_reference_list_params'][$name] = $currentValue;
                     break;
+                case 'reference_tree_hierarchy':
+                    $currentValue = $referencePlugin
+                        ->convertLevelsToTree($currentValue);
+                    // No break.
                 case strpos($name, 'reference_tree_') === 0:
-                    $data['fieldset_reference_tree'][$name] = $settings->get($name);
+                    $data['fieldset_reference_tree'][$name] = $currentValue;
                     break;
                 default:
-                    $data['fieldset_reference_general'][$name] = $settings->get($name);
+                    $data['fieldset_reference_general'][$name] = $currentValue;
                     break;
             }
         }
@@ -182,6 +201,8 @@ class Module extends AbstractModule
         $services = $this->getServiceLocator();
         $config = $services->get('Config');
         $settings = $services->get('Omeka\Settings');
+        $controllerPluginManager = $services->get('ControllerPluginManager');
+        $referencePlugin = $controllerPluginManager->get('reference');
 
         $params = $controller->getRequest()->getPost();
 
@@ -221,6 +242,10 @@ class Module extends AbstractModule
             }
         }
         $params['reference_slugs'] = $referenceSlugs;
+
+        // Normalize the tree.
+        $params['reference_tree_hierarchy'] = $referencePlugin
+            ->convertTreeToLevels($params['reference_tree_hierarchy']);
 
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
         foreach ($params as $name => $value) {

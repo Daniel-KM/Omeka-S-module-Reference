@@ -19,17 +19,13 @@ if (count($references)):
     <ul class="tree">
         <?php
             // Create the tree.
-            $previous_level = 0;
-            foreach ($references as $key => $reference):
-                $first = substr($reference, 0, 1);
-                $space = strpos($reference, ' ');
-                $level = ($first !== '-' || $space === false) ? 0 : $space;
-                $reference = trim($level == 0 ? $reference : substr($reference, $space));
-
+            $previous_level = null;
+            foreach ($references as $reference => $level):
                 // Close the previous line (done before, because next line is
                 // not known yet).
-                if ($key == 0):
-                    // Nothing for the first level.
+                if (is_null($previous_level)):
+                    // Nothing for the first value (first level).
+                    $previous_level = 0;
                 // Deeper level is always the next one.
                 elseif ($level > $previous_level):
                     // Nothing to do.
