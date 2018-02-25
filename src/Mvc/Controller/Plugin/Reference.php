@@ -400,7 +400,6 @@ class Reference extends AbstractPlugin
                     // This join allow to check visibility automatically too.
                     ->innerJoin($entityClass, 'resource', 'WITH', 'value.resource = resource')
                     ->groupBy('value.value')
-                    ->addGroupBy('resource.id')
                     ->orderBy('value.value', 'ASC')
                     ->addOrderBy('resource.id', 'ASC')
                     ->andWhere($qb->expr()->eq('value.property', ':property'))
@@ -412,9 +411,9 @@ class Reference extends AbstractPlugin
 
         if ($output === 'withFirst') {
             $qb
-                    ->addSelect([
-                        'resource.id AS first_id',
-                    ]);
+                ->addSelect([
+                    'MIN(resource.id) AS first_id',
+                ]);
         }
 
         if ($perPage) {
