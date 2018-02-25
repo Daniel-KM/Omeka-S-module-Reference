@@ -27,13 +27,13 @@ if (count($references)):
                 $letters[strtoupper($first_char)] = true;
             endif;
         endforeach;
-        $pagination_list = '<ul class="pagination_list">';
+        $pagination_list = '<ul class="pagination-list">';
         foreach ($letters as $letter => $isSet):
             $letterDisplay = $letter == 'number' ? '#0-9' : $letter;
             if ($isSet):
-                $pagination_list .= sprintf('<li class="pagination_range"><a href="#%s">%s</a></li>', $letter, $letterDisplay);
+                $pagination_list .= sprintf('<li class="pagination-range"><a href="#%s">%s</a></li>', $letter, $letterDisplay);
             else:
-                $pagination_list .= sprintf('<li class="pagination_range"><span>%s</span></li>', $letterDisplay);
+                $pagination_list .= sprintf('<li class="pagination-range"><span>%s</span></li>', $letterDisplay);
             endif;
         endforeach;
         $pagination_list .= '</ul>';
