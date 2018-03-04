@@ -99,7 +99,7 @@ return [
                 // 3 is the property id of Dublin Core Terms Subject, forced during install.
                 'dcterms:subject' => [
                     'type' => 'properties',
-                    'id' => 3,
+                    'term' => 3,
                     'label' => 'Subject',
                     'active' => true,
                 ],
@@ -109,7 +109,7 @@ return [
             'reference_tree_enabled' => false,
             'reference_tree_term' => 'dcterms:subject',
             'reference_tree_expanded' => true,
-            'reference_tree_hierarchy' => '',
+            'reference_tree_hierarchy' => [],
         ],
         // Default for blocks.
         'block_settings' => [
