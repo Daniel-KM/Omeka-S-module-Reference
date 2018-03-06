@@ -143,15 +143,6 @@ class ConfigForm extends Form implements TranslatorAwareInterface
         ]);
 
         $referenceTreeFieldset->add([
-            'name' => 'reference_tree_expanded',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Expand tree', // @translate
-                'info' => 'Check this box to display the tree expanded. This option can be overridden by the theme.', // @translate
-            ],
-        ]);
-
-        $referenceTreeFieldset->add([
             'name' => 'reference_tree_hierarchy',
             'type' => Element\Textarea::class,
             'options' => [
@@ -175,6 +166,15 @@ class ConfigForm extends Form implements TranslatorAwareInterface
 Asia ↵
 - Japan ↵
 ',
+            ],
+        ]);
+
+        $referenceTreeFieldset->add([
+            'name' => 'reference_tree_expanded',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Expand tree', // @translate
+                'info' => 'Check this box to display the tree expanded. This option can be overridden by the theme.', // @translate
             ],
         ]);
 

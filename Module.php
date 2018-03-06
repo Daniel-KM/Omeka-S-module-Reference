@@ -41,6 +41,13 @@ class Module extends AbstractModule
         $settings = $serviceLocator->get('Omeka\Settings');
         $config = require __DIR__ . '/config/module.config.php';
 
+        // The reference plugin is not available during upgrade.
+        include_once __DIR__ . '/src/Mvc/Controller/Plugin/Reference.php';
+        $entityManager = $serviceLocator->get('Omeka\EntityManager');
+        $controllerPluginManager = $serviceLocator->get('ControllerPluginManager');
+        $api = $controllerPluginManager->get('api');
+        $referencePlugin = new Mvc\Controller\Plugin\Reference($entityManager, $api);
+
         if (version_compare($oldVersion, '3.4.5', '<')) {
             $referenceSlugs = $settings->get('reference_slugs');
             foreach ($referenceSlugs as $slug => &$slugData) {
@@ -49,12 +56,6 @@ class Module extends AbstractModule
             }
             $settings->set('reference_slugs', $referenceSlugs);
 
-            // The reference plugin is not available during upgrade.
-            include_once __DIR__ . '/src/Mvc/Controller/Plugin/Reference.php';
-            $entityManager = $serviceLocator->get('Omeka\EntityManager');
-            $controllerPluginManager = $serviceLocator->get('ControllerPluginManager');
-            $api = $controllerPluginManager->get('api');
-            $referencePlugin = new Mvc\Controller\Plugin\Reference($entityManager, $api);
             $tree = $settings->get('reference_tree_hierarchy', '');
             $settings->set(
                 'reference_tree_hierarchy',
@@ -70,6 +71,30 @@ class Module extends AbstractModule
                 'reference_total',
                 $defaultConfig['reference_total']
             );
+        }
+
+        if (version_compare($oldVersion, '3.4.7', '<')) {
+            $tree = $settings->get('reference_tree_hierarchy', '');
+            $treeString = $referencePlugin->convertFlatLevelsToTree($tree);
+            $settings->set(
+                'reference_tree_hierarchy',
+                $referencePlugin->convertTreeToLevels($treeString)
+            );
+
+            $entityManager = $serviceLocator->get('Omeka\EntityManager');
+            $repository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
+            $blocks = $repository->findBy(['layout' => 'reference']);
+            foreach ($blocks as $block) {
+                $data = $block->getData();
+                if (empty($data['reference']['tree']) || $data['reference']['mode'] !== 'tree') {
+                    continue;
+                }
+                $treeString = $referencePlugin->convertFlatLevelsToTree($data['reference']['tree']);
+                $data['reference']['tree'] = $referencePlugin->convertTreeToLevels($treeString);
+                $block->setData($data);
+                $entityManager->persist($block);
+            }
+            $entityManager->flush();
         }
     }
 

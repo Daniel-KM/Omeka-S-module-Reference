@@ -108,6 +108,71 @@ class Reference extends AbstractPlugin
     }
 
     /**
+     * Convert a tree from string format to an array of texts with level.
+     *
+     * Example of a dash tree:
+     *
+     * Europe
+     * - France
+     * -- Paris
+     * - United Kingdom
+     * -- England
+     * --- London
+     * -- Scotland
+     * Asia
+     * - Japan
+     *
+     * Converted into:
+     *
+     * [
+     *     0 => [Europe => 0],
+     *     1 => [France => 1]
+     *     2 => [Paris => 2]
+     *     3 => United Kingdom => 1]
+     *     4 => [England => 2]
+     *     5 => [London => 3]
+     *     6 => [Scotland => 2]
+     *     7 => [Asia => 0]
+     *     8 => [Japan => 1]
+     * ]
+     *
+     * @param string $dashTree A tree with levels represented with dashes.
+     * @return array Array with an associative array as value, containing text
+     * as key and level as value (0 based).
+     */
+    public function convertTreeToLevels($dashTree)
+    {
+        $values = array_filter(explode(PHP_EOL, $dashTree));
+        $levels = array_reduce($values, function ($result, $item) {
+            $first = substr($item, 0, 1);
+            $space = strpos($item, ' ');
+            $level = ($first !== '-' || $space === false) ? 0 : $space;
+            $value = trim($level == 0 ? $item : substr($item, $space));
+            $result[] = [$value => $level];
+            return $result;
+        }, []);
+        return $levels;
+    }
+
+    /**
+     * Convert a tree from flat array format to string format
+     *
+     * @see \Reference\Mvc\Controller\Plugin\Reference::convertTreeToLevels()
+     *
+     * @param array $levels A flat array with text as key and level as value.
+     * @return string
+     */
+    public function convertLevelsToTree(array $levels)
+    {
+        $tree = array_map(function ($v) {
+            $level = reset($v);
+            $term = trim(key($v));
+            return $level ? str_repeat('-', $level) . ' ' . $term : $term;
+        }, $levels);
+        return implode(PHP_EOL, $tree);
+    }
+
+    /**
      * Convert a tree from string format to a flat array of texts with level.
      *
      * Example of a dash tree:
@@ -136,12 +201,14 @@ class Reference extends AbstractPlugin
      *     Japan => 1
      * ]
      *
+     * @deprecated 3.4.7 Use convertTreeToLevels() that manage duplicates terms.
+     *
      * @param string $dashTree A tree with levels represented with dashes.
      * All strings should be unique.
      * @return array Flat associative array with text as key and level as value
      * (0 based).
      */
-    public function convertTreeToLevels($dashTree)
+    public function convertTreeToFlatLevels($dashTree)
     {
         $values = array_filter(explode(PHP_EOL, $dashTree));
         $levels = array_reduce($values, function ($result, $item) {
@@ -158,12 +225,12 @@ class Reference extends AbstractPlugin
     /**
      * Convert a tree from flat array format to string format
      *
-     * @see \Reference\Mvc\Controller\Plugin\Reference::convertTreeToLevels()
+     * @see \Reference\Mvc\Controller\Plugin\Reference::convertTreeToFlatLevels()
      *
      * @param array $levels A flat array with text as key and level as value.
      * @return string
      */
-    public function convertLevelsToTree(array $levels)
+    public function convertFlatLevelsToTree(array $levels)
     {
         $tree = array_map(function ($v, $k) {
             return $v ? str_repeat('-', $v) . ' ' . trim($k) : trim($k);
@@ -297,8 +364,7 @@ class Reference extends AbstractPlugin
      *     </li>
      * </ul>
      *
-     * @param array $referenceLevels Flat associative array of references to
-     * show with reference as key and level as value.
+     * @param array $referenceLevels References and levels to show.
      * @param array $args Specify the references with "term" (dcterms:subject by
      * default), "type" and "resource_name"
      * @param array $options Options to display the references. Values are booleans:
@@ -336,8 +402,12 @@ class Reference extends AbstractPlugin
         // Sql searches are case insensitive, so a convert should be done.
         $hasMb = function_exists('mb_strtolower');
         $lowerReferences = $hasMb
-            ? array_map('mb_strtolower', array_keys($references))
-            : array_map('strtolower', array_keys($references));
+            ? array_map(function($v) {
+                return mb_strtolower(key($v));
+            }, $references)
+            : array_map(function($v) {
+                return strtolower(key($v));
+            }, $references);
         $output = $options['link_to_single'] ? 'withFirst' : 'list';
         $totals = $this->getReferencesList($termId, $type, $entityClass, $lowerReferences, null, null, $output);
         $lowerTotals = [];
@@ -353,18 +423,25 @@ class Reference extends AbstractPlugin
 
         // Merge of the two references arrays.
         $result = [];
-        foreach ($references as $reference => $level) {
+        foreach ($references as $referenceLevel) {
+            $level = reset($referenceLevel);
+            $reference = key($referenceLevel);
             $lowerReference = $hasMb ? mb_strtolower($reference) : sttolower($reference);
             if (isset($lowerTotals[$lowerReference])) {
-                $result[$lowerReference] = [
+                $referenceData = [
                     'total' => $lowerTotals[$lowerReference]['total'],
                     'first_id' => $lowerTotals[$lowerReference]['first_id'],
                 ];
             } else {
-                $result[$lowerReference] = ['total' => 0, 'first_id' => null];
+                $referenceData = [
+                    'total' => 0,
+                    'first_id' => null,
+                ];
             }
-            $result[$lowerReference]['value'] = $reference;
-            $result[$lowerReference]['level'] = $level;
+            $referenceData['value'] = $reference;
+            $referenceData['level'] = $level;
+            $referenceData['lower'] = $lowerReference;
+            $result[] = $referenceData;
         }
 
         $controller = $this->getController();

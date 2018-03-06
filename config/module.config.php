@@ -108,8 +108,8 @@ return [
             'reference_list_headings' => true,
             'reference_tree_enabled' => false,
             'reference_tree_term' => 'dcterms:subject',
-            'reference_tree_expanded' => true,
             'reference_tree_hierarchy' => [],
+            'reference_tree_expanded' => true,
         ],
         // Default for blocks.
         'block_settings' => [

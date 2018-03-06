@@ -22,9 +22,10 @@ if (count($references)):
         <?php
             // Create the tree.
             $previous_level = null;
-            foreach ($references as $lowerReference => $referenceData):
+            foreach ($references as $referenceData):
                 $reference = $referenceData['value'];
                 $level = $referenceData['level'];
+                $lowerReference = $referenceData['lower'];
 
                 // Close the previous line (done before, because next line is
                 // not known yet).
