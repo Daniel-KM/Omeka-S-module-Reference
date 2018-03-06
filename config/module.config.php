@@ -109,6 +109,7 @@ return [
             'reference_tree_enabled' => false,
             'reference_tree_term' => 'dcterms:subject',
             'reference_tree_hierarchy' => [],
+            'reference_tree_branch' => false,
             'reference_tree_expanded' => true,
         ],
         // Default for blocks.
@@ -127,6 +128,7 @@ return [
                 'skiplinks' => true,
                 'headings' => true,
                 'total' => true,
+                'branch' => false,
                 'expanded' => true,
             ],
         ],

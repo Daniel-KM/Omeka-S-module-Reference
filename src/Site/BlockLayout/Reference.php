@@ -91,6 +91,7 @@ class Reference extends AbstractBlockLayout
             ? $this->referencePlugin->convertLevelsToTree($data['reference']['tree'])
             : '';
 
+        // TODO Fix set data for radio buttons.
         $form->setData([
             'o:block[__blockIndex__][o:data][reference]' => $data['reference'],
             'o:block[__blockIndex__][o:data][options]' => $data['options'],
@@ -154,7 +155,11 @@ class Reference extends AbstractBlockLayout
         $data['options']['skiplinks'] = (bool) $data['options']['skiplinks'];
         $data['options']['headings'] = (bool) $data['options']['headings'];
         $data['options']['total'] = (bool) $data['options']['total'];
+        $data['options']['branch'] = (bool) $data['options']['branch'];
         $data['options']['expanded'] = (bool) $data['options']['expanded'];
+        if (empty($data['options']['query_type'])) {
+            $data['options']['query_type'] = 'eq';
+        }
 
         if (!empty($data['reference']['property'])) {
             $data['reference']['term'] = $data['reference']['property'];
@@ -176,6 +181,10 @@ class Reference extends AbstractBlockLayout
         } else {
             $errorStore->addError('property', 'To create references, there must be a property, a resource class or a tree.'); // @translate
             return;
+        }
+
+        if (empty($data['reference']['resource_name'])) {
+            $data['reference']['resource_name'] = 'items';
         }
 
         $data['reference']['termId'] = $this->api->searchOne($data['reference']['type'], [

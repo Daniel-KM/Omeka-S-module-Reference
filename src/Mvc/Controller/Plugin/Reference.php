@@ -369,6 +369,10 @@ class Reference extends AbstractPlugin
      * default), "type" and "resource_name"
      * @param array $options Options to display the references. Values are booleans:
      * - raw: Show subjects as raw text, not links (default to false)
+     * - link_to_single: Link to single resource, else to browse even when there
+     * is only one resource (defaul to config)
+     * - branch: The managed terms are branches (with the path separated with
+     * " :: " (defaul to config)PO
      * - expanded: Show tree as expanded (defaul to config)
      * @return string Html list.
      */
@@ -397,21 +401,46 @@ class Reference extends AbstractPlugin
 
         $resourceName = $this->mapEntityToResourceName($entityClass);
 
+        $options['mode'] = 'tree';
         $options = $this->cleanOptions($options);
 
         // Sql searches are case insensitive, so a convert should be done.
         $hasMb = function_exists('mb_strtolower');
-        $lowerReferences = $hasMb
-            ? array_map(function($v) {
-                return mb_strtolower(key($v));
-            }, $references)
-            : array_map(function($v) {
-                return strtolower(key($v));
-            }, $references);
+        $isBranch = $options['branch'];
         $output = $options['link_to_single'] ? 'withFirst' : 'list';
-        $totals = $this->getReferencesList($termId, $type, $entityClass, $lowerReferences, null, null, $output);
+
+        if ($isBranch) {
+            $branches = [];
+            $lowerBranches = [];
+            $levels = [];
+            foreach ($references as $referenceLevel) {
+                $level = reset($referenceLevel);
+                $reference = key($referenceLevel);
+                $levels[$level] = $reference;
+                $branch = '';
+                for ($i = 0; $i < $level; ++$i) {
+                    $branch .= $levels[$i] . ' :: ';
+                }
+                $branch .= $reference;
+                $branches[] = $branch;
+                $lowerBranches[] = $hasMb ? mb_strtolower($branch) : strtolower($branch);
+            }
+            $totals = $this->getReferencesList($termId, $type, $entityClass, $lowerBranches, null, null, $output);
+        }
+        // Simple tree.
+        else {
+            $lowerReferences = $hasMb
+                ? array_map(function($v) {
+                    return mb_strtolower(key($v));
+                }, $references)
+                : array_map(function($v) {
+                    return strtolower(key($v));
+                }, $references);
+            $totals = $this->getReferencesList($termId, $type, $entityClass, $lowerReferences, null, null, $output);
+        }
+
         $lowerTotals = [];
-        if (function_exists('mb_strtolower')) {
+        if ($hasMb) {
             foreach ($totals as $key => $value) {
                 $lowerTotals[mb_strtolower($key)] = $value;
             }
@@ -423,14 +452,15 @@ class Reference extends AbstractPlugin
 
         // Merge of the two references arrays.
         $result = [];
-        foreach ($references as $referenceLevel) {
+        $lowers = $isBranch ? $lowerBranches : $lowerReferences;
+        foreach ($references as $key => $referenceLevel) {
             $level = reset($referenceLevel);
             $reference = key($referenceLevel);
-            $lowerReference = $hasMb ? mb_strtolower($reference) : sttolower($reference);
-            if (isset($lowerTotals[$lowerReference])) {
+            $lower = $lowers[$key];
+            if (isset($lowerTotals[$lower])) {
                 $referenceData = [
-                    'total' => $lowerTotals[$lowerReference]['total'],
-                    'first_id' => $lowerTotals[$lowerReference]['first_id'],
+                    'total' => $lowerTotals[$lower]['total'],
+                    'first_id' => $lowerTotals[$lower]['first_id'],
                 ];
             } else {
                 $referenceData = [
@@ -440,7 +470,9 @@ class Reference extends AbstractPlugin
             }
             $referenceData['value'] = $reference;
             $referenceData['level'] = $level;
-            $referenceData['lower'] = $lowerReference;
+            if ($isBranch) {
+                $referenceData['branch'] = $branches[$key];
+            }
             $result[] = $referenceData;
         }
 
@@ -497,6 +529,9 @@ class Reference extends AbstractPlugin
                 break;
 
             case 'tree':
+                $cleanedOptions['branch'] = (bool) (isset($options['branch'])
+                    ? $options['branch']
+                    : $settings->get('reference_tree_branch', false));
                 $cleanedOptions['expanded'] = (bool) (isset($options['expanded'])
                     ? $options['expanded']
                     : $settings->get('reference_tree_expanded', false));

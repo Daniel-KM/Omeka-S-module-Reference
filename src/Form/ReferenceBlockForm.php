@@ -172,6 +172,14 @@ Asia ↵
                 'class' => 'chosen-select',
             ],
         ]);
+        $optionsFieldset->add([
+            'name' => 'branch',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Managed as branch', // @translate
+                'info' => 'Check this box if the tree is managed as branch (the path is saved with " :: " between each branch).', // @translate
+            ],
+        ]);
 
         $inputFilter = $this->getInputFilter();
         $inputFilter->add([

@@ -170,6 +170,15 @@ Asia ↵
         ]);
 
         $referenceTreeFieldset->add([
+            'name' => 'reference_tree_branch',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Managed as branch', // @translate
+                'info' => 'Check this box if the tree is managed as branch (the path is saved with " :: " between each branch).', // @translate
+            ],
+        ]);
+
+        $referenceTreeFieldset->add([
             'name' => 'reference_tree_expanded',
             'type' => Element\Checkbox::class,
             'options' => [

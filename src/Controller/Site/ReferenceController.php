@@ -107,6 +107,7 @@ class ReferenceController extends AbstractActionController
         $view->setVariable('options', [
             'query_type' => $settings->get('reference_query_type', 'eq'),
             'link_to_single' => $settings->get('reference_link_to_single', true),
+            'branch' => $settings->get('reference_tree_branch', false),
             'total' => $settings->get('reference_total', true),
             'expanded' => $settings->get('reference_tree_expanded', true),
         ]);
