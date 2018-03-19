@@ -179,7 +179,7 @@ Copyright
 [Omeka S]: https://omeka.org/s
 [Reference]: https://github.com/Daniel-KM/Omeka-S-module-Reference
 [Omeka]: https://omeka.org/classic
-[Reference plugin]: https://github.com/Daniel-KM/Reference
+[Reference plugin]: https://github.com/Daniel-KM/Omeka-plugin-Reference
 [Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
 [module issues]: https://github.com/Daniel-KM/Omeka-S-module-Reference/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
@@ -192,8 +192,8 @@ Copyright
 [Subject Browse]: https://github.com/pobocks/SubjectBrowse
 [Metadata Browser]: https://github.com/kevinreiss/Omeka-MetadataBrowser
 [Category Browse]: https://github.com/kevinreiss/Omeka-CategoryBrowse
-[Subject Browse (2.x)]: https://github.com/Daniel-KM/Reference/tree/subject_browse
-[Metadata Browser (2.x)]: https://github.com/Daniel-KM/MetadataBrowser
-[Category Browse (2.x)]: https://github.com/Daniel-KM/CategoryBrowse
+[Subject Browse (2.x)]: https://github.com/Daniel-KM/Omeka-plugin-Reference/tree/subject_browse
+[Metadata Browser (2.x)]: https://github.com/Daniel-KM/Omeka-plugin-MetadataBrowser
+[Category Browse (2.x)]: https://github.com/Daniel-KM/Omeka-plugin-CategoryBrowse
 [Jane Addams Digital Edition]: http://digital.janeaddams.ramapo.edu
 [Daniel-KM]: https://github.com/Daniel-KM "Daniel Berthereau"
