@@ -19,7 +19,7 @@ other Omeka module and follow the config instructions.
 
 See general end user documentation for [Installing a module].
 
-### Upgrade from Omeka Classic
+### Note for an upgrade from Omeka Classic
 
 The default slugs use the full term, with the vocabulary prefix, so the default
 route for subjects is now `reference/dcterms:subject` instead of `references/subject`.
@@ -30,6 +30,9 @@ Furthermore, the base route has been changed to singular `reference` instead of
 add/update it directly in your `local.config.php`, via a copy of the route part
 of the file `config/module.config.php`. Any word can be used, like `lexicon`,
 `glossary`, etc.
+
+Anyway, references can be set in a block of any page, with any slug, so it’s not
+necessary to modify the config.
 
 
 Usage
@@ -68,7 +71,7 @@ level.
 
 These contents can be displayed on any page via the view helper `reference()`:
 
-```
+```php
 // With default values.
 echo $this->reference()->displayListForTerm($term,
     [
@@ -89,7 +92,7 @@ echo $this->reference()->displayListForTerm($term,
 ```
 
 For tree view:
-```
+```php
 $references = $this->reference()->getTree();
 echo $this->reference()->displayTree($references,
     [
