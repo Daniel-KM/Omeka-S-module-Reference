@@ -27,17 +27,18 @@ class Reference extends AbstractHelper
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $resourceName All resources types if empty.
+     * @param array $query An api search formatted query to limit results.
      * @param int $perPage
      * @param int $page One-based page number.
      * @return Reference|array|null The result or null if called directly, else
      * this view helper.
      */
-    public function __invoke($term = null, $type = null, $resourceName = null, $perPage = null, $page = null)
-    {
+     public function __invoke($term = null, $type = null, $resourceName = null, $query = null, $perPage = null, $page = null)
+     {
         if (empty($term)) {
             return $this;
         }
-        return $this->reference->getList($term, $type, $resourceName, $perPage, $page);
+        return $this->reference->getList($term, $type, $resourceName, $query, $perPage, $page);
     }
 
     /**
@@ -46,13 +47,14 @@ class Reference extends AbstractHelper
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $resourceName
+     * @param array $query An api search formatted query to limit results.
      * @param int $perPage
      * @param int $page One-based page number.
      * @return array Associative array with total and first record ids.
      */
-    public function getList($term, $type = null, $resourceName = null, $perPage = null, $page = null)
+    public function getList($term, $type = null, $resourceName = null, $query = null, $perPage = null, $page = null)
     {
-        return $this->reference->getList($term, $type, $resourceName, $perPage, $page);
+        return $this->reference->getList($term, $type, $resourceName, $query, $perPage, $page);
     }
 
     /**
@@ -76,11 +78,12 @@ class Reference extends AbstractHelper
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $resourceName
+     * @param array $query An api search formatted query to limit results.
      * @return int The number of references if only one resource name is set.
      */
-    public function count($term, $type = null, $resourceName = null)
+    public function count($term, $type = null, $resourceName = null, $query = null)
     {
-        return $this->reference->count($term, $type, $resourceName);
+        return $this->reference->count($term, $type, $resourceName, $query);
     }
 
     /**
@@ -88,7 +91,7 @@ class Reference extends AbstractHelper
      *
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param array $args Specify the references with "type", "resource_name",
-     * "per_page" and "page".
+     * "query", "per_page" and "page".
      * @param array $options Options to display references. Values are booleans:
      * - raw: Show references as raw text, not links (default to false)
      * - skiplinks: Add the list of letters at top and bottom of the page
@@ -147,7 +150,7 @@ class Reference extends AbstractHelper
      * @param array $referenceLevels Flat associative array of references to
      * show with reference as key and level as value.
      * @param array $args Specify the references with "term" (dcterms:subject by
-     * default), "type" and "resource_name"
+     * default), "type", "resource_name", and "query".
      * @param array $options Options to display the references. Values are booleans:
      * - raw: Show subjects as raw text, not links (default to false)
      * - expanded: Show tree as expanded (defaul to config)

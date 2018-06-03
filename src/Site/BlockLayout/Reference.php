@@ -33,7 +33,7 @@ class Reference extends AbstractBlockLayout
     /**
      * @var array
      */
-    protected $defaultSettings;
+    protected $defaultSettings = [];
 
     /**
      * @param Api $api
@@ -68,6 +68,7 @@ class Reference extends AbstractBlockLayout
         $addedBlock = empty($block);
         if ($addedBlock) {
             $data = $this->defaultSettings;
+            $data['reference']['query'] = 'site_id=' . $site->id();
         } else {
             $data = $block->data();
         }
@@ -90,6 +91,8 @@ class Reference extends AbstractBlockLayout
         $data['reference']['tree'] = $mode === 'tree'
             ? $this->referencePlugin->convertLevelsToTree($data['reference']['tree'])
             : '';
+
+        $data['reference']['query'] = urldecode(http_build_query($data['reference']['query'], "\n", '&', PHP_QUERY_RFC3986));
 
         // TODO Fix set data for radio buttons.
         $form->setData([
@@ -128,10 +131,12 @@ class Reference extends AbstractBlockLayout
                 $total = count($data['reference']['tree']);
                 break;
             case 'list':
-                $term = $args['term'];
-                $type = $args['type'];
-                $resourceName = $args['resource_name'];
-                $total = $this->referencePlugin->count($term, $type, $resourceName);
+                $total = $this->referencePlugin->count(
+                    $args['term'],
+                    $args['type'],
+                    $args['resource_name'],
+                    $args['query']
+                );
                 break;
         }
 
@@ -186,6 +191,9 @@ class Reference extends AbstractBlockLayout
         if (empty($data['reference']['resource_name'])) {
             $data['reference']['resource_name'] = 'items';
         }
+
+        parse_str($data['reference']['query'], $query);
+        $data['reference']['query'] = $query;
 
         $data['reference']['termId'] = $this->api->searchOne($data['reference']['type'], [
             'term' => $data['reference']['term'],

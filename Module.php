@@ -35,72 +35,15 @@ class Module extends AbstractModule
         $this->manageSettings($serviceLocator->get('Omeka\Settings'), 'install');
     }
 
-    public function upgrade($oldVersion, $newVersion,
-        ServiceLocatorInterface $serviceLocator
-    ) {
-        $settings = $serviceLocator->get('Omeka\Settings');
-        $config = require __DIR__ . '/config/module.config.php';
-
-        // The reference plugin is not available during upgrade.
-        include_once __DIR__ . '/src/Mvc/Controller/Plugin/Reference.php';
-        $entityManager = $serviceLocator->get('Omeka\EntityManager');
-        $controllerPluginManager = $serviceLocator->get('ControllerPluginManager');
-        $api = $controllerPluginManager->get('api');
-        $referencePlugin = new Mvc\Controller\Plugin\Reference($entityManager, $api);
-
-        if (version_compare($oldVersion, '3.4.5', '<')) {
-            $referenceSlugs = $settings->get('reference_slugs');
-            foreach ($referenceSlugs as $slug => &$slugData) {
-                $slugData['term'] = $slugData['id'];
-                unset($slugData['id']);
-            }
-            $settings->set('reference_slugs', $referenceSlugs);
-
-            $tree = $settings->get('reference_tree_hierarchy', '');
-            $settings->set(
-                'reference_tree_hierarchy',
-                $referencePlugin->convertTreeToLevels($tree)
-            );
-
-            $defaultConfig = $config[strtolower(__NAMESPACE__)]['config'];
-            $settings->set(
-                'reference_resource_name',
-                $defaultConfig['reference_resource_name']
-            );
-            $settings->set(
-                'reference_total',
-                $defaultConfig['reference_total']
-            );
-        }
-
-        if (version_compare($oldVersion, '3.4.7', '<')) {
-            $tree = $settings->get('reference_tree_hierarchy', '');
-            $treeString = $referencePlugin->convertFlatLevelsToTree($tree);
-            $settings->set(
-                'reference_tree_hierarchy',
-                $referencePlugin->convertTreeToLevels($treeString)
-            );
-
-            $entityManager = $serviceLocator->get('Omeka\EntityManager');
-            $repository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
-            $blocks = $repository->findBy(['layout' => 'reference']);
-            foreach ($blocks as $block) {
-                $data = $block->getData();
-                if (empty($data['reference']['tree']) || $data['reference']['mode'] !== 'tree') {
-                    continue;
-                }
-                $treeString = $referencePlugin->convertFlatLevelsToTree($data['reference']['tree']);
-                $data['reference']['tree'] = $referencePlugin->convertTreeToLevels($treeString);
-                $block->setData($data);
-                $entityManager->persist($block);
-            }
-            $entityManager->flush();
-        }
-    }
-
     public function uninstall(ServiceLocatorInterface $serviceLocator)
     {
         $this->manageSettings($serviceLocator->get('Omeka\Settings'), 'uninstall');
+    }
+
+    public function upgrade($oldVersion, $newVersion,
+        ServiceLocatorInterface $serviceLocator
+    ) {
+        require_once 'data/scripts/upgrade.php';
     }
 
     protected function manageSettings($settings, $process, $key = 'config')
@@ -217,7 +160,8 @@ class Module extends AbstractModule
         $form->setData($data);
         $html = '<p>';
         $html .= $renderer->translate('This config allows to create routed pages for all sites.'); // @translate
-        $html .= ' ' . $renderer->translate('References can be created inside pages via blocks too.'); // @translate
+        $html .= ' ' . $renderer->translate('References are limited by the pool of the site.'); // @translate
+        $html .= ' ' . $renderer->translate('References can be created inside pages via blocks too, with any resource pool.'); // @translate
         $html .= '</p>';
         $html .= $renderer->formCollection($form);
         return $html;

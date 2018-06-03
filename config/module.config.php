@@ -120,6 +120,7 @@ return [
                 'type' => 'properties',
                 'tree' => [],
                 'resource_name' => 'items',
+                'query' => '',
             ],
             'options' => [
                 'query_type' => 'eq',

@@ -92,6 +92,14 @@ Asia ↵
                 ],
             ],
         ]);
+        $referenceFieldset->add([
+            'name' => 'query',
+            'type' => Element\Text::class,
+            'options' => [
+                'label' => 'Query to limit resources', // @translate
+                'info' => 'Limit the reference to a particular subset of resources, for example a site, via an advanced search query.', // @translate
+            ],
+        ]);
 
         $this->add([
             'name' => 'o:block[__blockIndex__][o:data][options]',

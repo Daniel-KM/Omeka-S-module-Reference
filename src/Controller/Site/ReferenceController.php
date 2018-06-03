@@ -29,10 +29,14 @@ class ReferenceController extends AbstractActionController
 
         $resourceName = $settings->get('reference_resource_name', 'resources');
 
+        $query = ['site_id' => $this->currentSite()->id()];
+
         $view = new ViewModel();
         $view->setVariable('references', $slugs);
         $view->setVariable('types', array_keys($types));
         $view->setVariable('resourceName', $resourceName);
+        $view->setVariable('query', $query);
+        $view->setVariable('site', $this->currentSite());
         return $view;
     }
 
@@ -54,23 +58,25 @@ class ReferenceController extends AbstractActionController
         $term = $slugData['term'];
         $type = $slugData['type'];
         $resourceName = $settings->get('reference_resource_name', 'resources');
+        $query = ['site_id' => $this->currentSite()->id()];
 
         $output = $this->params()->fromQuery('output');
         if ($output === 'json') {
-            $references = $this->reference()->getList($term, $type, $resourceName);
+            $references = $this->reference()->getList($term, $type, $resourceName, $query);
             $view = new JsonModel($references);
             return $view;
         }
 
-        $total = $this->reference()->count($term, $type, $resourceName);
+        $total = $this->reference()->count($term, $type, $resourceName, $query);
 
         $view = new ViewModel();
         $view->setVariable('total', $total);
         $view->setVariable('label', $slugData['label']);
         $view->setVariable('term', $term);
         $view->setVariable('args', [
-            'type' => $slugData['type'],
+            'type' => $type,
             'resource_name' => $resourceName,
+            'query' => $query,
         ]);
         $view->setVariable('options', [
             'query_type' => $settings->get('reference_query_type', 'eq'),
@@ -94,6 +100,7 @@ class ReferenceController extends AbstractActionController
         $term = $settings->get('reference_tree_term', 'dcterms:subject');
         $type = 'properties';
         $resourceName = $settings->get('reference_resource_name', 'resources');
+        $query = ['site_id' => $this->currentSite()->id()];
 
         $references = $settings->get('reference_tree_hierarchy', []);
 
@@ -103,6 +110,7 @@ class ReferenceController extends AbstractActionController
             'term' => $term,
             'type' => $type,
             'resource_name' => $resourceName,
+            'query' => $query,
         ]);
         $view->setVariable('options', [
             'query_type' => $settings->get('reference_query_type', 'eq'),

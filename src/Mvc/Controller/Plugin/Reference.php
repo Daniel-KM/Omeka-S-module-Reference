@@ -45,17 +45,18 @@ class Reference extends AbstractPlugin
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $resourceName All resources types if empty.
+     * @param array $query An api search formatted query to limit results.
      * @param int $perPage
      * @param int $page One-based page number.
      * @return Reference|array|null The result or null if called directly, else
      * this view plugin.
      */
-    public function __invoke($term = null, $type = null, $resourceName = null, $perPage = null, $page = null)
+    public function __invoke($term = null, $type = null, $resourceName = null, $query = null, $perPage = null, $page = null)
     {
         if (empty($term)) {
             return $this;
         }
-        return $this->getList($term, $type, $resourceName, $perPage, $page);
+        return $this->getList($term, $type, $resourceName, $query, $perPage, $page);
     }
 
     /**
@@ -64,11 +65,12 @@ class Reference extends AbstractPlugin
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $resourceName
+     * @param array $query An api search formatted query to limit results.
      * @param int $perPage
      * @param int $page One-based page number.
      * @return array Associative array with total and first record ids.
      */
-    public function getList($term, $type = null, $resourceName = null, $perPage = null, $page = null)
+    public function getList($term, $type = null, $resourceName = null, $query = null, $perPage = null, $page = null)
     {
         $type = $type === 'resource_classes' ? 'resource_classes' : 'properties';
 
@@ -82,7 +84,7 @@ class Reference extends AbstractPlugin
             return;
         }
 
-        $references = $this->getReferencesList($termId, $type, $entityClass, [], $perPage, $page);
+        $references = $this->getReferencesList($termId, $type, $entityClass, $query, [], $perPage, $page, null);
         return $references;
     }
 
@@ -246,9 +248,10 @@ class Reference extends AbstractPlugin
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $resourceName
+     * @param array $query An api search formatted query to limit results.
      * @return int The number of references if only one resource name is set.
      */
-    public function count($term, $type = null, $resourceName = null)
+    public function count($term, $type = null, $resourceName = null, $query = null)
     {
         $type = $type === 'resource_classes' ? 'resource_classes' : 'properties';
 
@@ -262,7 +265,7 @@ class Reference extends AbstractPlugin
             return;
         }
 
-        return $this->countReferences($termId, $type, $entityClass);
+        return $this->countReferences($termId, $type, $entityClass, $query);
     }
 
     /**
@@ -270,7 +273,7 @@ class Reference extends AbstractPlugin
      *
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param array $args Specify the references with "type", "resource_name",
-     * "per_page" and "page".
+     * "query", "per_page" and "page".
      * @param array $options Options to display references. Values are booleans:
      * - raw: Show references as raw text, not links (default to false)
      * - skiplinks: Add the list of letters at top and bottom of the page
@@ -299,11 +302,12 @@ class Reference extends AbstractPlugin
 
         $options = $this->cleanOptions($options);
 
+        $query = empty($args['query']) ? null : $args['query'];
         $perPage = empty($args['per_page']) ? null : (int) $args['per_page'];
         $page = empty($args['page']) ? null : (int) $args['page'];
         $output = $options['link_to_single'] ? 'withFirst' : 'list';
 
-        $references = $this->getReferencesList($termId, $type, $entityClass, [], $perPage, $page, $output);
+        $references = $this->getReferencesList($termId, $type, $entityClass, $query, [], $perPage, $page, $output);
 
         $controller = $this->getController();
         $partial = $controller->viewHelpers()->get('partial');
@@ -313,6 +317,7 @@ class Reference extends AbstractPlugin
             'type' => $type,
             'resourceName' => $resourceName,
             'options' => $options,
+            'query' => $query,
             'perPage' => $perPage,
             'page' => $page,
         ]);
@@ -366,7 +371,7 @@ class Reference extends AbstractPlugin
      *
      * @param array $referenceLevels References and levels to show.
      * @param array $args Specify the references with "term" (dcterms:subject by
-     * default), "type" and "resource_name"
+     * default), "type", "resource_name", and "query"
      * @param array $options Options to display the references. Values are booleans:
      * - raw: Show subjects as raw text, not links (default to false)
      * - link_to_single: Link to single resource, else to browse even when there
@@ -401,6 +406,8 @@ class Reference extends AbstractPlugin
 
         $resourceName = $this->mapEntityToResourceName($entityClass);
 
+        $query = empty($args['query']) ? null : $args['query'];
+
         $options['mode'] = 'tree';
         $options = $this->cleanOptions($options);
 
@@ -425,7 +432,7 @@ class Reference extends AbstractPlugin
                 $branches[] = $branch;
                 $lowerBranches[] = $hasMb ? mb_strtolower($branch) : strtolower($branch);
             }
-            $totals = $this->getReferencesList($termId, $type, $entityClass, $lowerBranches, null, null, $output);
+            $totals = $this->getReferencesList($termId, $type, $entityClass, $query, $lowerBranches, null, null, $output);
         }
         // Simple tree.
         else {
@@ -436,7 +443,7 @@ class Reference extends AbstractPlugin
                 : array_map(function($v) {
                     return strtolower(key($v));
                 }, $references);
-            $totals = $this->getReferencesList($termId, $type, $entityClass, $lowerReferences, null, null, $output);
+            $totals = $this->getReferencesList($termId, $type, $entityClass, $query, $lowerReferences, null, null, $output);
         }
 
         $lowerTotals = [];
@@ -550,6 +557,7 @@ class Reference extends AbstractPlugin
      * @param int $termId May be the resource class id.
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $entityClass
+     * @param array $query An api search formatted query to limit results.
      * @param array $values Allow to limit the answer to the specified values.
      * @param int $perPage
      * @param int $page One-based page number.
@@ -561,6 +569,7 @@ class Reference extends AbstractPlugin
         $termId,
         $type,
         $entityClass,
+        $query = null,
         $values = [],
         $perPage = null,
         $page = null,
@@ -631,6 +640,20 @@ class Reference extends AbstractPlugin
                 ]);
         }
 
+        // TODO Allow to use a query for resources.
+        // TODO Use a temporary table or use get the qb from the adapter.
+        if ($query && $entityClass !== \Omeka\Entity\Resource::class) {
+            $resourceName = $this->mapEntityToResourceName($entityClass);
+            $ids = $this->api->search($resourceName, $query, ['returnScalar' => 'id'])->getContent();
+            if ($ids) {
+                $qb
+                    ->andWhere('resource.id IN (:ids)')
+                    ->setParameter('ids', $ids);
+            } else {
+                return [];
+            }
+        }
+
         if ($values) {
             $qb
                 ->andWhere('value.value IN (:values)')
@@ -680,9 +703,10 @@ class Reference extends AbstractPlugin
      * @param int $termId May be the resource class id.
      * @param string $type "properties" or "resource_classes".
      * @param string $entityClass
+     * @param array $query An api search formatted query to limit results.
      * @return int The number of references if only one entity class is set.
      */
-    protected function countReferences($termId, $type, $entityClass)
+    protected function countReferences($termId, $type, $entityClass, $query = null)
     {
         $entityManager = $this->entityManager;
         $qb = $entityManager->createQueryBuilder();
@@ -717,6 +741,20 @@ class Reference extends AbstractPlugin
         if ($entityClass !== \Omeka\Entity\Resource::class) {
             $qb
                 ->innerJoin($entityClass, 'res', 'WITH', 'resource.id = res.id');
+        }
+
+        // TODO Allow to use a query for resources.
+        // TODO Use a temporary table or use get the qb from the adapter.
+        if ($query && $entityClass !== \Omeka\Entity\Resource::class) {
+            $resourceName = $this->mapEntityToResourceName($entityClass);
+            $ids = $this->api->search($resourceName, $query, ['returnScalar' => 'id'])->getContent();
+            if ($ids) {
+                $qb
+                    ->andWhere('resource.id IN (:ids)')
+                    ->setParameter('ids', $ids);
+            } else {
+                return 0;
+            }
         }
 
         $totalRecords = $qb->getQuery()->getSingleScalarResult();
