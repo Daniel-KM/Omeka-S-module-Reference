@@ -5,7 +5,8 @@ Reference (module for Omeka S)
 alphabetized index) of links to records or to searches for all resources classes
 (item types) and properties (metadata fields) of all resources of an Omeka S
 instance, or an expandable hierarchical tree of statically specified references.
-These lists can be displayed in any page via a helper or a block.
+These lists can be displayed in any page via a helper or a block. References can
+be limited by site or any other pool, and ordered alphabetically or by count.
 
 This [Omeka S] module is a rewrite of the [Reference plugin] for [Omeka] and
 intends to provide the same features as the original plugin.
@@ -77,6 +78,8 @@ echo $this->reference()->displayListForTerm($term,
     [
         'type' => 'properties',
         'resource_name' => 'items',
+        'order' => ['alphabetic' => 'ASC'],
+        'query' => ['site_id' => 1],
         'per_page' => null,
         'page' => null,
     ],
@@ -99,6 +102,7 @@ echo $this->reference()->displayTree($references,
         'term' => $term,
         'type' => 'properties',
         'resource_name' => 'items',
+        'query' => ['site_id' => 1],
     ],
     [
         'query_type' => 'eq',
@@ -114,6 +118,12 @@ echo $this->reference()->displayTree($references,
 
 All arguments are optional and the default ones are set in the config page or in
 the block, but they can be overridden in the theme.
+
+For `order`, the sort can be `['count' => 'DESC']` too.
+
+For `query`, it is the standard query used in the api of Omeka, or the arguments
+taken from the url of an advanced search, converted into an array with `parse_str`.
+The conversion is automatically done inside the user interface (page blocks).
 
 
 Warning

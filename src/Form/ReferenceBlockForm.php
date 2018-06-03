@@ -93,6 +93,19 @@ Asia ↵
             ],
         ]);
         $referenceFieldset->add([
+            'name' => 'order',
+            'type' => Element\Select::class,
+            'options' => [
+                'label' => 'Select order', // @translate
+                'value_options' => [
+                    'alphabetic ASC' => 'Alphabetic ascendant',  // @translate
+                    'alphabetic DESC' => 'Alphabetic descendant',  // @translate
+                    'count ASC' => 'Count ascendant',  // @translate
+                    'count DESC' => 'Count descendant',  // @translate
+                ],
+            ],
+        ]);
+        $referenceFieldset->add([
             'name' => 'query',
             'type' => Element\Text::class,
             'options' => [

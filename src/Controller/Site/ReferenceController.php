@@ -58,11 +58,12 @@ class ReferenceController extends AbstractActionController
         $term = $slugData['term'];
         $type = $slugData['type'];
         $resourceName = $settings->get('reference_resource_name', 'resources');
+        $order = ['value.value' => 'ASC'];
         $query = ['site_id' => $this->currentSite()->id()];
 
         $output = $this->params()->fromQuery('output');
         if ($output === 'json') {
-            $references = $this->reference()->getList($term, $type, $resourceName, $query);
+            $references = $this->reference()->getList($term, $type, $resourceName, $order, $query);
             $view = new JsonModel($references);
             return $view;
         }
@@ -76,6 +77,7 @@ class ReferenceController extends AbstractActionController
         $view->setVariable('args', [
             'type' => $type,
             'resource_name' => $resourceName,
+            'order' => $order,
             'query' => $query,
         ]);
         $view->setVariable('options', [

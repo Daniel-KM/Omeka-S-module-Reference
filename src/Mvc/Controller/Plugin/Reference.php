@@ -45,18 +45,20 @@ class Reference extends AbstractPlugin
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $resourceName All resources types if empty.
+     * @param array $order Sort and direction: ['alphabetic' => 'ASC'] (default),
+     * ['count' => 'DESC'], or any available column as sort.
      * @param array $query An api search formatted query to limit results.
      * @param int $perPage
      * @param int $page One-based page number.
      * @return Reference|array|null The result or null if called directly, else
      * this view plugin.
      */
-    public function __invoke($term = null, $type = null, $resourceName = null, $query = null, $perPage = null, $page = null)
+    public function __invoke($term = null, $type = null, $resourceName = null, $order = null,$query = null, $perPage = null, $page = null)
     {
         if (empty($term)) {
             return $this;
         }
-        return $this->getList($term, $type, $resourceName, $query, $perPage, $page);
+        return $this->getList($term, $type, $resourceName, $order, $query, $perPage, $page);
     }
 
     /**
@@ -65,12 +67,14 @@ class Reference extends AbstractPlugin
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $resourceName
+     * @param array $order Sort and direction: ['alphabetic' => 'ASC'] (default),
+     * ['count' => 'DESC'], or any available column as sort.
      * @param array $query An api search formatted query to limit results.
      * @param int $perPage
      * @param int $page One-based page number.
      * @return array Associative array with total and first record ids.
      */
-    public function getList($term, $type = null, $resourceName = null, $query = null, $perPage = null, $page = null)
+    public function getList($term, $type = null, $resourceName = null, $order = null, $query = null, $perPage = null, $page = null)
     {
         $type = $type === 'resource_classes' ? 'resource_classes' : 'properties';
 
@@ -84,7 +88,7 @@ class Reference extends AbstractPlugin
             return;
         }
 
-        $references = $this->getReferencesList($termId, $type, $entityClass, $query, [], $perPage, $page, null);
+        $references = $this->getReferencesList($termId, $type, $entityClass, $order, $query, [], $perPage, $page, null);
         return $references;
     }
 
@@ -273,7 +277,7 @@ class Reference extends AbstractPlugin
      *
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param array $args Specify the references with "type", "resource_name",
-     * "query", "per_page" and "page".
+     * "order", "query", "per_page" and "page".
      * @param array $options Options to display references. Values are booleans:
      * - raw: Show references as raw text, not links (default to false)
      * - skiplinks: Add the list of letters at top and bottom of the page
@@ -302,12 +306,13 @@ class Reference extends AbstractPlugin
 
         $options = $this->cleanOptions($options);
 
+        $order = empty($args['order']) ? null : $args['order'];
         $query = empty($args['query']) ? null : $args['query'];
         $perPage = empty($args['per_page']) ? null : (int) $args['per_page'];
         $page = empty($args['page']) ? null : (int) $args['page'];
         $output = $options['link_to_single'] ? 'withFirst' : 'list';
 
-        $references = $this->getReferencesList($termId, $type, $entityClass, $query, [], $perPage, $page, $output);
+        $references = $this->getReferencesList($termId, $type, $entityClass, $order, $query, [], $perPage, $page, $output);
 
         $controller = $this->getController();
         $partial = $controller->viewHelpers()->get('partial');
@@ -317,6 +322,7 @@ class Reference extends AbstractPlugin
             'type' => $type,
             'resourceName' => $resourceName,
             'options' => $options,
+            'order' => $order,
             'query' => $query,
             'perPage' => $perPage,
             'page' => $page,
@@ -432,7 +438,7 @@ class Reference extends AbstractPlugin
                 $branches[] = $branch;
                 $lowerBranches[] = $hasMb ? mb_strtolower($branch) : strtolower($branch);
             }
-            $totals = $this->getReferencesList($termId, $type, $entityClass, $query, $lowerBranches, null, null, $output);
+            $totals = $this->getReferencesList($termId, $type, $entityClass, null, $query, $lowerBranches, null, null, $output);
         }
         // Simple tree.
         else {
@@ -443,7 +449,7 @@ class Reference extends AbstractPlugin
                 : array_map(function($v) {
                     return strtolower(key($v));
                 }, $references);
-            $totals = $this->getReferencesList($termId, $type, $entityClass, $query, $lowerReferences, null, null, $output);
+            $totals = $this->getReferencesList($termId, $type, $entityClass, null, $query, $lowerReferences, null, null, $output);
         }
 
         $lowerTotals = [];
@@ -557,6 +563,8 @@ class Reference extends AbstractPlugin
      * @param int $termId May be the resource class id.
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $entityClass
+     * @param array $order Sort and direction: ['alphabetic' => 'ASC'] (default),
+     * ['count' => 'DESC'], or any available column as sort.
      * @param array $query An api search formatted query to limit results.
      * @param array $values Allow to limit the answer to the specified values.
      * @param int $perPage
@@ -569,6 +577,7 @@ class Reference extends AbstractPlugin
         $termId,
         $type,
         $entityClass,
+        $order = null,
         $query = null,
         $values = [],
         $perPage = null,
@@ -602,8 +611,7 @@ class Reference extends AbstractPlugin
                     ->where($qb->expr()->eq('resource.resourceClass', ':resource_class'))
                     ->setParameter('resource_class', (int) $resourceClassId)
                     ->groupBy('value.value')
-                    ->orderBy('value.value', 'ASC')
-                    ->addOrderBy('resource.id', 'ASC');
+                ;
 
                 if ($entityClass !== \Omeka\Entity\Resource::class) {
                     $qb
@@ -628,10 +636,34 @@ class Reference extends AbstractPlugin
                     // Only literal values.
                     ->andWhere($qb->expr()->isNotNull('value.value'))
                     ->groupBy('value.value')
-                    ->orderBy('value.value', 'ASC')
-                    ->addOrderBy('resource.id', 'ASC');
+                ;
                 break;
         }
+
+        if ($order) {
+            $direction = reset($order);
+            $order = strtolower(key($order));
+            switch ($order) {
+                case 'count':
+                    $qb
+                        ->orderBy('total', $direction)
+                        // Add alphabetic order for ergonomy.
+                        ->addOrderBy('value.value', 'ASC');
+                    break;
+                case 'alphabetic':
+                    $order = 'value.value';
+                    // No break;
+                default:
+                    $qb
+                        ->orderBy($order, $direction);
+            }
+        } else {
+            $qb
+                ->orderBy('value.value', 'ASC');
+        }
+        // Always add an order by id for consistency.
+        $qb
+            ->addOrderBy('resource.id', 'ASC');
 
         if ($output === 'withFirst') {
             $qb

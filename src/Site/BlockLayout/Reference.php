@@ -92,7 +92,13 @@ class Reference extends AbstractBlockLayout
             ? $this->referencePlugin->convertLevelsToTree($data['reference']['tree'])
             : '';
 
-        $data['reference']['query'] = urldecode(http_build_query($data['reference']['query'], "\n", '&', PHP_QUERY_RFC3986));
+        $data['reference']['order'] = empty($data['reference']['order'])
+            ? 'alphabetic ASC'
+            : key($data['reference']['order']) . ' ' . reset($data['reference']['order']);
+
+        $data['reference']['query'] = is_array($data['reference']['query'])
+            ? urldecode(http_build_query($data['reference']['query'], "\n", '&', PHP_QUERY_RFC3986))
+            : $data['reference']['query'];
 
         // TODO Fix set data for radio buttons.
         $form->setData([
@@ -191,6 +197,10 @@ class Reference extends AbstractBlockLayout
         if (empty($data['reference']['resource_name'])) {
             $data['reference']['resource_name'] = 'items';
         }
+
+        $data['reference']['order'] = empty($data['reference']['order'])
+            ? ['alphabetic' => 'ASC']
+            : [strtok($data['reference']['order'], ' ') => strtok(' ')];
 
         parse_str($data['reference']['query'], $query);
         $data['reference']['query'] = $query;
