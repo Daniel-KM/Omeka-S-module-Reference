@@ -32,7 +32,7 @@ add/update it directly in your `local.config.php`, via a copy of the route part
 of the file `config/module.config.php`. Any word can be used, like `lexicon`,
 `glossary`, etc.
 
-Anyway, references can be set in a block of any page, with any slug, so it’s not
+Anyway, it is recommended to use site page blocks, with any slug, so it’s not
 necessary to modify the config.
 
 
@@ -124,6 +124,13 @@ For `order`, the sort can be `['count' => 'DESC']` too.
 For `query`, it is the standard query used in the api of Omeka, or the arguments
 taken from the url of an advanced search, converted into an array with `parse_str`.
 The conversion is automatically done inside the user interface (page blocks).
+
+
+TODO
+----
+
+- Manage references inside admin board.
+- Manage pagination by letter and by number of references.
 
 
 Warning

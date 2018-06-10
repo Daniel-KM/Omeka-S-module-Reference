@@ -156,12 +156,15 @@ class Module extends AbstractModule
         }
 
         $form->init();
-        // TODO Fix the setData() with sub-subfieldset..
+        // TODO Fix the setData() with sub-subfieldset.
         $form->setData($data);
         $html = '<p>';
+        $html .= $renderer->translate('It is recommended to create reference blocks for site pages.'); // @translate
+        $html .= ' ' . $renderer->translate('So these options are used only to create global pages, that are not provided by Omeka yet.'); // @translate
+        $html .= '</p>';
+        $html .= '<p>';
         $html .= $renderer->translate('This config allows to create routed pages for all sites.'); // @translate
         $html .= ' ' . $renderer->translate('References are limited by the pool of the site.'); // @translate
-        $html .= ' ' . $renderer->translate('References can be created inside pages via blocks too, with any resource pool.'); // @translate
         $html .= '</p>';
         $html .= $renderer->formCollection($form);
         return $html;
@@ -219,7 +222,7 @@ class Module extends AbstractModule
 
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
         foreach ($params as $name => $value) {
-            if (isset($defaultSettings[$name])) {
+            if (array_key_exists($name, $defaultSettings)) {
                 $settings->set($name, $value);
             }
         }

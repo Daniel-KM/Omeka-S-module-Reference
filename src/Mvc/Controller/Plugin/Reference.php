@@ -42,6 +42,8 @@ class Reference extends AbstractPlugin
     /**
      * Get the reference object.
      *
+     * @todo Manage admin references.
+     *
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
      * @param string $type "properties" (default) or "resource_classes".
      * @param string $resourceName All resources types if empty.
