@@ -26,31 +26,31 @@ class Reference extends AbstractBlockLayout
     protected $formElementManager;
 
     /**
-     * @var ReferencePlugin
-     */
-    protected $referencePlugin;
-
-    /**
      * @var array
      */
     protected $defaultSettings = [];
 
     /**
+     * @var ReferencePlugin
+     */
+    protected $referencePlugin;
+
+    /**
      * @param Api $api
      * @param FormElementManager $formElementManager
      * @param array $defaultSettings
-     * @param ReferencePlugin
+     * @param ReferencePlugin $referencePlugin
      */
     public function __construct(
         Api $api,
         FormElementManager $formElementManager,
-        ReferencePlugin $referencePlugin,
-        array $defaultSettings
+        array $defaultSettings,
+        ReferencePlugin $referencePlugin
     ) {
         $this->api = $api;
         $this->formElementManager = $formElementManager;
-        $this->referencePlugin = $referencePlugin;
         $this->defaultSettings = $defaultSettings;
+        $this->referencePlugin = $referencePlugin;
     }
 
     public function getLabel()

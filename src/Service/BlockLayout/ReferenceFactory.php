@@ -10,7 +10,6 @@ class ReferenceFactory implements FactoryInterface
     /**
      * Create the Reference block layout service.
      *
-     * @param ContainerInterface $services
      * @return Reference
      */
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
@@ -18,13 +17,13 @@ class ReferenceFactory implements FactoryInterface
         $controllerPluginManager = $services->get('ControllerPluginManager');
         $api = $controllerPluginManager->get('api');
         $formElementManager = $services->get('FormElementManager');
-        $referencePlugin = $controllerPluginManager->get('reference');
         $config = $services->get('Config');
+        $plugin = $controllerPluginManager->get('reference');
         return new Reference(
             $api,
             $formElementManager,
-            $referencePlugin,
-           $config['reference']['block_settings']
+            $config['reference']['block_settings'],
+            $plugin
         );
     }
 }
