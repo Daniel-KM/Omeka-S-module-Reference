@@ -11,11 +11,13 @@
     margin: auto;
     padding: 0;
     list-style: none;
+    cursor: default;
 }
 .reference-pagination li.pagination-range {
     height: auto;
     line-height: initial;
     display: initial;
+    margin-right: 2px;
 }
 .reference-pagination li.pagination-range a,
 .reference-pagination li.pagination-range span {
