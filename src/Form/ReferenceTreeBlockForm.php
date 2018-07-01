@@ -62,7 +62,9 @@ Asia ↵
         ]);
         $argsFieldset->add([
             'name' => 'resource_name',
-            'type' => Element\Radio::class,
+            // TODO Radio doesn't work when there are multiple blocks.
+            // 'type' => Element\Radio::class,
+            'type' => Element\Select::class,
             'options' => [
                 'label' => 'Select resource', // @translate
                 'info' => 'Browse links are available only for item sets and items.',
@@ -107,7 +109,9 @@ Asia ↵
         ]);
         $optionsFieldset->add([
             'name' => 'query_type',
-            'type' => Element\Radio::class,
+            // TODO Radio doesn't work when there are multiple blocks.
+            // 'type' => Element\Radio::class,
+            'type' => Element\Select::class,
             'options' => [
                 'label' => 'Query type', // @translate
                 'info' => 'The type of query defines how elements are regrouped (see the advanced search).', // @translate

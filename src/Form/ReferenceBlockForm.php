@@ -49,7 +49,9 @@ class ReferenceBlockForm extends Form implements TranslatorAwareInterface
         ]);
         $argsFieldset->add([
             'name' => 'resource_name',
-            'type' => Element\Radio::class,
+            // TODO Radio doesn't work when there are multiple blocks.
+            // 'type' => Element\Radio::class,
+            'type' => Element\Select::class,
             'options' => [
                 'label' => 'Select resource', // @translate
                 'info' => 'Browse links are available only for item sets and items.',
