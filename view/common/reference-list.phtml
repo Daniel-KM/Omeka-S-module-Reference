@@ -9,8 +9,7 @@ if (count($references)):
     $controllerName = $mapResourcesControllers[$resourceName];
 
     // Set default values if needed.
-    $options += ['query_type' => 'eq', 'link_to_single' => true, 'total' => true, 'raw' => false, 'skiplinks' => true, 'headings' => true];
-    $queryType = $options['query_type'];
+    $options += ['link_to_single' => true, 'total' => true, 'raw' => false, 'skiplinks' => true, 'headings' => true];
     $linkToSingle = $options['link_to_single'];
     $total = $options['total'];
     $raw = $options['raw'];
@@ -82,10 +81,10 @@ if (count($references)):
                     $query['resource_class_id'] = $termId;
                     $query['property'] = $emptyReferenceValue
                         ? [['property' => 1 /* dcterms:title */, 'type' => 'nex']]
-                        : [['property' => 1 /* dcterms:title */, 'type' => $queryType, 'text' => $reference]];
+                        : [['property' => 1 /* dcterms:title */, 'type' => 'eq', 'text' => $reference]];
                 else:
                     $query = [
-                        'property' => [['property' => $termId, 'type' => $queryType, 'text' => $reference]],
+                        'property' => [['property' => $termId, 'type' => 'eq', 'text' => $reference]],
                     ];
                 endif;
                 $referenceText = $this->hyperlink(

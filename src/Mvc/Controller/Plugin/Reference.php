@@ -520,9 +520,6 @@ class Reference extends AbstractPlugin
             'raw' => isset($options['raw']) && $options['raw'],
         ];
 
-        $cleanedOptions['query_type'] = isset($options['query_type'])
-            ? ($options['query_type'] == 'in' ? 'in' : 'eq')
-            : $settings->get('reference_query_type', 'eq');
         $cleanedOptions['link_to_single'] = (bool) (isset($options['link_to_single'])
             ? $options['link_to_single']
             : $settings->get('reference_link_to_single'));
@@ -544,6 +541,9 @@ class Reference extends AbstractPlugin
                 break;
 
             case 'tree':
+                $cleanedOptions['query_type'] = isset($options['query_type'])
+                    ? ($options['query_type'] == 'in' ? 'in' : 'eq')
+                    : $settings->get('reference_tree_query_type', 'eq');
                 $cleanedOptions['branch'] = (bool) (isset($options['branch'])
                     ? $options['branch']
                     : $settings->get('reference_tree_branch', false));

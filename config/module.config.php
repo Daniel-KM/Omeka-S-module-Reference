@@ -93,7 +93,6 @@ return [
     'reference' => [
         'config' => [
             'reference_resource_name' => 'items',
-            'reference_query_type' => 'eq',
             'reference_link_to_single' => true,
             'reference_total' => true,
             // Pages ("properties" or "resource_classes") to provide, by slug.
@@ -112,6 +111,7 @@ return [
             'reference_tree_term' => 'dcterms:subject',
             'reference_tree_hierarchy' => [],
             'reference_tree_branch' => false,
+            'reference_tree_query_type' => 'eq',
             'reference_tree_expanded' => true,
         ],
         // Default for blocks.
@@ -125,7 +125,6 @@ return [
                     'query' => '',
                 ],
                 'options' => [
-                    'query_type' => 'eq',
                     'link_to_single' => true,
                     'heading' => 'Subjects', // @translate
                     'skiplinks' => true,

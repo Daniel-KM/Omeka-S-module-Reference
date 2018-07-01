@@ -106,18 +106,6 @@ class ReferenceBlockForm extends Form implements TranslatorAwareInterface
             ],
         ]);
         $optionsFieldset->add([
-            'name' => 'query_type',
-            'type' => Element\Radio::class,
-            'options' => [
-                'label' => 'Query type', // @translate
-                'info' => 'The type of query defines how elements are regrouped (see the advanced search).', // @translate
-                'value_options' => [
-                    'eq' => 'Is Exactly', // @translate
-                    'in' => 'Contains', // @translate
-                ],
-            ],
-        ]);
-        $optionsFieldset->add([
             'name' => 'link_to_single',
             'type' => Element\Checkbox::class,
             'options' => [

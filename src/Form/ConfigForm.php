@@ -50,19 +50,6 @@ class ConfigForm extends Form implements TranslatorAwareInterface
         ]);
 
         $generalFieldset->add([
-            'name' => 'reference_query_type',
-            'type' => Element\Radio::class,
-            'options' => [
-                'label' => 'Query type', // @translate
-                'info' => 'The type of query defines how elements are regrouped (see the advanced search).', // @translate
-                'value_options' => [
-                    'eq' => 'Is Exactly', // @translate
-                    'in' => 'Contains', // @translate
-                ],
-            ],
-        ]);
-
-        $generalFieldset->add([
             'name' => 'reference_link_to_single',
             'type' => Element\Checkbox::class,
             'options' => [
@@ -175,6 +162,19 @@ Asia ↵
             'options' => [
                 'label' => 'Managed as branch', // @translate
                 'info' => 'Check this box if the tree is managed as branch (the path is saved with " :: " between each branch).', // @translate
+            ],
+        ]);
+
+        $referenceTreeFieldset->add([
+            'name' => 'reference_tree_query_type',
+            'type' => Element\Radio::class,
+            'options' => [
+                'label' => 'Query type', // @translate
+                'info' => 'The type of query defines how elements are searched.', // @translate
+                'value_options' => [
+                    'eq' => 'Is Exactly', // @translate
+                    'in' => 'Contains', // @translate
+                ],
             ],
         ]);
 

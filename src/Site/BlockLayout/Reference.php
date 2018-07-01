@@ -166,9 +166,6 @@ class Reference extends AbstractBlockLayout
         $data['options']['skiplinks'] = (bool) $data['options']['skiplinks'];
         $data['options']['headings'] = (bool) $data['options']['headings'];
         $data['options']['total'] = (bool) $data['options']['total'];
-        if (empty($data['options']['query_type'])) {
-            $data['options']['query_type'] = $this->defaultSettings['options']['query_type'];
-        }
 
         unset($data['reference']['property']);
         unset($data['reference']['resource_class']);
