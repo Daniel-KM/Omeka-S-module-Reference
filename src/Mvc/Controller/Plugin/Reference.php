@@ -318,7 +318,7 @@ class Reference extends AbstractPlugin
 
         $controller = $this->getController();
         $partial = $controller->viewHelpers()->get('partial');
-        $html = $partial('common/reference-list', [
+        $html = $partial('common/reference', [
             'references' => $references,
             'term' => $termId,
             'type' => $type,
