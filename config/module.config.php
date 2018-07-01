@@ -117,7 +117,7 @@ return [
         // Default for blocks.
         'block_settings' => [
             'reference' => [
-                'reference' => [
+                'args' => [
                     'term' => 'dcterms:subject',
                     'type' => 'properties',
                     'resource_name' => 'items',
@@ -132,8 +132,8 @@ return [
                     'total' => true,
                 ],
             ],
-            'reference_tree' => [
-                'reference' => [
+            'referenceTree' => [
+                'args' => [
                     'term' => 'dcterms:subject',
                     'tree' => [],
                     'resource_name' => 'items',

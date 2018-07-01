@@ -70,3 +70,40 @@ WHERE layout = "reference";
 SQL;
     $connection->exec($sql);
 }
+
+if (version_compare($oldVersion, '3.4.10', '<')) {
+    $settings->set('reference_tree_query_type', $settings->get('reference_query_type'));
+    $settings->delete('reference_query_type');
+
+    $repository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
+    /** @var \Omeka\Entity\SitePageBlock[] $blocks */
+    $blocks = $repository->findBy(['layout' => 'reference']);
+    foreach ($blocks as $block) {
+        $data = $block->getData();
+        $mode = empty($data['reference']['mode']) ? null : $data['reference']['mode'];
+        $data['args'] = $data['reference'];
+        unset($data['reference']);
+        unset($data['args']['mode']);
+        switch ($mode) {
+            case 'list':
+                unset($data['args']['tree']);
+                unset($data['options']['query_type']);
+                unset($data['options']['branch']);
+                unset($data['options']['expanded']);
+                break;
+            case 'tree':
+                $block->setLayout('referenceTree');
+                unset($data['args']['type']);
+                unset($data['args']['order']);
+                unset($data['options']['skiplinks']);
+                unset($data['options']['headings']);
+                break;
+            default:
+                $data = $config['reference']['block_settings']['args'];
+                break;
+        }
+        $block->setData($data);
+        $entityManager->persist($block);
+    }
+    $entityManager->flush();
+}

@@ -67,21 +67,21 @@ class ReferenceTree extends AbstractBlockLayout
         $addedBlock = empty($block);
         if ($addedBlock) {
             $data = $this->defaultSettings;
-            $data['reference']['query'] = 'site_id=' . $site->id();
+            $data['args']['query'] = 'site_id=' . $site->id();
         } else {
             $data = $block->data() + $this->defaultSettings;
         }
 
-        $data['reference']['tree'] = $this->referencePlugin->convertLevelsToTree($data['reference']['tree']);
-        if (is_array($data['reference']['query'])) {
-            $data['reference']['query'] = urldecode(
-                http_build_query($data['reference']['query'], "\n", '&', PHP_QUERY_RFC3986)
+        $data['args']['tree'] = $this->referencePlugin->convertLevelsToTree($data['args']['tree']);
+        if (is_array($data['args']['query'])) {
+            $data['args']['query'] = urldecode(
+                http_build_query($data['args']['query'], "\n", '&', PHP_QUERY_RFC3986)
             );
         }
 
         // TODO Fix set data for radio buttons.
         $form->setData([
-            'o:block[__blockIndex__][o:data][reference]' => $data['reference'],
+            'o:block[__blockIndex__][o:data][args]' => $data['args'],
             'o:block[__blockIndex__][o:data][options]' => $data['options'],
         ]);
 
@@ -100,7 +100,7 @@ class ReferenceTree extends AbstractBlockLayout
     public function render(PhpRenderer $view, SitePageBlockRepresentation $block)
     {
         $data = $block->data();
-        $args = $data['reference'];
+        $args = $data['args'];
         $options = $data['options'];
 
         $tree = $args['tree'];
@@ -123,16 +123,16 @@ class ReferenceTree extends AbstractBlockLayout
     {
         $data = $block->getData();
 
-        $data['reference']['tree'] = $this->referencePlugin->convertTreeToLevels($data['reference']['tree']);
-        if (empty($data['reference']['resource_name'])) {
-            $data['reference']['resource_name'] = $this->defaultSettings['reference']['resource_name'];
+        $data['args']['tree'] = $this->referencePlugin->convertTreeToLevels($data['args']['tree']);
+        if (empty($data['args']['resource_name'])) {
+            $data['args']['resource_name'] = $this->defaultSettings['args']['resource_name'];
         }
-        parse_str($data['reference']['query'], $query);
-        $data['reference']['query'] = $query;
+        parse_str($data['args']['query'], $query);
+        $data['args']['query'] = $query;
 
         // Make the search simpler and quicker later on display.
-        $data['reference']['termId'] = $this->api->searchOne('properties', [
-            'term' => $data['reference']['term'],
+        $data['args']['termId'] = $this->api->searchOne('properties', [
+            'term' => $data['args']['term'],
         ])->getContent()->id();
 
         // Normalize options.

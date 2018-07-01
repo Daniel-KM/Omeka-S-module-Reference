@@ -15,15 +15,12 @@ class ReferenceTreeBlockForm extends Form implements TranslatorAwareInterface
     public function init()
     {
         $this->add([
-            'name' => 'o:block[__blockIndex__][o:data][reference]',
+            'name' => 'o:block[__blockIndex__][o:data][args]',
             'type' => Fieldset::class,
-            'options' => [
-                'label' => 'Reference Tree', // @translate
-            ],
         ]);
-        $referenceFieldset = $this->get('o:block[__blockIndex__][o:data][reference]');
+        $argsFieldset = $this->get('o:block[__blockIndex__][o:data][args]');
 
-        $referenceFieldset->add([
+        $argsFieldset->add([
             'name' => 'term',
             'type' => PropertySelect::class,
             'options' => [
@@ -36,7 +33,7 @@ class ReferenceTreeBlockForm extends Form implements TranslatorAwareInterface
                 'class' => 'chosen-select',
             ],
         ]);
-        $referenceFieldset->add([
+        $argsFieldset->add([
             'name' => 'tree',
             'type' => Element\Textarea::class,
             'options' => [
@@ -63,7 +60,7 @@ Asia ↵
 ',
             ],
         ]);
-        $referenceFieldset->add([
+        $argsFieldset->add([
             'name' => 'resource_name',
             'type' => Element\Radio::class,
             'options' => [
@@ -82,7 +79,7 @@ Asia ↵
                 'required' => true,
             ],
         ]);
-        $referenceFieldset->add([
+        $argsFieldset->add([
             'name' => 'query',
             'type' => Element\Text::class,
             'options' => [
@@ -95,7 +92,7 @@ Asia ↵
             'name' => 'o:block[__blockIndex__][o:data][options]',
             'type' => Fieldset::class,
             'options' => [
-                'label' => 'Options', // @translate
+                'label' => 'Display', // @translate
             ],
         ]);
         $optionsFieldset = $this->get('o:block[__blockIndex__][o:data][options]');
@@ -153,7 +150,7 @@ Asia ↵
 
         $inputFilter = $this->getInputFilter();
         $inputFilter->add([
-            'name' => 'o:block[__blockIndex__][o:data][reference]',
+            'name' => 'o:block[__blockIndex__][o:data][args]',
             'required' => false,
         ]);
         $inputFilter->add([

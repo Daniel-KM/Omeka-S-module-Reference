@@ -67,31 +67,30 @@ class Reference extends AbstractBlockLayout
         $addedBlock = empty($block);
         if ($addedBlock) {
             $data = $this->defaultSettings;
-            $data['reference']['query'] = 'site_id=' . $site->id();
+            $data['args']['query'] = 'site_id=' . $site->id();
         } else {
             $data = $block->data() + $this->defaultSettings;
+            if (is_array($data['args']['query'])) {
+                $data['args']['query'] = urldecode(
+                    http_build_query($data['args']['query'], "\n", '&', PHP_QUERY_RFC3986)
+                );
+            }
         }
 
-        switch ($data['reference']['type']) {
+        switch ($data['args']['type']) {
             case 'resource_classes':
-                $data['reference']['resource_class'] = $data['reference']['term'];
+                $data['args']['resource_class'] = $data['args']['term'];
                 break;
             case 'properties':
-                $data['reference']['property'] = $data['reference']['term'];
+                $data['args']['property'] = $data['args']['term'];
                 break;
         }
 
-        $data['reference']['order'] = key($data['reference']['order']) . ' ' . reset($data['reference']['order']);
-
-        if (is_array($data['reference']['query'])) {
-            $data['reference']['query'] = urldecode(
-                http_build_query($data['reference']['query'], "\n", '&', PHP_QUERY_RFC3986)
-            );
-        }
+        $data['args']['order'] = key($data['args']['order']) . ' ' . reset($data['args']['order']);
 
         // TODO Fix set data for radio buttons.
         $form->setData([
-            'o:block[__blockIndex__][o:data][reference]' => $data['reference'],
+            'o:block[__blockIndex__][o:data][args]' => $data['args'],
             'o:block[__blockIndex__][o:data][options]' => $data['options'],
         ]);
 
@@ -109,7 +108,7 @@ class Reference extends AbstractBlockLayout
     public function render(PhpRenderer $view, SitePageBlockRepresentation $block)
     {
         $data = $block->data();
-        $args = $data['reference'];
+        $args = $data['args'];
         $options = $data['options'];
 
         $term = $args['term'];
@@ -136,29 +135,29 @@ class Reference extends AbstractBlockLayout
     {
         $data = $block->getData();
 
-        if (!empty($data['reference']['property'])) {
-            $data['reference']['term'] = $data['reference']['property'];
-            $data['reference']['type'] = 'properties';
-        } elseif (!empty($data['reference']['resource_class'])) {
-            $data['reference']['term'] = $data['reference']['resource_class'];
-            $data['reference']['type'] = 'resource_classes';
+        if (!empty($data['args']['property'])) {
+            $data['args']['term'] = $data['args']['property'];
+            $data['args']['type'] = 'properties';
+        } elseif (!empty($data['args']['resource_class'])) {
+            $data['args']['term'] = $data['args']['resource_class'];
+            $data['args']['type'] = 'resource_classes';
         } else {
             $errorStore->addError('property', 'To create references, there must be a property, a resource class or a tree.'); // @translate
             return;
         }
-        if (empty($data['reference']['resource_name'])) {
-            $data['reference']['resource_name'] = $this->defaultSettings['reference']['resource_name'];
+        if (empty($data['args']['resource_name'])) {
+            $data['args']['resource_name'] = $this->defaultSettings['args']['resource_name'];
         }
-        parse_str($data['reference']['query'], $query);
-        $data['reference']['query'] = $query;
+        parse_str($data['args']['query'], $query);
+        $data['args']['query'] = $query;
 
-        $data['reference']['order'] = empty($data['reference']['order'])
-            ? $this->defaultSettings['reference']['order']
-            : [strtok($data['reference']['order'], ' ') => strtok(' ')];
+        $data['args']['order'] = empty($data['args']['order'])
+            ? $this->defaultSettings['args']['order']
+            : [strtok($data['args']['order'], ' ') => strtok(' ')];
 
         // Make the search simpler and quicker later on display.
-        $data['reference']['termId'] = $this->api->searchOne($data['reference']['type'], [
-            'term' => $data['reference']['term'],
+        $data['args']['termId'] = $this->api->searchOne($data['args']['type'], [
+            'term' => $data['args']['term'],
         ])->getContent()->id();
 
         // Normalize options.
@@ -167,8 +166,8 @@ class Reference extends AbstractBlockLayout
         $data['options']['headings'] = (bool) $data['options']['headings'];
         $data['options']['total'] = (bool) $data['options']['total'];
 
-        unset($data['reference']['property']);
-        unset($data['reference']['resource_class']);
+        unset($data['args']['property']);
+        unset($data['args']['resource_class']);
 
         $block->setData($data);
     }
