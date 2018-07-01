@@ -1,0 +1,46 @@
+<?php
+if (count($references)):
+    // Prepare the list.
+    $letters = [];
+    if (array_key_exists('initial', $references[key($references)])):
+        foreach ($references as $reference => $referenceData):
+            $first_char = $referenceData['initial'];
+            if (empty($letters[$first_char])):
+                $letters[preg_match('/\W|\d/u', $first_char) ? 'number' : $first_char] = true;
+            endif;
+        endforeach;
+    elseif (extension_loaded('mbstring')):
+        foreach ($references as $reference => $referenceData):
+            $first_char = mb_strtoupper(mb_substr($reference, 0, 1));
+            if (empty($letters[$first_char])):
+                $letters[preg_match('/\W|\d/u', $first_char) ? 'number' : $first_char] = true;
+            endif;
+        endforeach;
+    else:
+        foreach ($references as $reference => $referenceData):
+            $first_char = strtoupper(substr($reference, 0, 1));
+            if (empty($letters[$first_char])):
+                $letters[(strlen($first_char) == 0 || preg_match('/\W|\d/u', $first_char)) ? 'number' : $first_char] = true;
+            endif;
+        endforeach;
+    endif;
+
+    // Add the empty letters.
+    // Get the default list of initials for latin. To be updated for non-latin references.
+    // Anyway, even in latin, some characters are not transcoded, like Œ.
+    $alphabet = ['number' => false] + array_fill_keys(range('A', 'Z'), false);
+    $letters = array_merge($alphabet, $letters);
+
+    // Display the list of initials.
+    $pagination_list = '<ul class="pagination-list">';
+    foreach ($letters as $letter => $isSet):
+        $letterDisplay = $letter == 'number' ? '#0-9' : $letter;
+        $pagination_list .= $isSet
+            ? sprintf('<li class="pagination-range"><a href="#%s">%s</a></li>', $letter, $letterDisplay)
+            : sprintf('<li class="pagination-range"><span>%s</span></li>', $letterDisplay);
+    endforeach;
+    $pagination_list .= '</ul>';
+
+    // Return the html.
+    echo $pagination_list;
+endif;
