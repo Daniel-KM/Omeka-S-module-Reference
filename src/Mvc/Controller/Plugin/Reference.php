@@ -90,7 +90,7 @@ class Reference extends AbstractPlugin
             return;
         }
 
-        $references = $this->getReferencesList($termId, $type, $entityClass, $order, $query, [], $perPage, $page, null);
+        $references = $this->getReferencesList($termId, $type, $entityClass, $order, $query, [], $perPage, $page, null, false);
         return $references;
     }
 
@@ -313,8 +313,9 @@ class Reference extends AbstractPlugin
         $perPage = empty($args['per_page']) ? null : (int) $args['per_page'];
         $page = empty($args['page']) ? null : (int) $args['page'];
         $output = $options['link_to_single'] ? 'withFirst' : 'list';
+        $initial = $options['skiplinks'] || $options['headings'];
 
-        $references = $this->getReferencesList($termId, $type, $entityClass, $order, $query, [], $perPage, $page, $output);
+        $references = $this->getReferencesList($termId, $type, $entityClass, $order, $query, [], $perPage, $page, $output, $initial);
 
         $controller = $this->getController();
         $partial = $controller->viewHelpers()->get('partial');
@@ -423,6 +424,7 @@ class Reference extends AbstractPlugin
         $hasMb = function_exists('mb_strtolower');
         $isBranch = $options['branch'];
         $output = $options['link_to_single'] ? 'withFirst' : 'list';
+        $initial = false;
 
         if ($isBranch) {
             $branches = [];
@@ -440,7 +442,7 @@ class Reference extends AbstractPlugin
                 $branches[] = $branch;
                 $lowerBranches[] = $hasMb ? mb_strtolower($branch) : strtolower($branch);
             }
-            $totals = $this->getReferencesList($termId, $type, $entityClass, null, $query, $lowerBranches, null, null, $output);
+            $totals = $this->getReferencesList($termId, $type, $entityClass, null, $query, $lowerBranches, null, null, $output, $initial);
         }
         // Simple tree.
         else {
@@ -451,7 +453,7 @@ class Reference extends AbstractPlugin
                 : array_map(function($v) {
                     return strtolower(key($v));
                 }, $references);
-            $totals = $this->getReferencesList($termId, $type, $entityClass, null, $query, $lowerReferences, null, null, $output);
+            $totals = $this->getReferencesList($termId, $type, $entityClass, null, $query, $lowerReferences, null, null, $output, $initial);
         }
 
         $lowerTotals = [];
@@ -572,8 +574,9 @@ class Reference extends AbstractPlugin
      * @param int $perPage
      * @param int $page One-based page number.
      * @param string $output May be "associative" (default), "list" or "withFirst".
-     * @return array Associative list of references, with the total and the
-     * first record, according to the output parameter.
+     * @param bool $initial Get initial letter (useful for non-acii references).
+     * @return array Associative list of references, with the total, the first
+     * first record, and the first character, according to the parameters.
      */
     protected function getReferencesList(
         $termId,
@@ -584,7 +587,8 @@ class Reference extends AbstractPlugin
         $values = [],
         $perPage = null,
         $page = null,
-        $output = null
+        $output = null,
+        $initial = false
     ) {
         $entityManager = $this->entityManager;
         $qb = $entityManager->createQueryBuilder();
@@ -674,6 +678,15 @@ class Reference extends AbstractPlugin
                 ]);
         }
 
+        if ($initial) {
+            // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
+            $qb
+                ->addSelect([
+                    // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
+                    $qb->expr()->upper($qb->expr()->substring('value.value', 1, 1)) . 'AS initial',
+                ]);
+        }
+
         // TODO Allow to use a query for resources.
         // TODO Use a temporary table or use get the qb from the adapter.
         if ($query && $entityClass !== \Omeka\Entity\Resource::class) {
@@ -706,12 +719,32 @@ class Reference extends AbstractPlugin
             case 'list':
             case 'withFirst':
                 $result = $qb->getQuery()->getScalarResult();
-                $result = array_map(function ($v) {
-                    $v['total'] = (int) $v['total'];
-                    return $v;
-                }, $result);
+                if ($initial && (extension_loaded('intl') || extension_loaded('iconv'))) {
+                    if (extension_loaded('intl')) {
+                        $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+                        $result = array_map(function ($v) use ($transliterator) {
+                            $v['total'] = (int) $v['total'];
+                            $v['initial'] = $transliterator->transliterate($v['initial']);
+                            return $v;
+                        }, $result);
+                    }
+                } elseif (extension_loaded('iconv')) {
+                    $result = array_map(function ($v) {
+                        $v['total'] = (int) $v['total'];
+                        if ($conv = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial'])) {
+                            $v['initial'] = $conv;
+                        }
+                        return $v;
+                    }, $result);
+                } else {
+                    $result = array_map(function ($v) {
+                        $v['total'] = (int) $v['total'];
+                        return $v;
+                    }, $result);
+                }
                 $result = array_combine(array_column($result, 'value'), $result);
                 return $result;
+
             case 'associative':
             default:
                 $result = $qb->getQuery()->getScalarResult();
