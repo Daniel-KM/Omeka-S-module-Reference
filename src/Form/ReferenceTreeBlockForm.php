@@ -2,14 +2,13 @@
 namespace Reference\Form;
 
 use Omeka\Form\Element\PropertySelect;
-use Omeka\Form\Element\ResourceClassSelect;
 use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
 use Zend\I18n\Translator\TranslatorAwareInterface;
 use Zend\I18n\Translator\TranslatorAwareTrait;
 
-class ReferenceBlockForm extends Form implements TranslatorAwareInterface
+class ReferenceTreeBlockForm extends Form implements TranslatorAwareInterface
 {
     use TranslatorAwareTrait;
 
@@ -19,13 +18,13 @@ class ReferenceBlockForm extends Form implements TranslatorAwareInterface
             'name' => 'o:block[__blockIndex__][o:data][reference]',
             'type' => Fieldset::class,
             'options' => [
-                'label' => 'Reference', // @translate
+                'label' => 'Reference Tree', // @translate
             ],
         ]);
         $referenceFieldset = $this->get('o:block[__blockIndex__][o:data][reference]');
 
         $referenceFieldset->add([
-            'name' => 'property',
+            'name' => 'term',
             'type' => PropertySelect::class,
             'options' => [
                 'label' => 'Property', // @translate
@@ -33,21 +32,35 @@ class ReferenceBlockForm extends Form implements TranslatorAwareInterface
                 'term_as_value' => true,
             ],
             'attributes' => [
-                'required' => false,
+                'required' => true,
                 'class' => 'chosen-select',
             ],
         ]);
         $referenceFieldset->add([
-            'name' => 'resource_class',
-            'type' => ResourceClassSelect::class,
+            'name' => 'tree',
+            'type' => Element\Textarea::class,
             'options' => [
-                'label' => 'Resource class', // @translate
-                'empty_option' => 'Select a resource class…', // @translate
-                'term_as_value' => true,
+                'label' => 'Static tree of references', // @translate
+                'info' => $this->translate('If any, write the hierarchy of all your references in order to display them in the "Tree of references" page.') // @translate
+                    . ' ' . $this->translate('Format is: one reference by line, preceded by zero, one or more "-" to indicate the hierarchy level.') // @translate
+                    . ' ' . $this->translate('Separate the "-" and the reference with a space. Empty lines are not considered.') // @translate
+                    . ' ' . $this->translate('Note: sql does case insensitive searches, so all references should be case-insensitively unique.'), // @translate
             ],
             'attributes' => [
-                'required' => false,
-                'class' => 'chosen-select',
+                'required' => true,
+                'rows' => 20,
+                'cols' => 60,
+                // The place holder may not use end of line on some browsers, so
+                // a symbol is used for it.
+                'placeholder' => 'Europe ↵
+- France ↵
+-- Paris ↵
+- United Kingdom ↵
+-- England ↵
+--- London ↵
+Asia ↵
+- Japan ↵
+',
             ],
         ]);
         $referenceFieldset->add([
@@ -65,18 +78,8 @@ class ReferenceBlockForm extends Form implements TranslatorAwareInterface
                     // 'media' => 'Media',  // @translate
                 ],
             ],
-        ]);
-        $referenceFieldset->add([
-            'name' => 'order',
-            'type' => Element\Select::class,
-            'options' => [
-                'label' => 'Select order', // @translate
-                'value_options' => [
-                    'alphabetic ASC' => 'Alphabetic ascendant',  // @translate
-                    'alphabetic DESC' => 'Alphabetic descendant',  // @translate
-                    'count ASC' => 'Count ascendant',  // @translate
-                    'count DESC' => 'Count descendant',  // @translate
-                ],
+            'attributes' => [
+                'required' => true,
             ],
         ]);
         $referenceFieldset->add([
@@ -126,24 +129,25 @@ class ReferenceBlockForm extends Form implements TranslatorAwareInterface
             ],
         ]);
         $optionsFieldset->add([
-            'name' => 'skiplinks',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Add skiplinks above and below list', // @translate
-            ],
-        ]);
-        $optionsFieldset->add([
-            'name' => 'headings',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Add first letter as headings between references', // @translate
-            ],
-        ]);
-        $optionsFieldset->add([
             'name' => 'total',
             'type' => Element\Checkbox::class,
             'options' => [
                 'label' => 'Add the total of resources for each reference', // @translate
+            ],
+        ]);
+        $optionsFieldset->add([
+            'name' => 'expanded',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Expand the tree', // @translate
+            ],
+        ]);
+        $optionsFieldset->add([
+            'name' => 'branch',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Managed as branch', // @translate
+                'info' => 'Check this box if the tree is managed as branch (the path is saved with " :: " between each branch).', // @translate
             ],
         ]);
 

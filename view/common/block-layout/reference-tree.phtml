@@ -8,7 +8,7 @@ $translate = $this->plugin('translate');
 
     <?php
     if ($total):
-        echo $this->reference()->displayListForTerm($term, $args, $options);
+        echo $this->reference()->displayTree($tree, $args, $options);
     else:
     ?>
     <p><?php echo $translate('There is no references.'); ?></p>

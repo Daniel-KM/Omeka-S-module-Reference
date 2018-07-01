@@ -159,7 +159,7 @@ class Module extends AbstractModule
         // TODO Fix the setData() with sub-subfieldset.
         $form->setData($data);
         $html = '<p>';
-        $html .= $renderer->translate('It is recommended to create reference blocks for site pages.'); // @translate
+        $html .= $renderer->translate('It is recommended to create reference with the blocks of the site pages.'); // @translate
         $html .= ' ' . $renderer->translate('So these options are used only to create global pages, that are not provided by Omeka yet.'); // @translate
         $html .= '</p>';
         $html .= '<p>';

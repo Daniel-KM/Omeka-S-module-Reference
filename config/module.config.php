@@ -18,12 +18,14 @@ return [
     'block_layouts' => [
         'factories' => [
             'reference' => Service\BlockLayout\ReferenceFactory::class,
+            'referenceTree' => Service\BlockLayout\ReferenceTreeFactory::class,
         ],
     ],
     'form_elements' => [
         'factories' => [
             Form\ConfigForm::class => Service\Form\ConfigFormFactory::class,
             Form\ReferenceBlockForm::class => Service\Form\ReferenceBlockFormFactory::class,
+            Form\ReferenceTreeBlockForm::class => Service\Form\ReferenceTreeBlockFormFactory::class,
         ],
     ],
     'controllers' => [
@@ -115,22 +117,37 @@ return [
         // Default for blocks.
         'block_settings' => [
             'reference' => [
-                'mode' => 'list',
-                'term' => 'dcterms:subject',
-                'type' => 'properties',
-                'tree' => [],
-                'resource_name' => 'items',
-                'query' => '',
+                'reference' => [
+                    'term' => 'dcterms:subject',
+                    'type' => 'properties',
+                    'resource_name' => 'items',
+                    'order' => ['alphabetic' => 'ASC'],
+                    'query' => '',
+                ],
+                'options' => [
+                    'query_type' => 'eq',
+                    'link_to_single' => true,
+                    'heading' => 'Subjects', // @translate
+                    'skiplinks' => true,
+                    'headings' => true,
+                    'total' => true,
+                ],
             ],
-            'options' => [
-                'query_type' => 'eq',
-                'link_to_single' => true,
-                'heading' => 'Subjects', // @translate
-                'skiplinks' => true,
-                'headings' => true,
-                'total' => true,
-                'branch' => false,
-                'expanded' => true,
+            'reference_tree' => [
+                'reference' => [
+                    'term' => 'dcterms:subject',
+                    'tree' => [],
+                    'resource_name' => 'items',
+                    'query' => '',
+                ],
+                'options' => [
+                    'query_type' => 'eq',
+                    'link_to_single' => true,
+                    'heading' => 'Tree of subjects', // @translate
+                    'total' => true,
+                    'branch' => false,
+                    'expanded' => true,
+                ],
             ],
         ],
     ],

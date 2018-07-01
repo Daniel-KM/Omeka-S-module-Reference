@@ -8,12 +8,12 @@ use Omeka\Entity\SitePageBlock;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
 use Omeka\Stdlib\ErrorStore;
-use Reference\Form\ReferenceBlockForm;
+use Reference\Form\ReferenceTreeBlockForm;
 use Reference\Mvc\Controller\Plugin\Reference as ReferencePlugin;
 use Zend\Form\FormElementManager\FormElementManagerV3Polyfill as FormElementManager;
 use Zend\View\Renderer\PhpRenderer;
 
-class Reference extends AbstractBlockLayout
+class ReferenceTree extends AbstractBlockLayout
 {
     /**
      * @var FormElementManager
@@ -55,14 +55,14 @@ class Reference extends AbstractBlockLayout
 
     public function getLabel()
     {
-        return 'Reference'; // @translate
+        return 'Reference tree'; // @translate
     }
 
     public function form(PhpRenderer $view, SiteRepresentation $site,
         SitePageRepresentation $page = null, SitePageBlockRepresentation $block = null
     ) {
-        /** @var \Reference\Form\ReferenceBlockForm $form */
-        $form = $this->formElementManager->get(ReferenceBlockForm::class);
+        /** @var \Reference\Form\ReferenceTreeBlockForm $form */
+        $form = $this->formElementManager->get(ReferenceTreeBlockForm::class);
 
         $addedBlock = empty($block);
         if ($addedBlock) {
@@ -72,17 +72,7 @@ class Reference extends AbstractBlockLayout
             $data = $block->data() + $this->defaultSettings;
         }
 
-        switch ($data['reference']['type']) {
-            case 'resource_classes':
-                $data['reference']['resource_class'] = $data['reference']['term'];
-                break;
-            case 'properties':
-                $data['reference']['property'] = $data['reference']['term'];
-                break;
-        }
-
-        $data['reference']['order'] = key($data['reference']['order']) . ' ' . reset($data['reference']['order']);
-
+        $data['reference']['tree'] = $this->referencePlugin->convertLevelsToTree($data['reference']['tree']);
         if (is_array($data['reference']['query'])) {
             $data['reference']['query'] = urldecode(
                 http_build_query($data['reference']['query'], "\n", '&', PHP_QUERY_RFC3986)
@@ -103,7 +93,8 @@ class Reference extends AbstractBlockLayout
 
     public function prepareRender(PhpRenderer $view)
     {
-        $view->headLink()->appendStylesheet($view->assetUrl('css/reference.css', 'Reference'));
+        $view->headLink()->appendStylesheet($view->assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));
+        $view->headScript()->appendFile($view->assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'));
     }
 
     public function render(PhpRenderer $view, SitePageBlockRepresentation $block)
@@ -112,20 +103,16 @@ class Reference extends AbstractBlockLayout
         $args = $data['reference'];
         $options = $data['options'];
 
-        $term = $args['term'];
-        $total = $this->referencePlugin->count(
-            $args['term'],
-            $args['type'],
-            $args['resource_name'],
-            $args['query']
-        );
+        $tree = $args['tree'];
+        unset($args['tree']);
+        $total = count($tree);
 
         return $view->partial(
-            'common/block-layout/reference',
+            'common/block-layout/reference-tree',
             [
                 'block' => $block,
                 'total' => $total,
-                'term' => $term,
+                'tree' => $tree,
                 'args' => $args,
                 'options' => $options,
             ]
@@ -136,42 +123,26 @@ class Reference extends AbstractBlockLayout
     {
         $data = $block->getData();
 
-        if (!empty($data['reference']['property'])) {
-            $data['reference']['term'] = $data['reference']['property'];
-            $data['reference']['type'] = 'properties';
-        } elseif (!empty($data['reference']['resource_class'])) {
-            $data['reference']['term'] = $data['reference']['resource_class'];
-            $data['reference']['type'] = 'resource_classes';
-        } else {
-            $errorStore->addError('property', 'To create references, there must be a property, a resource class or a tree.'); // @translate
-            return;
-        }
+        $data['reference']['tree'] = $this->referencePlugin->convertTreeToLevels($data['reference']['tree']);
         if (empty($data['reference']['resource_name'])) {
             $data['reference']['resource_name'] = $this->defaultSettings['reference']['resource_name'];
         }
         parse_str($data['reference']['query'], $query);
         $data['reference']['query'] = $query;
 
-        $data['reference']['order'] = empty($data['reference']['order'])
-            ? $this->defaultSettings['reference']['order']
-            : [strtok($data['reference']['order'], ' ') => strtok(' ')];
-
         // Make the search simpler and quicker later on display.
-        $data['reference']['termId'] = $this->api->searchOne($data['reference']['type'], [
+        $data['reference']['termId'] = $this->api->searchOne('properties', [
             'term' => $data['reference']['term'],
         ])->getContent()->id();
 
         // Normalize options.
         $data['options']['link_to_single'] = (bool) $data['options']['link_to_single'];
-        $data['options']['skiplinks'] = (bool) $data['options']['skiplinks'];
-        $data['options']['headings'] = (bool) $data['options']['headings'];
         $data['options']['total'] = (bool) $data['options']['total'];
+        $data['options']['branch'] = (bool) $data['options']['branch'];
+        $data['options']['expanded'] = (bool) $data['options']['expanded'];
         if (empty($data['options']['query_type'])) {
             $data['options']['query_type'] = $this->defaultSettings['options']['query_type'];
         }
-
-        unset($data['reference']['property']);
-        unset($data['reference']['resource_class']);
 
         $block->setData($data);
     }

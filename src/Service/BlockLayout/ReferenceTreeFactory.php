@@ -2,22 +2,22 @@
 namespace Reference\Service\BlockLayout;
 
 use Interop\Container\ContainerInterface;
-use Reference\Site\BlockLayout\Reference;
+use Reference\Site\BlockLayout\ReferenceTree;
 use Zend\ServiceManager\Factory\FactoryInterface;
 
-class ReferenceFactory implements FactoryInterface
+class ReferenceTreeFactory implements FactoryInterface
 {
     /**
-     * Create the Reference block layout service.
+     * Create the Reference tree block layout service.
      *
-     * @return Reference
+     * @return ReferenceTree
      */
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
         $controllerPluginManager = $services->get('ControllerPluginManager');
-        return new Reference(
+        return new ReferenceTree(
             $services->get('FormElementManager'),
-            $services->get('Config')['reference']['block_settings']['reference'],
+            $services->get('Config')['reference']['block_settings']['reference_tree'],
             $controllerPluginManager->get('api'),
             $controllerPluginManager->get('reference')
         );
