@@ -18,10 +18,14 @@ return [
     'block_layouts' => [
         'factories' => [
             'reference' => Service\BlockLayout\ReferenceFactory::class,
+            'referenceIndex' => Service\BlockLayout\ReferenceIndexFactory::class,
             'referenceTree' => Service\BlockLayout\ReferenceTreeFactory::class,
         ],
     ],
     'form_elements' => [
+        'invokables' => [
+            Form\ReferenceIndexBlockForm::class => Form\ReferenceIndexBlockForm::class,
+        ],
         'factories' => [
             Form\ConfigForm::class => Service\Form\ConfigFormFactory::class,
             Form\ReferenceBlockForm::class => Service\Form\ReferenceBlockFormFactory::class,
@@ -129,6 +133,19 @@ return [
                     'heading' => 'Subjects', // @translate
                     'skiplinks' => true,
                     'headings' => true,
+                    'total' => true,
+                ],
+            ],
+            'referenceIndex' => [
+                'args' => [
+                    'terms' => ['dcterms:subject'],
+                    'type' => 'properties',
+                    'resource_name' => 'items',
+                    'order' => ['alphabetic' => 'ASC'],
+                    'query' => '',
+                ],
+                'options' => [
+                    'heading' => 'Reference index', // @translate
                     'total' => true,
                 ],
             ],

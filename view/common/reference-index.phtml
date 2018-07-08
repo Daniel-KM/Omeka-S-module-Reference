@@ -1,0 +1,34 @@
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+$this->htmlElement('body')->appendAttribute('class', 'reference browse list');
+$siteSlug = $this->params()->fromRoute('site-slug');
+?>
+<ul class="references">
+    <?php foreach ($terms as $term): ?>
+    <li><?php
+    // TODO Currently, the totals are determined one by one.
+    if ($totals):
+        // TODO Get the properties labels one time.
+        $label = $this->api()->searchOne($type, ['term' => $term])->getContent()->label();
+        $total = $this->reference()->count($term, $type, $resourceName, $args['query']);
+        echo $this->hyperlink(
+            sprintf($translate('%s (%d)'), $label, $total),
+            // TODO Define the link to the reference page.
+            $this->url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $term)]),
+            ['title' => sprintf($this->translate('Browse %s'), $label)]
+        );
+    else:
+        $label = $this->api()->searchOne($type, ['term' => $term])->getContent()->label();
+        $total = $this->reference()->count($term, $type, $resourceName, $args['query']);
+        echo $this->hyperlink(
+            $label,
+            // TODO Define the link to the reference page.
+            $this->url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $term)]),
+            ['title' => sprintf($this->translate('Browse %s'), $label)]
+        );
+    endif;
+    ?>
+    </li>
+    <?php endforeach; ?>
+</ul>

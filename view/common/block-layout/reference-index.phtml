@@ -1,0 +1,24 @@
+<?php
+$translate = $this->plugin('translate');
+?>
+<div class="reference-block">
+    <?php if ($options['heading']): ?>
+    <h3><?php echo $translate($options['heading']); ?></h3>
+    <?php endif; ?>
+
+    <?php if (empty($terms)): ?>
+    <p><?php echo $translate('There is no references.'); ?></p>
+    <?php else: ?>
+    <?php
+    echo $this->partial('common/reference-index', [
+        'site' => $block->page()->site(),
+        'terms' => $terms,
+        'type' => $args['type'],
+        'resourceName' => $args['resource_name'],
+        'totals' => $totals,
+        'args' => $args,
+        'options' => $options,
+    ]);
+    ?>
+    <?php endif; ?>
+</div>

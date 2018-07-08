@@ -132,6 +132,8 @@ TODO
 - Manage references inside admin board.
 - Manage pagination by letter and by number of references.
 - Fix initials for some letters (#2) via a custom DQL function for `convert`.
+- Create automatically the pages related to the block index in order to remove
+  the global pages.
 
 
 Warning
