@@ -727,15 +727,15 @@ class Reference extends AbstractPlugin
                             $v['initial'] = $transliterator->transliterate($v['initial']);
                             return $v;
                         }, $result);
+                    } elseif (extension_loaded('iconv')) {
+                        $result = array_map(function ($v) {
+                            $v['total'] = (int) $v['total'];
+                            if ($conv = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial'])) {
+                                $v['initial'] = $conv;
+                            }
+                            return $v;
+                        }, $result);
                     }
-                } elseif (extension_loaded('iconv')) {
-                    $result = array_map(function ($v) {
-                        $v['total'] = (int) $v['total'];
-                        if ($conv = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial'])) {
-                            $v['initial'] = $conv;
-                        }
-                        return $v;
-                    }, $result);
                 } else {
                     $result = array_map(function ($v) {
                         $v['total'] = (int) $v['total'];
