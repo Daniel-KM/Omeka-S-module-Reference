@@ -131,6 +131,7 @@ TODO
 
 - Manage references inside admin board.
 - Manage pagination by letter and by number of references.
+- Fix initials for some letters (#2) via a custom DQL function for `convert`.
 
 
 Warning

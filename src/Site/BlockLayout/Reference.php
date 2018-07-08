@@ -85,6 +85,7 @@ class Reference extends AbstractBlockLayout
                 $data['args']['property'] = $data['args']['term'];
                 break;
         }
+        unset($data['args']['terms']);
 
         $data['args']['order'] = key($data['args']['order']) . ' ' . reset($data['args']['order']);
 
@@ -96,7 +97,8 @@ class Reference extends AbstractBlockLayout
 
         $form->prepare();
 
-        $html = $view->formCollection($form);
+        $html = '<p>' . $view->translate('Choose a property or a resource class.') . '</p>';
+        $html .= $view->formCollection($form);
         return $html;
     }
 
@@ -123,8 +125,8 @@ class Reference extends AbstractBlockLayout
             'common/block-layout/reference',
             [
                 'block' => $block,
-                'total' => $total,
                 'term' => $term,
+                'total' => $total,
                 'args' => $args,
                 'options' => $options,
             ]
@@ -142,7 +144,7 @@ class Reference extends AbstractBlockLayout
             $data['args']['term'] = $data['args']['resource_class'];
             $data['args']['type'] = 'resource_classes';
         } else {
-            $errorStore->addError('property', 'To create references, there must be a property, a resource class or a tree.'); // @translate
+            $errorStore->addError('property', 'To create references, there must be a property or a resource class.'); // @translate
             return;
         }
         if (empty($data['args']['resource_name'])) {

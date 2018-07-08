@@ -70,14 +70,14 @@ class ReferenceTree extends AbstractBlockLayout
             $data['args']['query'] = 'site_id=' . $site->id();
         } else {
             $data = $block->data() + $this->defaultSettings;
+            if (is_array($data['args']['query'])) {
+                $data['args']['query'] = urldecode(
+                    http_build_query($data['args']['query'], "\n", '&', PHP_QUERY_RFC3986)
+                );
+            }
         }
 
         $data['args']['tree'] = $this->referencePlugin->convertLevelsToTree($data['args']['tree']);
-        if (is_array($data['args']['query'])) {
-            $data['args']['query'] = urldecode(
-                http_build_query($data['args']['query'], "\n", '&', PHP_QUERY_RFC3986)
-            );
-        }
 
         // TODO Fix set data for radio buttons.
         $form->setData([

@@ -2,7 +2,7 @@
 $escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 $siteSlug = $this->params()->fromRoute('site-slug');
-$resourceName = empty($resourceName) ? 'resources' : $resourceName;
+$resourceName = empty($resourceName) ? 'items' : $resourceName;
 $query = empty($query) ? ['site_id' => $site->id()] : $query;
 ?>
 <div id="primary" class="reference">
