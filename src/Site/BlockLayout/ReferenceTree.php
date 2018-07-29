@@ -123,6 +123,11 @@ class ReferenceTree extends AbstractBlockLayout
     {
         $data = $block->getData();
 
+        // Check if data are already formatted, checking the main value.
+        if (is_array($data['args']['tree'])) {
+            return;
+        }
+
         $data['args']['tree'] = $this->referencePlugin->convertTreeToLevels($data['args']['tree']);
         if (empty($data['args']['resource_name'])) {
             $data['args']['resource_name'] = $this->defaultSettings['args']['resource_name'];

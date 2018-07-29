@@ -140,6 +140,11 @@ class ReferenceIndex extends AbstractBlockLayout
     {
         $data = $block->getData();
 
+        // Check if data are already formatted, checking the main value.
+        if (!empty($data['args']['terms'])) {
+            return;
+        }
+
         $properties = isset($data['args']['properties'])
             ? array_filter($data['args']['properties'], 'strlen')
             : [];

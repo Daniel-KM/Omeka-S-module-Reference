@@ -137,6 +137,11 @@ class Reference extends AbstractBlockLayout
     {
         $data = $block->getData();
 
+        // Check if data are already formatted, checking the main value.
+        if (!empty($data['args']['term'])) {
+            return;
+        }
+
         if (!empty($data['args']['property'])) {
             $data['args']['term'] = $data['args']['property'];
             $data['args']['type'] = 'properties';
