@@ -423,7 +423,8 @@ class Reference extends AbstractPlugin
         // Sql searches are case insensitive, so a convert should be done.
         $hasMb = function_exists('mb_strtolower');
         $isBranch = $options['branch'];
-        $output = $options['link_to_single'] ? 'withFirst' : 'list';
+        $withFirst = $options['link_to_single'] === 'withFirst';
+        $output = $withFirst ? 'withFirst' : 'list';
         $initial = false;
 
         if ($isBranch) {
@@ -477,7 +478,9 @@ class Reference extends AbstractPlugin
             if (isset($lowerTotals[$lower])) {
                 $referenceData = [
                     'total' => $lowerTotals[$lower]['total'],
-                    'first_id' => $lowerTotals[$lower]['first_id'],
+                    'first_id' => $withFirst
+                        ? $lowerTotals[$lower]['first_id']
+                        : null,
                 ];
             } else {
                 $referenceData = [
