@@ -93,7 +93,7 @@ class Module extends AbstractModule
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
         foreach ($defaultSettings as $name => $value) {
             //  TODO Manage the values of the config form via the config form.
-            $currentValue = $settings->get($name);
+            $currentValue = $settings->get($name, $value);
             switch ($name) {
                 case 'reference_slugs':
                     $referenceSlugs = $currentValue;
@@ -175,12 +175,12 @@ class Module extends AbstractModule
         $services = $this->getServiceLocator();
         $config = $services->get('Config');
         $settings = $services->get('Omeka\Settings');
+        $form = $services->get('FormElementManager')->get(ConfigForm::class);
         $controllerPluginManager = $services->get('ControllerPluginManager');
         $referencePlugin = $controllerPluginManager->get('reference');
 
         $params = $controller->getRequest()->getPost();
 
-        $form = $services->get('FormElementManager')->get(ConfigForm::class);
         $form->init();
         $form->setData($params);
         if (!$form->isValid()) {
@@ -195,7 +195,7 @@ class Module extends AbstractModule
         $fieldsData = [];
         foreach (['resource_classes', 'properties'] as $type) {
             $fields = json_decode($params[$type], true);
-            foreach ($fields as $key => $fieldData) {
+            foreach ($fields as $fieldData) {
                 $type = strtok($fieldData['name'], '[]');
                 $id = strtok('[]');
                 $name = strtok('[]');
@@ -221,10 +221,9 @@ class Module extends AbstractModule
             ->convertTreeToLevels($params['reference_tree_hierarchy']);
 
         $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
+        $params = array_intersect_key($params, $defaultSettings);
         foreach ($params as $name => $value) {
-            if (array_key_exists($name, $defaultSettings)) {
-                $settings->set($name, $value);
-            }
+            $settings->set($name, $value);
         }
     }
 }
