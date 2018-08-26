@@ -16,7 +16,7 @@ $siteSlug = $this->params()->fromRoute('site-slug');
             sprintf($translate('%s (%d)'), $label, $total),
             // TODO Define the link to the reference page.
             $this->url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $term)]),
-            ['title' => sprintf($this->translate('Browse %s'), $label)]
+            ['title' => sprintf($translate('Browse %s'), $label)]
         );
     else:
         $label = $this->api()->searchOne($type, ['term' => $term])->getContent()->label();
@@ -25,7 +25,7 @@ $siteSlug = $this->params()->fromRoute('site-slug');
             $label,
             // TODO Define the link to the reference page.
             $this->url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $term)]),
-            ['title' => sprintf($this->translate('Browse %s'), $label)]
+            ['title' => sprintf($translate('Browse %s'), $label)]
         );
     endif;
     ?>

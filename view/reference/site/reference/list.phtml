@@ -1,11 +1,12 @@
 <?php
+$translate = $this->plugin('translate');
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 ?>
 <div id="primary" class="reference">
-    <h2><?php echo sprintf($this->translate('Browse items by "%s" (%d headings)'), $label, $total); ?></h2>
+    <h2><?php echo sprintf($translate('Browse items by "%s" (%d headings)'), $label, $total); ?></h2>
     <?php if ($total): ?>
     <?php echo $this->reference()->displayListForTerm($term, $args, $options); ?>
     <?php else: ?>
-    <p><?php echo $this->escapeHtml(sprintf($this->translate('There is no references for "%s".'), $label)); ?></p>
+    <p><?php echo $this->escapeHtml(sprintf($translate('There is no references for "%s".'), $label)); ?></p>
     <?php endif; ?>
 </div>
