@@ -399,7 +399,7 @@ class Reference extends AbstractPlugin
         $type = isset($args['type']) && $args['type'] === 'resource_classes' ? 'resource_classes' : 'properties';
 
         $term = empty($args['term']) ? $this->DC_Subject_id : $args['term'];
-        $termId = $this->getTermId($args['term'], $type);
+        $termId = $this->getTermId($term, $type);
         if (empty($termId)) {
             return;
         }
