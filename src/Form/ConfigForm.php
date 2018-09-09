@@ -207,6 +207,8 @@ Asia ↵
             ],
         ];
         $typeFieldset = [];
+        $typeVocabularyFieldset = [];
+        $typeVocabularyMemberFieldset = [];
         foreach ($types as $type => $typeData) {
             $referenceIndexesFieldset->add([
                 'name' => $type,

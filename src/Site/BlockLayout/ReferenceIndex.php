@@ -167,6 +167,7 @@ class ReferenceIndex extends AbstractBlockLayout
         if (empty($data['args']['resource_name'])) {
             $data['args']['resource_name'] = $this->defaultSettings['args']['resource_name'];
         }
+        $query = [];
         parse_str($data['args']['query'], $query);
         $data['args']['query'] = $query;
 

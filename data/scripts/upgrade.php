@@ -1,7 +1,19 @@
 <?php
 namespace Reference;
 
+/**
+ * @var Module $this
+ * @var \Zend\ServiceManager\ServiceLocatorInterface $serviceLocator
+ * @var string $oldVersion
+ * @var string $newVersion
+ */
 $services = $serviceLocator;
+
+/**
+ * @var \Omeka\Settings\Settings $settings
+ * @var \Doctrine\DBAL\Connection $connection
+ * @var array $config
+ */
 $settings = $services->get('Omeka\Settings');
 $connection = $services->get('Omeka\Connection');
 $config = require dirname(dirname(__DIR__)) . '/config/module.config.php';
@@ -15,7 +27,7 @@ $referencePlugin = new Mvc\Controller\Plugin\Reference($entityManager, $api);
 
 if (version_compare($oldVersion, '3.4.5', '<')) {
     $referenceSlugs = $settings->get('reference_slugs');
-    foreach ($referenceSlugs as $slug => &$slugData) {
+    foreach ($referenceSlugs as &$slugData) {
         $slugData['term'] = $slugData['id'];
         unset($slugData['id']);
     }
