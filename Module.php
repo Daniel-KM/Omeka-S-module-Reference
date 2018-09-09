@@ -2,6 +2,7 @@
 namespace Reference;
 
 use Omeka\Module\AbstractModule;
+use Omeka\Stdlib\Message;
 use Reference\Form\ConfigForm;
 use Zend\Mvc\Controller\AbstractController;
 use Zend\Mvc\MvcEvent;
@@ -204,10 +205,16 @@ class Module extends AbstractModule
                 $fieldsData[$type][$id][$name] = $fieldData['value'];
             }
         }
+
         // Normalize reference slugs by slug to simplify access to pages.
         $referenceSlugs = [];
+        $duplicateSlugs = [];
         foreach ($fieldsData as $type => $typeData) {
             foreach ($typeData as $id => $field) {
+                if (isset($referenceSlugs[$field['slug']])) {
+                    $duplicateSlugs[] = $field['slug'];
+                    continue;
+                }
                 $referenceSlug = [];
                 $referenceSlug['type'] = $type;
                 $referenceSlug['term'] = $id;
@@ -217,6 +224,15 @@ class Module extends AbstractModule
             }
         }
         $params['reference_slugs'] = $referenceSlugs;
+
+        if ($duplicateSlugs) {
+            $controller->messenger()->addError(new Message(
+                'The following slugs are duplicated: "%s".', // @translate
+                implode('", "', $duplicateSlugs)
+            ));
+            $controller->messenger()->addWarning('Changes were not saved.'); // @translate
+            return false;
+        }
 
         // Normalize the tree.
         $params['reference_tree_hierarchy'] = $referencePlugin
