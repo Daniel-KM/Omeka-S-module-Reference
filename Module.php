@@ -190,12 +190,14 @@ class Module extends AbstractModule
 
         // TODO Manage the data filtered by the config form.
         // $params = $form->getData();
+        $params = $params->toArray();
 
+        // Fix the "max_input_vars" limit in php.ini via js.
         // Recreate the array that was json encoded via js.
         $fieldsData = [];
-        foreach (['resource_classes', 'properties'] as $type) {
-            $fields = json_decode($params[$type], true);
-            foreach ($fields as $fieldData) {
+        $fields = json_decode($params['fieldsets'], true);
+        foreach ($fields as $type => $typeFields) {
+            foreach ($typeFields as $fieldData) {
                 $type = strtok($fieldData['name'], '[]');
                 $id = strtok('[]');
                 $name = strtok('[]');

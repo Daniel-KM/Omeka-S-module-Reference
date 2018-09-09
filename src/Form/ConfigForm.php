@@ -187,24 +187,6 @@ Asia ↵
             ],
         ]);
 
-        // Fix the "max_input_vars" limit in php.ini via js.
-        $this->add([
-            'name' => 'resource_classes',
-            'type' => Element\Hidden::class,
-            'attributes' => [
-                'id' => 'resource_classes',
-                'value' => '[]',
-            ],
-        ]);
-        $this->add([
-            'name' => 'properties',
-            'type' => Element\Hidden::class,
-            'attributes' => [
-                'id' => 'properties',
-                'value' => '[]',
-            ],
-        ]);
-
         $this->add([
             'name' => 'fieldset_reference_list_indexes',
             'type' => Fieldset::class,

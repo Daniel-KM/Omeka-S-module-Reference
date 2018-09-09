@@ -1,26 +1,28 @@
 $(document).ready(function() {
 
+// The form may have more than 1000 fields, so they are jsonified before submit.
+$('#content form').append('<input name="fieldsets" id="fieldsets" value="[]" type="hidden">');
 $('#content form').submit(function(event) {
     event.preventDefault();
     var data = $('#content form').serializeArray();
-    var resourceClasses = [];
-    var properties = [];
-
+    var fieldsets = {};
     $.each(data, $.proxy(function(index, element) {
         if (!element) {
             return;
         }
-        if (element.name.substring(0, 17) === 'resource_classes[') {
-            resourceClasses.push(element);
-            $('input[name="' + element.name + '"]').remove();
-        } else if (element.name.substring(0, 11) === 'properties[') {
-            properties.push(element);
-            $('input[name="' + element.name + '"]').remove();
+        var posChar = element.name.indexOf('[');
+        if (posChar <= 0) {
+            return;
         }
+        var name = element.name.slice(0, posChar);
+        if (fieldsets[name] === undefined) {
+            fieldsets[name] = [];
+        }
+        fieldsets[name].push(element);
+        $('input[name="' + element.name + '"]').remove();
     }, this));
 
-    $('#resource_classes').val(JSON.stringify(resourceClasses));
-    $('#properties').val(JSON.stringify(properties));
+    $('#fieldsets').val(JSON.stringify(fieldsets));
     $(this).unbind('submit').submit();
 });
 
