@@ -99,6 +99,7 @@ return [
             'reference_resource_name' => 'items',
             'reference_link_to_single' => true,
             'reference_total' => true,
+            'reference_search_list_values' => false,
             // Pages ("properties" or "resource_classes") to provide, by slug.
             'reference_slugs' => [
                 // 3 is the property id of Dublin Core Terms Subject, forced during install.

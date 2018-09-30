@@ -20,6 +20,8 @@ class ConfigForm extends Form implements TranslatorAwareInterface
 
     public function init()
     {
+        // TODO Move most of these options to site level (and admin settings).
+
         $this->add([
             'type' => Fieldset::class,
             'name' => 'fieldset_reference_general',
@@ -64,6 +66,15 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             'options' => [
                 'label' => 'Print total', // @translate
                 'info' => 'Print the total of resources for each reference.', // @translate
+            ],
+        ]);
+
+        $generalFieldset->add([
+            'name' => 'reference_search_list_values',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'List values in advanced search', // @translate
+                'info' => 'Dynamically list all available properties in the advanced search public form.', // @translate
             ],
         ]);
 

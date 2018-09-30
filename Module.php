@@ -4,6 +4,8 @@ namespace Reference;
 use Omeka\Module\AbstractModule;
 use Omeka\Stdlib\Message;
 use Reference\Form\ConfigForm;
+use Zend\EventManager\Event;
+use Zend\EventManager\SharedEventManagerInterface;
 use Zend\Mvc\Controller\AbstractController;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
@@ -73,6 +75,15 @@ class Module extends AbstractModule
 
         $controllerRights = ['browse', 'list', 'tree'];
         $acl->allow(null, Controller\Site\ReferenceController::class, $controllerRights);
+    }
+
+    public function attachListeners(SharedEventManagerInterface $sharedEventManager)
+    {
+        $sharedEventManager->attach(
+            'Omeka\Controller\Site\Item',
+            'view.advanced_search',
+            [$this, 'handleViewAdvancedSearch']
+        );
     }
 
     public function getConfigForm(PhpRenderer $renderer)
@@ -243,5 +254,27 @@ class Module extends AbstractModule
         foreach ($params as $name => $value) {
             $settings->set($name, $value);
         }
+    }
+
+    public function handleViewAdvancedSearch(Event $event)
+    {
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+        if (!$settings->get('reference_search_list_values', false)) {
+            return;
+        }
+
+        // The original advanced-search/properties.phtml view template cannot be
+        // used, because it is always replaced by the module one once it is
+        // available, whatever the setting.
+        // @see application/view/common/advanced-search.phtml.
+        $partials = $event->getParam('partials');
+        $key = array_search('common/advanced-search/properties', $partials);
+        // If the key doesn't exist, it means another module doesn't want it.
+        if ($key === false) {
+            return;
+        }
+        $partials[$key] = 'common/advanced-search/properties-reference';
+        $event->setParam('partials', $partials);
     }
 }
