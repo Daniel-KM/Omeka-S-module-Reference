@@ -264,17 +264,11 @@ class Module extends AbstractModule
             return;
         }
 
-        // The original advanced-search/properties.phtml view template cannot be
-        // used, because it is always replaced by the module one once it is
-        // available, whatever the setting.
-        // @see application/view/common/advanced-search.phtml.
-        $partials = $event->getParam('partials');
-        $key = array_search('common/advanced-search/properties', $partials);
-        // If the key doesn't exist, it means another module doesn't want it.
-        if ($key === false) {
-            return;
-        }
-        $partials[$key] = 'common/advanced-search/properties-reference';
-        $event->setParam('partials', $partials);
+        $view = $event->getTarget();
+        $view->headLink()->appendStylesheet($view->assetUrl('vendor/chosen-js/chosen.css', 'Omeka'));
+        $view->headScript()->appendFile($view->assetUrl('vendor/chosen-js/chosen.jquery.js', 'Omeka'));
+        $view->headScript()->appendFile($view->assetUrl('js/reference-advanced-search.js', 'Reference'));
+        $view->headScript()->appendScript('var basePath = ' . json_encode($view->basePath()) . ';' . PHP_EOL
+            . 'var siteSlug = ' . json_encode($view->params()->fromRoute('site-slug')));
     }
 }

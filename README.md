@@ -134,6 +134,7 @@ TODO
 - Fix initials for some letters ([#2](https://github.com/Daniel-KM/Omeka-S-module-Reference/issues/2)) via a custom DQL function for `convert`.
 - Create automatically the pages related to the block index in order to remove
   the global pages.
+- Manage advanced search reference by site and in admin board.
 
 
 Warning
