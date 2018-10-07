@@ -266,6 +266,7 @@ class Module extends AbstractModule
 
         $view = $event->getTarget();
         $view->headLink()->appendStylesheet($view->assetUrl('vendor/chosen-js/chosen.css', 'Omeka'));
+        $view->headLink()->appendStylesheet($view->assetUrl('css/reference.css', 'Reference'));
         $view->headScript()->appendFile($view->assetUrl('vendor/chosen-js/chosen.jquery.js', 'Omeka'));
         $view->headScript()->appendFile($view->assetUrl('js/reference-advanced-search.js', 'Reference'));
         $view->headScript()->appendScript('var basePath = ' . json_encode($view->basePath()) . ';' . PHP_EOL
