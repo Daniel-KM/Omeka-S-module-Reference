@@ -285,6 +285,8 @@ class Reference extends AbstractPlugin
      * "order", "query", "per_page" and "page".
      * @param array $options Options to display references. Values are booleans:
      * - raw: Show references as raw text, not links (default to false)
+     * - link_to_single: When there is one result for a term, link it directly
+     * to the resource, and not to the list page (default to config)
      * - skiplinks: Add the list of letters at top and bottom of the page
      * - headings: Add each letter as headers
      * @return string Html list.
@@ -386,11 +388,11 @@ class Reference extends AbstractPlugin
      * default), "type", "resource_name", and "query"
      * @param array $options Options to display the references. Values are booleans:
      * - raw: Show subjects as raw text, not links (default to false)
-     * - link_to_single: Link to single resource, else to browse even when there
-     * is only one resource (defaul to config)
+     * - link_to_single: When there is one result for a term, link it directly
+     * to the resource, and not to the list page (default to config)
      * - branch: The managed terms are branches (with the path separated with
-     * " :: " (defaul to config)PO
-     * - expanded: Show tree as expanded (defaul to config)
+     * " :: " (default to config)
+     * - expanded: Show tree as expanded (default to config)
      * @return string Html list.
      */
     public function displayTree($references, array $args, array $options = [])
@@ -426,10 +428,8 @@ class Reference extends AbstractPlugin
         // Sql searches are case insensitive, so a convert should be done.
         $hasMb = function_exists('mb_strtolower');
         $isBranch = $options['branch'];
-        $withFirst = $options['link_to_single'] === 'withFirst';
-        $output = $withFirst ? 'withFirst' : 'list';
+        $output = $options['link_to_single'] ? 'withFirst' : 'list';
         $initial = false;
-
         if ($isBranch) {
             $branches = [];
             $lowerBranches = [];
@@ -481,7 +481,7 @@ class Reference extends AbstractPlugin
             if (isset($lowerTotals[$lower])) {
                 $referenceData = [
                     'total' => $lowerTotals[$lower]['total'],
-                    'first_id' => $withFirst
+                    'first_id' => $options['link_to_single']
                         ? $lowerTotals[$lower]['first_id']
                         : null,
                 ];
