@@ -61,11 +61,13 @@ class ReferenceController extends AbstractActionController
         $order = ['value.value' => 'ASC'];
         $query = ['site_id' => $this->currentSite()->id()];
 
-        $output = $this->params()->fromQuery('output');
-        if ($output === 'json') {
-            $references = $this->reference()->getList($term, $type, $resourceName, $order, $query);
-            $view = new JsonModel($references);
-            return $view;
+        // @deprecated Use format ".json" instead of query "?output=json". Will be reomoved in 3.4.12.
+        $output = $this->params()->fromRoute('output') ?: $this->params()->fromQuery('output');
+        switch ($output) {
+            case 'json':
+                $references = $this->reference()->getList($term, $type, $resourceName, $order, $query);
+                $view = new JsonModel($references);
+                return $view;
         }
 
         $total = $this->reference()->count($term, $type, $resourceName, $query);

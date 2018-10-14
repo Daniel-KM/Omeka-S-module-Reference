@@ -47,7 +47,7 @@ return [
             'site' => [
                 'child_routes' => [
                     'reference' => [
-                        'type' => 'Literal',
+                        'type' => \Zend\Router\Http\Literal::class,
                         'options' => [
                             'route' => '/reference',
                             'defaults' => [
@@ -59,18 +59,33 @@ return [
                         'may_terminate' => true,
                         'child_routes' => [
                             'list' => [
-                                'type' => 'Segment',
+                                'type' => \Zend\Router\Http\Segment::class,
                                 'options' => [
                                     'route' => '/:slug',
+                                    'constraints' => [
+                                        'slug' => '[^.]+',
+                                    ],
                                     'defaults' => [
                                         'action' => 'list',
+                                    ],
+                                ],
+                                'may_terminate' => true,
+                                'child_routes' => [
+                                    'output' => [
+                                        'type' => \Zend\Router\Http\Segment::class,
+                                        'options' => [
+                                            'route' => '.:output',
+                                            'constraints' => [
+                                                'output' => 'json',
+                                            ],
+                                        ],
                                     ],
                                 ],
                             ],
                         ],
                     ],
                     'reference_tree' => [
-                        'type' => 'Literal',
+                        'type' => \Zend\Router\Http\Literal::class,
                         'options' => [
                             'route' => '/reference-tree',
                             'defaults' => [

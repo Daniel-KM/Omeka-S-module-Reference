@@ -43,8 +43,9 @@ The plugin adds pages in all sites, that can be added to the navigation:
 * "Browse by reference" (http://www.example.com/s/my-site/reference).
 * "Hierarchy of references" (http://www.example.com/s/my-site/reference-tree).
 
-The results are available via json too: simply add `?output=json` to the url
-(available only for lists).
+The results are available via json too: simply add `.json` to the url (available
+only for lists). The old `?output=json` is deprecated and will be removed in
+version 3.4.12.
 
 The config is the same in the main config form or in the block form for pages.
 
