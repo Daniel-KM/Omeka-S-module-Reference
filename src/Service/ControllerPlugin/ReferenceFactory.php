@@ -9,12 +9,10 @@ class ReferenceFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $name, array $options = null)
     {
-        $entityManager = $services->get('Omeka\EntityManager');
-        $controllerPluginManager = $services->get('ControllerPluginManager');
-        $api = $controllerPluginManager->get('api');
         return new Reference(
-            $entityManager,
-            $api
+            $services->get('Omeka\EntityManager'),
+            $services->get('Omeka\ApiAdapterManager'),
+            $services->get('ControllerPluginManager')->get('api')
         );
     }
 }

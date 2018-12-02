@@ -2,6 +2,8 @@
 namespace Reference\Mvc\Controller\Plugin;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\QueryBuilder;
+use Omeka\Api\Adapter\Manager as AdapterManager;
 use Omeka\Api\Representation\PropertyRepresentation;
 use Omeka\Api\Representation\ResourceClassRepresentation;
 use Omeka\Mvc\Controller\Plugin\Api;
@@ -25,17 +27,24 @@ class Reference extends AbstractPlugin
     protected $entityManager;
 
     /**
+     * @param AdapterManager
+     */
+    protected $adapterManager;
+
+    /**
      * @param Api
      */
     protected $api;
 
     /**
      * @param EntityManager $entityManager
+     * @param AdapterManager $adapterManager
      * @param Api $api
      */
-    public function __construct(EntityManager $entityManager, Api $api)
+    public function __construct(EntityManager $entityManager, AdapterManager $adapterManager, Api $api)
     {
         $this->entityManager = $entityManager;
+        $this->adapterManager = $adapterManager;
         $this->api = $api;
     }
 
@@ -607,6 +616,7 @@ class Reference extends AbstractPlugin
     ) {
         $entityManager = $this->entityManager;
         $qb = $entityManager->createQueryBuilder();
+        $expr = $qb->expr();
 
         switch ($type) {
             case 'resource_classes':
@@ -618,7 +628,7 @@ class Reference extends AbstractPlugin
                         'DISTINCT value.value',
                         // "Distinct" avoids to count duplicate values in properties in
                         // a resource: we count resources, not properties.
-                        $qb->expr()->countDistinct('resource.id') . ' AS total',
+                        $expr->countDistinct('resource.id') . ' AS total',
                     ])
                     // This checks visibility automatically.
                     ->from(\Omeka\Entity\Resource::class, 'resource')
@@ -629,7 +639,7 @@ class Reference extends AbstractPlugin
                         'value.resource = resource AND value.property = :property_id'
                     )
                     ->setParameter('property_id', $termId)
-                    ->where($qb->expr()->eq('resource.resourceClass', ':resource_class'))
+                    ->where($expr->eq('resource.resourceClass', ':resource_class'))
                     ->setParameter('resource_class', (int) $resourceClassId)
                     ->groupBy('value.value')
                 ;
@@ -647,15 +657,15 @@ class Reference extends AbstractPlugin
                         'value.value',
                         // "Distinct" avoids to count duplicate values in properties in
                         // a resource: we count resources, not properties.
-                        $qb->expr()->countDistinct('resource.id') . ' AS total',
+                        $expr->countDistinct('resource.id') . ' AS total',
                     ])
                     ->from(\Omeka\Entity\Value::class, 'value')
                     // This join allow to check visibility automatically too.
                     ->innerJoin($entityClass, 'resource', 'WITH', 'value.resource = resource')
-                    ->andWhere($qb->expr()->eq('value.property', ':property'))
+                    ->andWhere($expr->eq('value.property', ':property'))
                     ->setParameter('property', $termId)
                     // Only literal values.
-                    ->andWhere($qb->expr()->isNotNull('value.value'))
+                    ->andWhere($expr->isNotNull('value.value'))
                     ->groupBy('value.value')
                 ;
                 break;
@@ -698,23 +708,11 @@ class Reference extends AbstractPlugin
             $qb
                 ->addSelect([
                     // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
-                    $qb->expr()->upper($qb->expr()->substring('value.value', 1, 1)) . 'AS initial',
+                    $expr->upper($expr->substring('value.value', 1, 1)) . 'AS initial',
                 ]);
         }
 
-        // TODO Allow to use a query for resources.
-        // TODO Use a temporary table or use get the qb from the adapter.
-        if ($query && $entityClass !== \Omeka\Entity\Resource::class) {
-            $resourceName = $this->mapEntityToResourceName($entityClass);
-            $ids = $this->api->search($resourceName, $query, ['returnScalar' => 'id'])->getContent();
-            if ($ids) {
-                $qb
-                    ->andWhere('resource.id IN (:ids)')
-                    ->setParameter('ids', $ids);
-            } else {
-                return [];
-            }
-        }
+        $this->limitQuery($qb, $entityClass, $query);
 
         if ($values) {
             $qb
@@ -793,15 +791,16 @@ class Reference extends AbstractPlugin
     {
         $entityManager = $this->entityManager;
         $qb = $entityManager->createQueryBuilder();
+        $expr = $qb->expr();
 
         switch ($type) {
             case 'resource_classes':
                 $qb
                     ->select([
-                        $qb->expr()->countDistinct('resource.id'),
+                        $expr->countDistinct('resource.id'),
                     ])
                     ->from(\Omeka\Entity\Resource::class, 'resource')
-                    ->andWhere($qb->expr()->eq('resource.resourceClass', ':resource_class'))
+                    ->andWhere($expr->eq('resource.resourceClass', ':resource_class'))
                     ->setParameter('resource_class', (int) $termId);
                 break;
 
@@ -810,14 +809,14 @@ class Reference extends AbstractPlugin
                 $qb
                     ->select([
                         // Here, this is the count of references, not resources.
-                        $qb->expr()->countDistinct('value.value'),
+                        $expr->countDistinct('value.value'),
                     ])
                     ->from(\Omeka\Entity\Value::class, 'value')
                     // This join allow to check visibility automatically too.
                     ->innerJoin(\Omeka\Entity\Resource::class, 'resource', 'WITH', 'value.resource = resource')
-                    ->andWhere($qb->expr()->eq('value.property', ':property'))
+                    ->andWhere($expr->eq('value.property', ':property'))
                     ->setParameter('property', (int) $termId)
-                    ->andWhere($qb->expr()->isNotNull('value.value'));
+                    ->andWhere($expr->isNotNull('value.value'));
                 break;
         }
 
@@ -826,22 +825,45 @@ class Reference extends AbstractPlugin
                 ->innerJoin($entityClass, 'res', 'WITH', 'resource.id = res.id');
         }
 
-        // TODO Allow to use a query for resources.
-        // TODO Use a temporary table or use get the qb from the adapter.
-        if ($query && $entityClass !== \Omeka\Entity\Resource::class) {
-            $resourceName = $this->mapEntityToResourceName($entityClass);
-            $ids = $this->api->search($resourceName, $query, ['returnScalar' => 'id'])->getContent();
-            if ($ids) {
-                $qb
-                    ->andWhere('resource.id IN (:ids)')
-                    ->setParameter('ids', $ids);
-            } else {
-                return 0;
-            }
-        }
+        $this->limitQuery($qb, $entityClass, $query);
 
         $totalRecords = $qb->getQuery()->getSingleScalarResult();
         return $totalRecords;
+    }
+
+    /**
+     * Limit the results with a query (generally the site query).
+     *
+     * @param QueryBuilder $qb
+     * @param string $entityClass
+     * @param array $query
+     */
+    protected function limitQuery(QueryBuilder $qb, $entityClass, array $query = null)
+    {
+        if (empty($query)) {
+            return;
+        }
+
+        $subQb = $this->entityManager->createQueryBuilder()
+            ->select($entityClass . '.id')
+            ->from($entityClass, $entityClass);
+        /** @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter */
+        $resourceName = $this->mapEntityToResourceName($entityClass);
+        $adapter = $this->adapterManager->get($resourceName);
+        $adapter->buildQuery($subQb, $query);
+
+        // There is no colision, because adapter query uses alias ":omeka_".
+        $qb
+            ->andWhere($qb->expr()->in('resource.id', $subQb->getDQL()));
+
+        $subParams = $subQb->getParameters();
+        foreach ($subParams as $parameter) {
+            $qb->setParameter(
+                $parameter->getName(),
+                $parameter->getValue(),
+                $parameter->getType()
+            );
+        }
     }
 
     /**
@@ -849,7 +871,7 @@ class Reference extends AbstractPlugin
      *
      * @param mixed $term May be the property id, the term, or the object.
      * @param string $type "properties" (default) or "resource_classes".
-     * @return int .
+     * @return int The term id if any.
      */
     protected function getTermId($term, $type = 'properties')
     {
