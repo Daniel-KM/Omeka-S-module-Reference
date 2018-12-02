@@ -35,8 +35,15 @@ class Reference extends AbstractHelper
      * @return Reference|array|null The result or null if called directly, else
      * this view helper.
      */
-     public function __invoke($term = null, $type = null, $resourceName = null, $order = null, $query = null, $perPage = null, $page = null)
-     {
+     public function __invoke(
+         $term = null,
+         $type = null,
+         $resourceName = null,
+         $order = null,
+         array $query = null,
+         $perPage = null,
+         $page = null
+     ) {
         if (empty($term)) {
             return $this;
         }
@@ -56,7 +63,7 @@ class Reference extends AbstractHelper
      * @param int $page One-based page number.
      * @return array Associative array with total and first record ids.
      */
-    public function getList($term, $type = null, $resourceName = null, $order = null, $query = null, $perPage = null, $page = null)
+    public function getList($term, $type = null, $resourceName = null, $order = null, array $query = null, $perPage = null, $page = null)
     {
         return $this->reference->getList($term, $type, $resourceName, $order, $query, $perPage, $page);
     }
@@ -85,7 +92,7 @@ class Reference extends AbstractHelper
      * @param array $query An api search formatted query to limit results.
      * @return int The number of references if only one resource name is set.
      */
-    public function count($term, $type = null, $resourceName = null, $query = null)
+    public function count($term, $type = null, $resourceName = null, array $query = null)
     {
         return $this->reference->count($term, $type, $resourceName, $query);
     }
@@ -119,6 +126,7 @@ class Reference extends AbstractHelper
      *
      * Output via the default partial:
      *
+     * ```html
      * <ul class="tree">
      *     <li>Europe
      *         <div class="expander"></div>
@@ -150,6 +158,7 @@ class Reference extends AbstractHelper
      *         </ul>
      *     </li>
      * </ul>
+     * ```
      *
      * @param array $referenceLevels Flat associative array of references to
      * show with reference as key and level as value.

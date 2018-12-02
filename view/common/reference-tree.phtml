@@ -1,5 +1,13 @@
 <?php
-// The arg "query" that may limit the references is available too.
+/**
+ * @var \Zend\View\Renderer\PhpRenderer $this
+ * @var array $references
+ * @var string $term
+ * @var string $resourceName
+ * @var array $args
+ * @var array $options
+ * @var array $query
+ */
 
 if (count($references)):
     $this->headLink()->appendStylesheet($this->assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));

@@ -6,13 +6,9 @@ use Omeka\Form\Element\ResourceClassSelect;
 use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
-use Zend\I18n\Translator\TranslatorAwareInterface;
-use Zend\I18n\Translator\TranslatorAwareTrait;
 
-class ReferenceBlockForm extends Form implements TranslatorAwareInterface
+class ReferenceBlockForm extends Form
 {
-    use TranslatorAwareTrait;
-
     public function init()
     {
         $this->add([
@@ -101,7 +97,7 @@ class ReferenceBlockForm extends Form implements TranslatorAwareInterface
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Heading', // @translate
-                'info' => 'Translatable title above references, if any.',
+                'info' => 'Translatable title above references, if any.', // @translate
             ],
         ]);
         $optionsFieldset->add([
@@ -143,11 +139,5 @@ class ReferenceBlockForm extends Form implements TranslatorAwareInterface
             'name' => 'o:block[__blockIndex__][o:data][options]',
             'required' => false,
         ]);
-    }
-
-    protected function translate($args)
-    {
-        $translator = $this->getTranslator();
-        return $translator->translate($args);
     }
 }

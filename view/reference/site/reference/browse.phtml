@@ -1,6 +1,14 @@
 <?php
+/**
+ * @var \Zend\View\Renderer\PhpRenderer $this
+ * @var array $references
+ * @var array $types
+ * @var string $resourceName
+ * @var array $query
+ * @var \Omeka\Api\Representation\SiteRepresentation $site
+ */
+
 $translate = $this->plugin('translate');
-$escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 $siteSlug = $this->params()->fromRoute('site-slug');
 $resourceName = empty($resourceName) ? 'items' : $resourceName;
@@ -21,8 +29,7 @@ $query = empty($query) ? ['site_id' => $site->id()] : $query;
                     $this->url('site/reference/list', ['site-slug' => $siteSlug, 'slug' => $slug]),
                     ['title' => sprintf($translate('Browse %s'), $slugData['label'])]
                 );
-            ?>
-            </li>
+            ?></li>
         <?php endforeach; ?>
         </ul>
     <?php else: ?>
@@ -32,7 +39,7 @@ $query = empty($query) ? ['site_id' => $site->id()] : $query;
         $type = null;
         $first = true;
         foreach ($references as $slug => $slugData):
-        $changedType = $slugData['type'] != $type;
+            $changedType = $slugData['type'] != $type;
             if ($changedType):
                 if ($first):
                     $first = false;
@@ -42,19 +49,20 @@ $query = empty($query) ? ['site_id' => $site->id()] : $query;
             <li><?php
                 echo $slugData['type'] === 'resource_classes' ? $translate('Main types') : $translate('Metadata');
                 $type = $slugData['type'];
-            ?><ul>
-            <?php endif; ?>
+                ?><ul>
+            <?php
+            endif; ?>
             <li><?php
                 echo $this->hyperlink(
                     sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slugData['term'], $slugData['type'], $resourceName, $query)),
                     $this->url('site/reference/list', ['site-slug' => $siteSlug, 'slug' => $slug]),
                     ['title' => sprintf($translate('Browse %s'), $slugData['label'])]
                 );
-            ?>
-            </li>
-        <?php endforeach; ?>
+            ?></li>
+        <?php
+        endforeach; ?>
         </ul></li>
+        </ul>
     <?php endif; ?>
-    </ul>
     <?php endif; ?>
 </div>

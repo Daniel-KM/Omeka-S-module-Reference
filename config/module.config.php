@@ -24,11 +24,11 @@ return [
     ],
     'form_elements' => [
         'invokables' => [
+            Form\ReferenceBlockForm::class => Form\ReferenceBlockForm::class,
             Form\ReferenceIndexBlockForm::class => Form\ReferenceIndexBlockForm::class,
         ],
         'factories' => [
             Form\ConfigForm::class => Service\Form\ConfigFormFactory::class,
-            Form\ReferenceBlockForm::class => Service\Form\ReferenceBlockFormFactory::class,
             Form\ReferenceTreeBlockForm::class => Service\Form\ReferenceTreeBlockFormFactory::class,
         ],
     ],

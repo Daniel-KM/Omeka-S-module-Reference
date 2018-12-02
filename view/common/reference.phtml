@@ -1,5 +1,13 @@
 <?php
-// The arg "query" that may limit the references is available too.
+/**
+ * @var \Zend\View\Renderer\PhpRenderer $this
+ * @var array $references
+ * @var term $term
+ * @var string $resourceName
+ * @var array $options
+ * @var string $type
+ * @var array $query
+ */
 
 if (count($references)):
     $this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Reference'));
@@ -38,7 +46,7 @@ if (count($references)):
             if ($hasInitial) {
                 $first_char = $referenceData['initial'];
             } elseif (extension_loaded('mbstring')) {
-                $first_char =  mb_strtoupper(mb_substr($reference, 0, 1));
+                $first_char = mb_strtoupper(mb_substr($reference, 0, 1));
             } else {
                 $first_char = substr($reference, 0, 1);
                 if (strlen($first_char) == 0) {

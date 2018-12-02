@@ -55,8 +55,15 @@ class Reference extends AbstractPlugin
      * @return Reference|array|null The result or null if called directly, else
      * this view plugin.
      */
-    public function __invoke($term = null, $type = null, $resourceName = null, $order = null,$query = null, $perPage = null, $page = null)
-    {
+    public function __invoke(
+        $term = null,
+        $type = null,
+        $resourceName = null,
+        $order = null,
+        array $query = null,
+        $perPage = null,
+        $page = null
+    ) {
         if (empty($term)) {
             return $this;
         }
@@ -76,7 +83,7 @@ class Reference extends AbstractPlugin
      * @param int $page One-based page number.
      * @return array Associative array with total and first record ids.
      */
-    public function getList($term, $type = null, $resourceName = null, $order = null, $query = null, $perPage = null, $page = null)
+    public function getList($term, $type = null, $resourceName = null, $order = null, array $query = null, $perPage = null, $page = null)
     {
         $type = $type === 'resource_classes' ? 'resource_classes' : 'properties';
 
@@ -260,7 +267,7 @@ class Reference extends AbstractPlugin
      * @param array $query An api search formatted query to limit results.
      * @return int The number of references if only one resource name is set.
      */
-    public function count($term, $type = null, $resourceName = null, $query = null)
+    public function count($term, $type = null, $resourceName = null, array $query = null)
     {
         $type = $type === 'resource_classes' ? 'resource_classes' : 'properties';
 
@@ -351,6 +358,7 @@ class Reference extends AbstractPlugin
      *
      * Output via the default partial:
      *
+     * ```html
      * <ul class="tree">
      *     <li>Europe
      *         <div class="expander"></div>
@@ -382,6 +390,7 @@ class Reference extends AbstractPlugin
      *         </ul>
      *     </li>
      * </ul>
+     * ```
      *
      * @param array $referenceLevels References and levels to show.
      * @param array $args Specify the references with "term" (dcterms:subject by
@@ -589,8 +598,8 @@ class Reference extends AbstractPlugin
         $type,
         $entityClass,
         $order = null,
-        $query = null,
-        $values = [],
+        array $query = null,
+        array $values = [],
         $perPage = null,
         $page = null,
         $output = null,
@@ -736,8 +745,9 @@ class Reference extends AbstractPlugin
                     } elseif (extension_loaded('iconv')) {
                         $result = array_map(function ($v) {
                             $v['total'] = (int) $v['total'];
-                            if ($conv = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial'])) {
-                                $v['initial'] = $conv;
+                            $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);;
+                            if ($trans) {
+                                $v['initial'] = $trans;
                             }
                             return $v;
                         }, $result);
@@ -779,7 +789,7 @@ class Reference extends AbstractPlugin
      * @param array $query An api search formatted query to limit results.
      * @return int The number of references if only one entity class is set.
      */
-    protected function countReferences($termId, $type, $entityClass, $query = null)
+    protected function countReferences($termId, $type, $entityClass, array $query = null)
     {
         $entityManager = $this->entityManager;
         $qb = $entityManager->createQueryBuilder();

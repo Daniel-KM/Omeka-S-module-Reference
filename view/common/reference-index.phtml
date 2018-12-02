@@ -1,6 +1,14 @@
 <?php
+/**
+ * @var \Zend\View\Renderer\PhpRenderer $this
+ * @var array $terms
+ * @var bool $totals
+ * @var string $resourceName
+ * @var array $args
+ * @var string $type
+ */
+
 $translate = $this->plugin('translate');
-$escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 $siteSlug = $this->params()->fromRoute('site-slug');
 ?>
