@@ -104,7 +104,7 @@ Asia ↵
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Heading', // @translate
-                'info' => 'Translatable title above references, if any.',
+                'info' => 'Translatable title above references, if any. The placeholder {total} can be used.', // @translate
             ],
         ]);
         $optionsFieldset->add([

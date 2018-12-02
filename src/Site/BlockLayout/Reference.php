@@ -164,6 +164,7 @@ class Reference extends AbstractBlockLayout
             : [strtok($data['args']['order'], ' ') => strtok(' ')];
 
         // Make the search simpler and quicker later on display.
+        // TODO To be removed in Omeka 1.2.
         $data['args']['termId'] = $this->api->searchOne($data['args']['type'], [
             'term' => $data['args']['term'],
         ])->getContent()->id();
