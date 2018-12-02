@@ -9,47 +9,107 @@
  * @var array $query
  */
 
-$translate = $this->plugin('translate');
-$hyperlink = $this->plugin('hyperlink');
-$url = $this->plugin('url');
-$siteSlug = $this->params()->fromRoute('site-slug');
-$emptyTitle = $translate('[Untitled]');
-// $api = $this->api();
+// It is recommended to skip "link_to_single" when there are more than 5000
+// references on a page and there are custom_url (clean url, ark...) with many
+// single values.
 
 if (count($references)):
+    $translate = $this->plugin('translate');
+    $url = $this->plugin('url');
+    $siteSlug = $this->params()->fromRoute('site-slug');
+    // This is the Omeka default title. May be different in the database.
+    $emptyTitle = $translate('[Untitled]');
+    // $api = $this->api();
+
     $this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Reference'));
 
-    $termId = $term;
     $mapResourcesControllers = ['resources' => 'resource', 'items' => 'item', 'item_sets' => 'item-set', 'media' => 'media'];
     $controllerName = $mapResourcesControllers[$resourceName];
 
     // Set default values if needed.
-    $options += ['link_to_single' => true, 'total' => true, 'raw' => false, 'skiplinks' => true, 'headings' => true];
-    $linkToSingle = $options['link_to_single'];
-    $total = $options['total'];
-    $raw = $options['raw'];
-    $skipLinks = $options['skiplinks'];
-    $headings = $options['headings'];
+    $options += ['link_to_single' => true, 'total' => true, 'raw' => false, 'skiplinks' => true, 'headings' => true, 'custom_url' => false];
+    $options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
     $hasInitial = array_key_exists('initial', $references[key($references)]);
+    $propertyTitle = version_compare(\Omeka\Module::VERSION, '1.2', '<') ? '1' : 'dcterms:title';
+
+    // Set default templates according to options for improved performance.
+    $template = '';
+    $replaceBase = [];
+
+    if ($options['headings']):
+        if ($options['skiplinks']):
+            $templateHeading = '<h3 class="reference-heading" id="{heading_id}"><a href="#reference-skiplinks">{heading_text}</a></h3>' . PHP_EOL;
+        else:
+            $templateHeading = '<h3 class="reference-heading" id="{heading_id}">{heading_text}</h3>' . PHP_EOL;
+        endif;
+        $template .= '{heading}';
+        $replaceBase['{heading}'] = '';
+    endif;
+
+    $replaceBase['{reference_text}'] = '';
+
+    if ($options['raw']):
+        if ($options['total']):
+            $template .= '<div class="reference-record">{reference_text}{reference_total}</div>' . PHP_EOL;
+            $replaceBase['{reference_total}'] = '';
+        else:
+            $template .= '<div class="reference-record">{reference_text}</div>' . PHP_EOL;
+        endif;
+    else:
+        $replaceBase['{reference_url}'] = '';
+        if ($options['total']):
+            $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}</a>{reference_total}</div>' . PHP_EOL;
+            $replaceBase['{reference_total}'] = '';
+        else:
+            $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}</a></div>' . PHP_EOL;
+        endif;
+        if (!$options['custom_url']):
+            $tempPlaceholder = '00999999990999999001';
+            $templateUrlSingle = str_replace($tempPlaceholder, '{reference}',
+                $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $tempPlaceholder], false));
+            $query = [];
+            if ($type === 'resource_classes'):
+                // The default url helper doesn't encode "&" as "&amp;".
+                // $query['resource_class_id'] = $term;
+                // $query['property'] = [['property' => $propertyTitle, 'type' => 'nex']];
+                // $templateUrlEmpty = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
+                // $query['property'] = [['property' => $propertyTitle, 'type' => 'eq', 'text' => $tempPlaceholder]];
+                // $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
+                $templateUrlEmpty = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false)
+                    . '?resource_class_id=' . rawurlencode($term) . '&amp;property%5B0%5D%5Bproperty%5D=' . rawurlencode($propertyTitle) . '&amp;property%5B0%5D%5Btype%5D=nex';
+                $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false)
+                    . '?resource_class_id=' . rawurlencode($term) . '&amp;property%5B0%5D%5Bproperty%5D=' . rawurlencode($propertyTitle) . '&amp;property%5B0%5D%5Btype%5D=eq&amp;property%5B0%5D%5Btext%5D={reference}';
+            else:
+                // $query['property'] = [['property' => $term, 'type' => 'eq', 'text' => $tempPlaceholder]];
+                // $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
+                // $templateUrl = str_replace($tempPlaceholder, '{reference}', $templateUrl);
+                $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false)
+                    . '?property%5B0%5D%5Bproperty%5D=' . rawurlencode($term) . '&amp;property%5B0%5D%5Btype%5D=eq&amp;property%5B0%5D%5Btext%5D={reference}';
+            endif;
+        endif;
+    endif;
 
     // Prepare and display skip links.
-    if ($skipLinks):
+    if ($options['skiplinks']):
         $paginationList = $this->partial('common/reference-skiplinks', ['references' => $references]);
     ?>
-<div class="pagination reference-pagination pagination-top">
+<div id="reference-skiplinks" class="pagination reference-pagination pagination-top">
     <?php echo $paginationList; ?>
 </div>
     <?php endif; ?>
 <div id="reference-headings">
     <?php
+
     $current_heading = '';
-    $current_id = '';
+    $current_heading_id = '';
     foreach ($references as $reference => $referenceData):
         $emptyReferenceValue = is_null($referenceData['value']);
         $referenceValue = $emptyReferenceValue ? $emptyTitle : $referenceData['value'];
 
+        $replace = $replaceBase;
+
         // Add the first character as header if wanted.
-        if ($headings):
+        if ($options['headings']):
             if ($hasInitial) {
                 $first_char = $referenceData['initial'];
             } elseif (extension_loaded('mbstring')) {
@@ -66,59 +126,75 @@ if (count($references)):
             $current_first_char = $first_char;
             if ($current_heading !== $current_first_char):
                 $current_heading = $current_first_char;
-                $current_id = $current_heading === '#0-9' ? 'number' : $current_heading;
-            ?>
-    <h3 class="reference-heading" id="<?php echo $current_id; ?>"><?php echo $current_heading; ?></h3>
-            <?php
+                $current_heading_id = $current_heading === '#0-9' ? 'number' : $current_heading;
+                $heading = [
+                    '{heading_id}' => $current_heading_id,
+                    '{heading_text}' => $current_heading,
+                ];
+                $heading = str_replace(array_keys($heading), array_values($heading), $templateHeading);
+                $replace['{heading}'] = $heading;
             endif;
         endif;
 
-        if ($raw):
+        if ($options['raw']):
             $referenceText = $reference;
             $referenceNumber = true;
+            $replace['{reference_text}'] = $referenceText;
         else:
-            if ($linkToSingle && $referenceData['total'] === 1):
-                // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
-                // $resource = $api->read($resourceName, $referenceData['first_id'])->getContent();
-                // $referenceText = $hyperlink($referenceValue, $resource->siteUrl());
-                $referenceText = $hyperlink(
-                    $referenceValue,
-                    $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $referenceData['first_id']], false)
-                );
-                $referenceNumber = false;
-            else:
-                if ($type === 'resource_classes'):
-                    $query = [];
-                    $query['resource_class_id'] = $termId;
-                    $query['property'] = $emptyReferenceValue
-                        ? [['property' => 1 /* dcterms:title */, 'type' => 'nex']]
-                        : [['property' => 1 /* dcterms:title */, 'type' => 'eq', 'text' => $reference]];
+            $referenceNumber = !$options['link_to_single'] || $referenceData['total'] > 1;
+
+            if ($options['custom_url']):
+                if ($referenceNumber):
+                    if ($type === 'resource_classes'):
+                        $query = [];
+                        $query['resource_class_id'] = $term;
+                        $query['property'] = $emptyReferenceValue
+                            ? [['property' => $propertyTitle, 'type' => 'nex']]
+                            : [['property' => $propertyTitle, 'type' => 'eq', 'text' => $reference]];
+                    else:
+                        $query = ['property' => [['property' => $term, 'type' => 'eq', 'text' => $reference]]];
+                    endif;
+                    $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
                 else:
-                    $query = [
-                        'property' => [['property' => $termId, 'type' => 'eq', 'text' => $reference]],
-                    ];
+                    // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
+                    // $resource = $api->read($resourceName, $referenceData['first_id'])->getContent();
+                    // $referenceUrl = $resource->siteUrl();
+                    $referenceUrl = $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $referenceData['first_id']], false);
                 endif;
-                $referenceText = $hyperlink(
-                    $referenceValue,
-                    $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false)
-                );
-                $referenceNumber = true;
+
+            else:
+                if ($referenceNumber):
+                    if ($type === 'resource_classes'):
+                        $referenceUrl = $emptyReferenceValue
+                            ? $templateUrlEmpty
+                            : str_replace('{reference}', rawurlencode($reference), $templateUrl);
+                    else:
+                        $referenceUrl = str_replace('{reference}', rawurlencode($reference), $templateUrl);
+                    endif;
+                else:
+                    $referenceUrl = str_replace('{reference}', rawurlencode($referenceData['first_id']), $templateUrlSingle);
+                endif;
             endif;
+
+            $replace['{reference_text}'] = $referenceValue;
+            $replace['{reference_url}'] = $referenceUrl;
         endif;
+
+        // Can be null when references are set directly.
+        if ($options['total'] && $referenceNumber && @$referenceData['total']):
+            $referenceTotal = ' (' . $referenceData['total'] . ')';
+            $replace['{reference_total}'] = $referenceTotal;
+        endif;
+
+       // Process the output of one reference (and eventually the initial heading).
+        echo str_replace(array_keys($replace), array_values($replace), $template);
         ?>
-    <div class="reference-record">
-        <?php echo $referenceText; ?>
-        <?php // Can be null when references are set directly.
-            if ($total && $referenceNumber && @$referenceData['total']):
-                echo ' (' . $referenceData['total'] . ')';
-            endif;
-        ?>
-    </div>
     <?php endforeach; ?>
 </div>
-    <?php if ($skipLinks): ?>
-<div class="pagination reference-pagination pagination-bottom">
+    <?php if ($options['skiplinks']): ?>
+<div id="reference-skiplinks-bottom" class="pagination reference-pagination pagination-bottom">
     <?php echo $paginationList; ?>
 </div>
     <?php endif;
+
 endif;

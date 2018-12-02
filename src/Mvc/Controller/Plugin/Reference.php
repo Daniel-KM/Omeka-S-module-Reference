@@ -303,6 +303,9 @@ class Reference extends AbstractPlugin
      * - raw: Show references as raw text, not links (default to false)
      * - link_to_single: When there is one result for a term, link it directly
      * to the resource, and not to the list page (default to config)
+     * - custom_url: with modules such Clean Url or Ark, use the url generator
+     * instad the standard item/id. May slow the display when there are many
+     * single references
      * - skiplinks: Add the list of letters at top and bottom of the page
      * - headings: Add each letter as headers
      * @return string Html list.
@@ -408,6 +411,9 @@ class Reference extends AbstractPlugin
      * - raw: Show subjects as raw text, not links (default to false)
      * - link_to_single: When there is one result for a term, link it directly
      * to the resource, and not to the list page (default to config)
+     * - custom_url: with modules such Clean Url or Ark, use the url generator
+     * instad the standard item/id. May slow the display when there are many
+     * single references
      * - branch: The managed terms are branches (with the path separated with
      * " :: " (default to config)
      * - expanded: Show tree as expanded (default to config)
@@ -549,6 +555,9 @@ class Reference extends AbstractPlugin
         $cleanedOptions['link_to_single'] = (bool) (isset($options['link_to_single'])
             ? $options['link_to_single']
             : $settings->get('reference_link_to_single'));
+        $cleanedOptions['custom_url'] = (bool) (isset($options['custom_url'])
+            ? $options['custom_url']
+            : $settings->get('custom_url'));
         $cleanedOptions['total'] = (bool) (isset($options['total'])
             ? $options['total']
             : $settings->get('reference_total', true));

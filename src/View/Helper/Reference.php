@@ -105,6 +105,11 @@ class Reference extends AbstractHelper
      * "order", "query", "per_page" and "page".
      * @param array $options Options to display references. Values are booleans:
      * - raw: Show references as raw text, not links (default to false)
+     * - link_to_single: When there is one result for a term, link it directly
+     * to the resource, and not to the list page (default to config)
+     * - custom_url: with modules such Clean Url or Ark, use the url generator
+     * instad the standard item/id. May slow the display when there are many
+     * single references
      * - skiplinks: Add the list of letters at top and bottom of the page
      * - headings: Add each letter as headers
      * @return string Html list.
@@ -160,13 +165,19 @@ class Reference extends AbstractHelper
      * </ul>
      * ```
      *
-     * @param array $referenceLevels Flat associative array of references to
-     * show with reference as key and level as value.
+     * @param array $referenceLevels References and levels to show.
      * @param array $args Specify the references with "term" (dcterms:subject by
-     * default), "type", "resource_name", and "query".
+     * default), "type", "resource_name", and "query"
      * @param array $options Options to display the references. Values are booleans:
      * - raw: Show subjects as raw text, not links (default to false)
-     * - expanded: Show tree as expanded (defaul to config)
+     * - link_to_single: When there is one result for a term, link it directly
+     * to the resource, and not to the list page (default to config)
+     * - custom_url: with modules such Clean Url or Ark, use the url generator
+     * instad the standard item/id. May slow the display when there are many
+     * single references
+     * - branch: The managed terms are branches (with the path separated with
+     * " :: " (default to config)
+     * - expanded: Show tree as expanded (default to config)
      * @return string Html list.
      */
     public function displayTree($references, array $args, array $options = [])

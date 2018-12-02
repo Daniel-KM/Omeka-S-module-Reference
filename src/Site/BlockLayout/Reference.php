@@ -171,6 +171,7 @@ class Reference extends AbstractBlockLayout
 
         // Normalize options.
         $data['options']['link_to_single'] = (bool) $data['options']['link_to_single'];
+        $data['options']['custom_url'] = (bool) $data['options']['custom_url'];
         $data['options']['skiplinks'] = (bool) $data['options']['skiplinks'];
         $data['options']['headings'] = (bool) $data['options']['headings'];
         $data['options']['total'] = (bool) $data['options']['total'];

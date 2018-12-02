@@ -137,12 +137,14 @@ class ReferenceTree extends AbstractBlockLayout
         $data['args']['query'] = $query;
 
         // Make the search simpler and quicker later on display.
+        // TODO To be removed in Omeka 1.2.
         $data['args']['termId'] = $this->api->searchOne('properties', [
             'term' => $data['args']['term'],
         ])->getContent()->id();
 
         // Normalize options.
         $data['options']['link_to_single'] = (bool) $data['options']['link_to_single'];
+        $data['options']['custom_url'] = (bool) $data['options']['custom_url'];
         $data['options']['total'] = (bool) $data['options']['total'];
         $data['options']['branch'] = (bool) $data['options']['branch'];
         $data['options']['expanded'] = (bool) $data['options']['expanded'];

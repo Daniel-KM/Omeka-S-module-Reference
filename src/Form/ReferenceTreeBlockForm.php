@@ -130,6 +130,14 @@ Asia ↵
             ],
         ]);
         $optionsFieldset->add([
+            'name' => 'custom_url',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Custom url for single', // @translate
+                'info' => 'May be set with modules such Clean Url or Ark. May slow the display when there are many single references.', // @translate
+            ],
+        ]);
+        $optionsFieldset->add([
             'name' => 'total',
             'type' => Element\Checkbox::class,
             'options' => [

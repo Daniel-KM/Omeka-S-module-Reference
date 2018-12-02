@@ -113,6 +113,7 @@ return [
         'config' => [
             'reference_resource_name' => 'items',
             'reference_link_to_single' => true,
+            'reference_custom_url' => false,
             'reference_total' => true,
             'reference_search_list_values' => false,
             // Pages ("properties" or "resource_classes") to provide, by slug.
@@ -146,6 +147,7 @@ return [
                 ],
                 'options' => [
                     'link_to_single' => true,
+                    'custom_url' => false,
                     'heading' => 'Subjects', // @translate
                     'skiplinks' => true,
                     'headings' => true,
@@ -175,6 +177,7 @@ return [
                 'options' => [
                     'query_type' => 'eq',
                     'link_to_single' => true,
+                    'custom_url' => false,
                     'heading' => 'Tree of subjects', // @translate
                     'total' => true,
                     'branch' => false,

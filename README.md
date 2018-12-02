@@ -87,6 +87,7 @@ echo $this->reference()->displayListForTerm($term,
     [
         'query_type' => 'eq',
         'link_to_single' => true,
+        'custom_url' => false,
         'total' => true,
         'skiplinks' => true,
         'headings' => true,
@@ -108,6 +109,7 @@ echo $this->reference()->displayTree($references,
     [
         'query_type' => 'eq',
         'link_to_single' => true,
+        'custom_url' => false,
         'total' => true,
         'expanded' => true,
         'strip' => true,
@@ -191,6 +193,7 @@ GitHub) in [Subject Browse], with some ideas from [Metadata Browser] and
 [Category Browse], that have been upgraded for Omeka 2.x too ([Subject Browse (2.x)],
 [Metadata Browser (2.x)], and [Category Browse (2.x)]). They are no longer
 maintained. Upgrade and improvements were made for [Jane Addams Digital Edition].
+Performance fixes were made for Article 19.
 
 
 Copyright
