@@ -10,6 +10,11 @@
  */
 
 if (count($references)):
+    $hyperlink = $this->plugin('hyperlink');
+    $url = $this->plugin('url');
+    $siteSlug = $this->params()->fromRoute('site-slug');
+    // $api = $this->api();
+
     $this->headLink()->appendStylesheet($this->assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));
     $this->headScript()->appendFile($this->assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'));
 
@@ -70,16 +75,21 @@ if (count($references)):
                         $referenceText = '<span class="no-resource">' . $reference . '</span>';
                         $referenceNumber = false;
                     elseif ($linkToSingle && $referenceData['total'] === 1):
-                        $resource = $this->api()->read($resourceName, $referenceData['first_id'])->getContent();
-                        $referenceText = $this->hyperlink($reference, $resource->siteUrl());
+                        // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
+                        // $resource = $api()->read($resourceName, $referenceData['first_id'])->getContent();
+                        // $referenceText = $hyperlink($reference, $resource->siteUrl());
+                        $referenceText = $hyperlink(
+                            $reference,
+                            $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $referenceData['first_id']], false)
+                        );
                         $referenceNumber = false;
                     else:
                         $query = [
                             'property' => [['property' => $termId, 'type' => $queryType, 'text' => $isBranch ? $referenceData['branch']: $reference]],
                         ];
-                        $referenceText = $this->hyperlink(
+                        $referenceText = $hyperlink(
                             $reference,
-                            $this->url('site/resource', ['controller' => $controllerName, 'action' => 'browse'], ['query' => $query], true)
+                            $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false)
                         );
                         $referenceNumber = true;
                     endif;

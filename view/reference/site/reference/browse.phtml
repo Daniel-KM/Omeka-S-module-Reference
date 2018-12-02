@@ -9,8 +9,11 @@
  */
 
 $translate = $this->plugin('translate');
-$this->htmlElement('body')->appendAttribute('class', 'reference browse list');
+$hyperlink = $this->plugin('hyperlink');
+$url = $this->plugin('url');
 $siteSlug = $this->params()->fromRoute('site-slug');
+
+$this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 $resourceName = empty($resourceName) ? 'items' : $resourceName;
 $query = empty($query) ? ['site_id' => $site->id()] : $query;
 ?>
@@ -24,9 +27,9 @@ $query = empty($query) ? ['site_id' => $site->id()] : $query;
         <ul class='references'>
         <?php foreach ($references as $slug => $slugData): ?>
             <li><?php
-                echo $this->hyperlink(
+                echo $hyperlink(
                     sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slugData['term'], $slugData['type'], $resourceName, $query)),
-                    $this->url('site/reference/list', ['site-slug' => $siteSlug, 'slug' => $slug]),
+                    $url('site/reference/list', ['site-slug' => $siteSlug, 'slug' => $slug]),
                     ['title' => sprintf($translate('Browse %s'), $slugData['label'])]
                 );
             ?></li>
@@ -53,9 +56,9 @@ $query = empty($query) ? ['site_id' => $site->id()] : $query;
             <?php
             endif; ?>
             <li><?php
-                echo $this->hyperlink(
+                echo $hyperlink(
                     sprintf('%s (%d)', $slugData['label'], $this->reference()->count($slugData['term'], $slugData['type'], $resourceName, $query)),
-                    $this->url('site/reference/list', ['site-slug' => $siteSlug, 'slug' => $slug]),
+                    $url('site/reference/list', ['site-slug' => $siteSlug, 'slug' => $slug]),
                     ['title' => sprintf($translate('Browse %s'), $slugData['label'])]
                 );
             ?></li>

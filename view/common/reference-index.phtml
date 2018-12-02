@@ -9,8 +9,12 @@
  */
 
 $translate = $this->plugin('translate');
-$this->htmlElement('body')->appendAttribute('class', 'reference browse list');
+$hyperlink = $this->plugin('hyperlink');
+$url = $this->plugin('url');
+$api = $this->api();
 $siteSlug = $this->params()->fromRoute('site-slug');
+
+$this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 ?>
 <ul class="references">
     <?php foreach ($terms as $term): ?>
@@ -18,21 +22,21 @@ $siteSlug = $this->params()->fromRoute('site-slug');
     // TODO Currently, the totals are determined one by one.
     if ($totals):
         // TODO Get the properties labels one time.
-        $label = $this->api()->searchOne($type, ['term' => $term])->getContent()->label();
+        $label = $api->searchOne($type, ['term' => $term])->getContent()->label();
         $total = $this->reference()->count($term, $type, $resourceName, $args['query']);
-        echo $this->hyperlink(
+        echo $hyperlink(
             sprintf($translate('%s (%d)'), $label, $total),
             // TODO Define the link to the reference page.
-            $this->url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $term)]),
+            $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $term)]),
             ['title' => sprintf($translate('Browse %s'), $label)]
         );
     else:
-        $label = $this->api()->searchOne($type, ['term' => $term])->getContent()->label();
+        $label = $api->searchOne($type, ['term' => $term])->getContent()->label();
         $total = $this->reference()->count($term, $type, $resourceName, $args['query']);
-        echo $this->hyperlink(
+        echo $hyperlink(
             $label,
             // TODO Define the link to the reference page.
-            $this->url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $term)]),
+            $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $term)]),
             ['title' => sprintf($translate('Browse %s'), $label)]
         );
     endif;

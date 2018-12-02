@@ -9,6 +9,13 @@
  * @var array $query
  */
 
+$translate = $this->plugin('translate');
+$hyperlink = $this->plugin('hyperlink');
+$url = $this->plugin('url');
+$siteSlug = $this->params()->fromRoute('site-slug');
+$emptyTitle = $translate('[Untitled]');
+// $api = $this->api();
+
 if (count($references)):
     $this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Reference'));
 
@@ -39,7 +46,7 @@ if (count($references)):
     $current_id = '';
     foreach ($references as $reference => $referenceData):
         $emptyReferenceValue = is_null($referenceData['value']);
-        $referenceValue = $emptyReferenceValue ? '[Untitled]' : $referenceData['value'];
+        $referenceValue = $emptyReferenceValue ? $emptyTitle : $referenceData['value'];
 
         // Add the first character as header if wanted.
         if ($headings):
@@ -48,7 +55,7 @@ if (count($references)):
             } elseif (extension_loaded('mbstring')) {
                 $first_char = mb_strtoupper(mb_substr($reference, 0, 1));
             } else {
-                $first_char = substr($reference, 0, 1);
+                $first_char = strtoupper(substr($reference, 0, 1));
                 if (strlen($first_char) == 0) {
                     $first_char = '#0-9';
                 }
@@ -71,8 +78,13 @@ if (count($references)):
             $referenceNumber = true;
         else:
             if ($linkToSingle && $referenceData['total'] === 1):
-                $resource = $this->api()->read($resourceName, $referenceData['first_id'])->getContent();
-                $referenceText = $this->hyperlink($referenceValue, $resource->siteUrl());
+                // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
+                // $resource = $api->read($resourceName, $referenceData['first_id'])->getContent();
+                // $referenceText = $hyperlink($referenceValue, $resource->siteUrl());
+                $referenceText = $hyperlink(
+                    $referenceValue,
+                    $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $referenceData['first_id']], false)
+                );
                 $referenceNumber = false;
             else:
                 if ($type === 'resource_classes'):
@@ -86,9 +98,9 @@ if (count($references)):
                         'property' => [['property' => $termId, 'type' => 'eq', 'text' => $reference]],
                     ];
                 endif;
-                $referenceText = $this->hyperlink(
+                $referenceText = $hyperlink(
                     $referenceValue,
-                    $this->url('site/resource', ['controller' => $controllerName, 'action' => 'browse'], ['query' => $query], true)
+                    $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false)
                 );
                 $referenceNumber = true;
             endif;
