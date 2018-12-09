@@ -98,7 +98,7 @@ class Reference extends AbstractBlockLayout
         $form->prepare();
 
         $html = '<p>' . $view->translate('Choose a property or a resource class.') . '</p>';
-        $html .= $view->formCollection($form);
+        $html .= $view->formCollection($form, false);
         return $html;
     }
 

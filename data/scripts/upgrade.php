@@ -23,7 +23,7 @@ include_once dirname(dirname(__DIR__)) . '/src/Mvc/Controller/Plugin/Reference.p
 $entityManager = $services->get('Omeka\EntityManager');
 $controllerPluginManager = $services->get('ControllerPluginManager');
 $api = $controllerPluginManager->get('api');
-$referencePlugin = new Mvc\Controller\Plugin\Reference($entityManager, $api);
+$referencePlugin = new Mvc\Controller\Plugin\Reference($entityManager, $services->get('Omeka\ApiAdapterManager'), $api);
 
 if (version_compare($oldVersion, '3.4.5', '<')) {
     $referenceSlugs = $settings->get('reference_slugs');
