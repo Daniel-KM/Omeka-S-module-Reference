@@ -702,8 +702,9 @@ class Reference extends AbstractPlugin
                 ->orderBy('value.value', 'ASC');
         }
         // Always add an order by id for consistency.
+        // TODO Is it still useful? May not work on mySql 5.7 and later (require to be grouped)?
         $qb
-            ->addOrderBy('resource.id', 'ASC');
+            ->addOrderBy('value.resource', 'ASC');
 
         if ($output === 'withFirst') {
             $qb
