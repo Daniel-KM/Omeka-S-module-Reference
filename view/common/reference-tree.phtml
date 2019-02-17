@@ -76,27 +76,27 @@ if (count($references)):
                     $referenceNumber = !$options['link_to_single'] || $referenceData['total'] > 1;
                     if (empty($referenceData['total'])):
                         $referenceText = '<span class="no-resource">' . $reference . '</span>';
-                    elseif ($referenceNumber):
-                        $referenceOrBranch = $options['branch'] ? $referenceData['branch'] : $reference;
-                        if ($options['custom_url']):
-                            $query = ['property' => [['property' => $term, 'type' => $options['query_type'], 'text' => $referenceOrBranch]]];
-                            $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
-                        else:
-                            $referenceUrl = str_replace('{reference}', rawurlencode($referenceOrBranch), $templateUrl);
-                        endif;
                     else:
-                        if ($options['custom_url']):
-                            // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
-                            // $resource = $api()->read($resourceName, $referenceData['first_id'])->getContent();
-                            // $referenceUrl = $resource->siteUrl();
-                            $referenceUrl = $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $referenceData['first_id']], false);
+                        if ($referenceNumber):
+                            $referenceOrBranch = $options['branch'] ? $referenceData['branch'] : $reference;
+                            if ($options['custom_url']):
+                                $query = ['property' => [['property' => $term, 'type' => $options['query_type'], 'text' => $referenceOrBranch]]];
+                                $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
+                            else:
+                                $referenceUrl = str_replace('{reference}', rawurlencode($referenceOrBranch), $templateUrl);
+                            endif;
                         else:
-                            $referenceUrl = str_replace('{reference}', rawurldecode($referenceData['first_id']), $templateUrlSingle);
+                            if ($options['custom_url']):
+                                // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
+                                // $resource = $api()->read($resourceName, $referenceData['first_id'])->getContent();
+                                // $referenceUrl = $resource->siteUrl();
+                                $referenceUrl = $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $referenceData['first_id']], false);
+                            else:
+                                $referenceUrl = str_replace('{reference}', rawurldecode($referenceData['first_id']), $templateUrlSingle);
+                            endif;
                         endif;
+                        $referenceText = $hyperlink($reference, $referenceUrl);
                     endif;
-
-                    $referenceText = $hyperlink($reference, $referenceUrl);
-
                 endif;
 
                 echo $referenceText;
