@@ -181,12 +181,12 @@ The module uses a jQuery library for the tree view, released under the [MIT]
 licence.
 
 
-Contact
--------
+Copyright
+---------
 
-Current maintainers:
-
-* Daniel Berthereau (see [Daniel-KM] on GitHub)
+* Copyright William Mayo, 2011
+* Copyright Philip Collins, 2013 ([jQuery tree view])
+* Copyright Daniel Berthereau, 2014-2019 (see [Daniel-KM] on GitHub)
 
 This module is inspired from earlier work done by William Mayo (see [pobocks] on
 GitHub) in [Subject Browse], with some ideas from [Metadata Browser] and
@@ -194,14 +194,6 @@ GitHub) in [Subject Browse], with some ideas from [Metadata Browser] and
 [Metadata Browser (2.x)], and [Category Browse (2.x)]). They are no longer
 maintained. Upgrade and improvements were made for [Jane Addams Digital Edition].
 Performance fixes were made for Article 19.
-
-
-Copyright
----------
-
-* Copyright William Mayo, 2011
-* Copyright Daniel Berthereau, 2014-2018
-* Copyright Philip Collins, 2013 ([jQuery tree view])
 
 
 [Omeka S]: https://omeka.org/s
