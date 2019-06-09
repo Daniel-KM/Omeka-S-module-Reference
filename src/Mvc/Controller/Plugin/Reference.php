@@ -62,7 +62,7 @@ class Reference extends AbstractPlugin
      * @param int $perPage
      * @param int $page One-based page number.
      * @return Reference|array|null The result or null if called directly, else
-     * this view plugin.
+     * this plugin.
      */
     public function __invoke(
         $term = null,
@@ -98,12 +98,12 @@ class Reference extends AbstractPlugin
 
         $termId = $this->getTermId($term, $type);
         if (empty($termId)) {
-            return;
+            return [];
         }
 
         $entityClass = $this->mapResourceNameToEntity($resourceName);
         if (empty($entityClass)) {
-            return;
+            return [];
         }
 
         $references = $this->getReferencesList($termId, $type, $entityClass, $order, $query, [], $perPage, $page, null, false);
@@ -282,12 +282,12 @@ class Reference extends AbstractPlugin
 
         $termId = $this->getTermId($term, $type);
         if (empty($termId)) {
-            return;
+            return 0;
         }
 
         $entityClass = $this->mapResourceNameToEntity($resourceName);
         if (empty($entityClass)) {
-            return;
+            return 0;
         }
 
         return $this->countReferences($termId, $type, $entityClass, $query);
@@ -316,13 +316,13 @@ class Reference extends AbstractPlugin
 
         $termId = $this->getTermId($term, $type);
         if (empty($termId)) {
-            return;
+            return '';
         }
 
         if (isset($args['resource_name'])) {
             $entityClass = $this->mapResourceNameToEntity($args['resource_name']);
             if (empty($entityClass)) {
-                return;
+                return '';
             }
         } else {
             $entityClass = \Omeka\Entity\Resource::class;
@@ -422,7 +422,7 @@ class Reference extends AbstractPlugin
     public function displayTree($references, array $args, array $options = [])
     {
         if (empty($references)) {
-            return;
+            return '';
         }
 
         $type = isset($args['type']) && $args['type'] === 'resource_classes' ? 'resource_classes' : 'properties';
@@ -430,13 +430,13 @@ class Reference extends AbstractPlugin
         $term = empty($args['term']) ? $this->DC_Subject_id : $args['term'];
         $termId = $this->getTermId($term, $type);
         if (empty($termId)) {
-            return;
+            return '';
         }
 
         if (isset($args['resource_name'])) {
             $entityClass = $this->mapResourceNameToEntity($args['resource_name']);
             if (empty($entityClass)) {
-                return;
+                return '';
             }
         } else {
             $entityClass = \Omeka\Entity\Resource::class;
@@ -896,12 +896,12 @@ class Reference extends AbstractPlugin
         }
 
         if (!strpos($term, ':')) {
-            return;
+            return 0;
         }
 
         $result = $this->api->searchOne($type, ['term' => $term])->getContent();
         if (empty($result)) {
-            return;
+            return 0;
         }
         return $result->id();
     }

@@ -33,7 +33,7 @@ class Reference extends AbstractHelper
      * @param int $perPage
      * @param int $page One-based page number.
      * @return Reference|array|null The result or null if called directly, else
-     * this view helper.
+     * this helper.
      */
      public function __invoke(
          $term = null,
