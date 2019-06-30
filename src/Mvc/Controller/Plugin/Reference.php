@@ -475,10 +475,10 @@ class Reference extends AbstractPlugin
         // Simple tree.
         else {
             $lowerReferences = $hasMb
-                ? array_map(function($v) {
+                ? array_map(function ($v) {
                     return mb_strtolower(key($v));
                 }, $references)
-                : array_map(function($v) {
+                : array_map(function ($v) {
                     return strtolower(key($v));
                 }, $references);
             $totals = $this->getReferencesList($termId, $type, $entityClass, null, $query, $lowerReferences, null, null, $output, $initial);
@@ -753,7 +753,8 @@ class Reference extends AbstractPlugin
                     } elseif (extension_loaded('iconv')) {
                         $result = array_map(function ($v) {
                             $v['total'] = (int) $v['total'];
-                            $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);;
+                            $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);
+                            ;
                             if ($trans) {
                                 $v['initial'] = $trans;
                             }

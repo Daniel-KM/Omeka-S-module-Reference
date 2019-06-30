@@ -35,7 +35,7 @@ class Reference extends AbstractHelper
      * @return Reference|array|null The result or null if called directly, else
      * this helper.
      */
-     public function __invoke(
+    public function __invoke(
          $term = null,
          $type = null,
          $resourceName = null,
