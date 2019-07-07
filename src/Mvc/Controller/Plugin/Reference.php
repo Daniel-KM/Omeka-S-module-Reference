@@ -125,7 +125,7 @@ class Reference extends AbstractPlugin
             $tree = $settings->get('reference_tree_hierarchy', []);
         } elseif (is_string($references)) {
             // The str_replace() allows to fix Apple copy/paste.
-            $tree = array_filter(explode(PHP_EOL, str_replace(["\r\n", "\n\r", "\r", "\n"], PHP_EOL, $references)));
+            $tree = array_filter(array_map('trim', explode("\n", str_replace(["\r\n", "\n\r", "\r"], ["\n", "\n", "\n"], $references))));
         } else {
             $tree = $references;
         }
@@ -168,7 +168,7 @@ class Reference extends AbstractPlugin
     public function convertTreeToLevels($dashTree)
     {
         // The str_replace() allows to fix Apple copy/paste.
-        $values = array_filter(explode(PHP_EOL, str_replace(["\r\n", "\n\r", "\r", "\n"], PHP_EOL, $dashTree)));
+        $values = array_filter(array_map('trim', explode("\n", str_replace(["\r\n", "\n\r", "\r"], ["\n", "\n", "\n"], $dashTree))));
         $levels = array_reduce($values, function ($result, $item) {
             $first = substr($item, 0, 1);
             $space = strpos($item, ' ');
@@ -237,7 +237,7 @@ class Reference extends AbstractPlugin
     public function convertTreeToFlatLevels($dashTree)
     {
         // The str_replace() allows to fix Apple copy/paste.
-        $values = array_filter(explode(PHP_EOL, str_replace(["\r\n", "\n\r", "\r", "\n"], PHP_EOL, $dashTree)));
+        $values = array_filter(array_map('trim', explode("\n", str_replace(["\r\n", "\n\r", "\r"], ["\n", "\n", "\n"], $dashTree))));
         $levels = array_reduce($values, function ($result, $item) {
             $first = substr($item, 0, 1);
             $space = strpos($item, ' ');
