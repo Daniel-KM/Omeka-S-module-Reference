@@ -692,7 +692,7 @@ class Reference extends AbstractPlugin
                     break;
                 case 'alphabetic':
                     $order = 'value.value';
-                    // No break;
+                    // no break;
                 default:
                     $qb
                         ->orderBy($order, $direction);
@@ -750,11 +750,10 @@ class Reference extends AbstractPlugin
                             $v['initial'] = $transliterator->transliterate($v['initial']);
                             return $v;
                         }, $result);
-                    } elseif (extension_loaded('iconv')) {
+                    } else {
                         $result = array_map(function ($v) {
                             $v['total'] = (int) $v['total'];
                             $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);
-                            ;
                             if ($trans) {
                                 $v['initial'] = $trans;
                             }

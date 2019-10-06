@@ -157,7 +157,7 @@ class Module extends AbstractModule
                 case 'reference_tree_hierarchy':
                     $currentValue = $referencePlugin
                         ->convertLevelsToTree($currentValue);
-                    // No break.
+                    // no break.
                 case strpos($name, 'reference_tree_') === 0:
                     $data['fieldset_reference_tree'][$name] = $currentValue;
                     break;
