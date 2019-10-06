@@ -103,8 +103,8 @@ if (count($references)):
     $current_heading = '';
     $current_heading_id = '';
     foreach ($references as $reference => $referenceData):
-        $emptyReferenceValue = is_null($referenceData['value']);
-        $referenceValue = $emptyReferenceValue ? $emptyTitle : $referenceData['value'];
+        $emptyReferenceValue = is_null($referenceData['val']);
+        $referenceValue = $emptyReferenceValue ? $emptyTitle : $referenceData['val'];
 
         $replace = $replaceBase;
 

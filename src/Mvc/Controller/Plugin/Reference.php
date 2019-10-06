@@ -37,15 +37,26 @@ class Reference extends AbstractPlugin
     protected $api;
 
     /**
+     * @param bool
+     */
+    protected $supportAnyValue;
+
+    /**
      * @param EntityManager $entityManager
      * @param AdapterManager $adapterManager
      * @param Api $api
+     * @param bool $supportAnyValue
      */
-    public function __construct(EntityManager $entityManager, AdapterManager $adapterManager, Api $api)
-    {
+    public function __construct(
+        EntityManager $entityManager,
+        AdapterManager $adapterManager,
+        Api $api,
+        $supportAnyValue
+    ) {
         $this->entityManager = $entityManager;
         $this->adapterManager = $adapterManager;
         $this->api = $api;
+        $this->supportAnyValue = $supportAnyValue;
     }
 
     /**
@@ -634,7 +645,7 @@ class Reference extends AbstractPlugin
 
                 $qb
                     ->select([
-                        'DISTINCT value.value',
+                        'DISTINCT value.value AS val',
                         // "Distinct" avoids to count duplicate values in properties in
                         // a resource: we count resources, not properties.
                         $expr->countDistinct('resource.id') . ' AS total',
@@ -650,7 +661,7 @@ class Reference extends AbstractPlugin
                     ->setParameter('property_id', $termId)
                     ->where($expr->eq('resource.resourceClass', ':resource_class'))
                     ->setParameter('resource_class', (int) $resourceClassId)
-                    ->groupBy('value.value')
+                    ->groupBy('val')
                 ;
 
                 if ($entityClass !== \Omeka\Entity\Resource::class) {
@@ -663,7 +674,7 @@ class Reference extends AbstractPlugin
             default:
                 $qb
                     ->select([
-                        'value.value',
+                        $this->supportAnyValue ? 'ANY_VALUE(value.value) AS val' : 'value.value AS val',
                         // "Distinct" avoids to count duplicate values in properties in
                         // a resource: we count resources, not properties.
                         $expr->countDistinct('resource.id') . ' AS total',
@@ -675,7 +686,7 @@ class Reference extends AbstractPlugin
                     ->setParameter('property', $termId)
                     // Only literal values.
                     ->andWhere($expr->isNotNull('value.value'))
-                    ->groupBy('value.value')
+                    ->groupBy('val')
                 ;
                 break;
         }
@@ -688,10 +699,10 @@ class Reference extends AbstractPlugin
                     $qb
                         ->orderBy('total', $direction)
                         // Add alphabetic order for ergonomy.
-                        ->addOrderBy('value.value', 'ASC');
+                        ->addOrderBy('val', 'ASC');
                     break;
                 case 'alphabetic':
-                    $order = 'value.value';
+                    $order = 'val';
                     // no break;
                 default:
                     $qb
@@ -699,12 +710,12 @@ class Reference extends AbstractPlugin
             }
         } else {
             $qb
-                ->orderBy('value.value', 'ASC');
+                ->orderBy('val', 'ASC');
         }
-        // Always add an order by id for consistency.
-        // TODO Is it still useful? May not work on mySql 5.7 and later (require to be grouped)?
-        $qb
-            ->addOrderBy('value.resource', 'ASC');
+
+        // Don't add useless order by resource id, since value are unique.
+        // Furthermore, it may break mySql 5.7.5 and later, where ONLY_FULL_GROUP_BY
+        // is set by default and requires to be grouped.
 
         if ($output === 'withFirst') {
             $qb
@@ -766,17 +777,18 @@ class Reference extends AbstractPlugin
                         return $v;
                     }, $result);
                 }
-                $result = array_combine(array_column($result, 'value'), $result);
+                $result = array_combine(array_column($result, 'val'), $result);
                 return $result;
 
             case 'associative':
             default:
                 $result = $qb->getQuery()->getScalarResult();
+
                 // Array column cannot be used in one step, because the null
                 // value (no title) should be converted to "", not to "0".
                 // $result = array_column($result, 'total', 'value');
                 $result = array_combine(
-                    array_column($result, 'value'),
+                    array_column($result, 'val'),
                     array_column($result, 'total')
                 );
                 return array_map('intval', $result);
