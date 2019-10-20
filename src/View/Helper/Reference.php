@@ -24,9 +24,11 @@ class Reference extends AbstractHelper
     /**
      * Get the reference object.
      *
-     * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
-     * @param string $type "properties" (default) or "resource_classes".
-     * @param string $resourceName All resources types if empty.
+     * @param int|string|PropertyRepresentation|ResourceClassRepresentation|null $term
+     * @param string $type "properties" (default), "resource_classes", "item_sets", or
+     * "resource_templates".
+     * @param string $resourceName All resources types if empty. For item sets,
+     * it is always "items".
      * @param array $order Sort and direction: ['alphabetic' => 'ASC'] (default),
      * ['count' => 'DESC'], or any available column as sort.
      * @param array $query An api search formatted query to limit results.
@@ -44,7 +46,7 @@ class Reference extends AbstractHelper
          $perPage = null,
          $page = null
      ) {
-        if (empty($term)) {
+        if (is_null($term)) {
             return $this;
         }
         return $this->reference->getList($term, $type, $resourceName, $order, $query, $perPage, $page);
@@ -54,8 +56,10 @@ class Reference extends AbstractHelper
      * Get the list of references of a property or a resource class.
      *
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
-     * @param string $type "properties" (default) or "resource_classes".
-     * @param string $resourceName
+     * @param string $type "properties" (default), "resource_classes", "item_sets", or
+     * "resource_templates".
+     * @param string $resourceName All resources types if empty. For item sets,
+     * it is always "items".
      * @param array $order Sort and direction: ['alphabetic' => 'ASC'] (default),
      * ['count' => 'DESC'], or any available column as sort.
      * @param array $query An api search formatted query to limit results.
@@ -87,8 +91,10 @@ class Reference extends AbstractHelper
      * @todo Manage multiple resource names (items, item sets, medias) at once.
      *
      * @param int|string|PropertyRepresentation|ResourceClassRepresentation $term
-     * @param string $type "properties" (default) or "resource_classes".
-     * @param string $resourceName
+     * @param string $type "properties" (default), "resource_classes", "item_sets", or
+     * "resource_templates".
+     * @param string $resourceName All resources types if empty. For item sets,
+     * it is always "items".
      * @param array $query An api search formatted query to limit results.
      * @return int The number of references if only one resource name is set.
      */
