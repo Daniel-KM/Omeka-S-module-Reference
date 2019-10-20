@@ -9,11 +9,11 @@
 
 $translate = $this->plugin('translate');
 ?>
+
 <div class="reference-block">
     <?php if ($options['heading']): ?>
     <h3><?php echo str_replace('{total}', $total, $translate($options['heading'])); ?></h3>
     <?php endif; ?>
-
     <?php
     if ($total):
         echo $this->reference()->displayTree($tree, $args, $options);

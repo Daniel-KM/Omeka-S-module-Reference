@@ -14,8 +14,11 @@ $url = $this->plugin('url');
 $api = $this->api();
 $siteSlug = $this->params()->fromRoute('site-slug');
 
+$reference = $this->plugin('reference');
+
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 ?>
+
 <ul class="references">
     <?php foreach ($terms as $term): ?>
     <li><?php
@@ -23,7 +26,7 @@ $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
     if ($totals):
         // TODO Get the properties labels one time.
         $label = $api->searchOne($type, ['term' => $term])->getContent()->label();
-        $total = $this->reference()->count($term, $type, $resourceName, $args['query']);
+        $total = $reference()->count($term, $type, $resourceName, $args['query']);
         echo $hyperlink(
             sprintf($translate('%s (%d)'), $label, $total),
             // TODO Define the link to the reference page.
@@ -32,7 +35,7 @@ $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
         );
     else:
         $label = $api->searchOne($type, ['term' => $term])->getContent()->label();
-        $total = $this->reference()->count($term, $type, $resourceName, $args['query']);
+        $total = $reference()->count($term, $type, $resourceName, $args['query']);
         echo $hyperlink(
             $label,
             // TODO Define the link to the reference page.

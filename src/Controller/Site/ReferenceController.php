@@ -23,8 +23,7 @@ class ReferenceController extends AbstractActionController
         }
 
         if (empty($slugs)) {
-            $this->notFoundAction();
-            return;
+            return $this->notFoundAction();
         }
 
         $resourceName = $settings->get('reference_resource_name', 'resources');
@@ -50,8 +49,7 @@ class ReferenceController extends AbstractActionController
 
         $slug = $this->params('slug');
         if (!isset($slugs[$slug]) || empty($slugs[$slug]['active'])) {
-            $this->notFoundAction();
-            return;
+            return $this->notFoundAction();
         }
         $slugData = $slugs[$slug];
 
