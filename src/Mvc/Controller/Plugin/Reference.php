@@ -118,7 +118,7 @@ class Reference extends AbstractPlugin
         }
 
         $termId = $this->getTermId($term, $type);
-        return $this->getReferencesList($termId, $type, $entityClass, $order, $query, [], $perPage, $page, null, false);
+        return $this->getReferencesList($termId, $type, $entityClass, $order, $query, [], $perPage, $page, null, false, false);
     }
 
     /**
@@ -344,8 +344,9 @@ class Reference extends AbstractPlugin
         $page = empty($args['page']) ? null : (int) $args['page'];
         $output = $options['link_to_single'] ? 'withFirst' : 'list';
         $initial = $options['skiplinks'] || $options['headings'];
+        $includeWithoutMeta = $options['include_without_meta'];
 
-        $references = $this->getReferencesList($termId, $type, $entityClass, $order, $query, [], $perPage, $page, $output, $initial);
+        $references = $this->getReferencesList($termId, $type, $entityClass, $order, $query, [], $perPage, $page, $output, $initial, $includeWithoutMeta);
 
         $controller = $this->getController();
         $partial = $controller->viewHelpers()->get('partial');
@@ -476,7 +477,7 @@ class Reference extends AbstractPlugin
                 $branches[] = $branch;
                 $lowerBranches[] = $hasMb ? mb_strtolower($branch) : strtolower($branch);
             }
-            $totals = $this->getReferencesList($termId, $type, $entityClass, null, $query, $lowerBranches, null, null, $output, $initial);
+            $totals = $this->getReferencesList($termId, $type, $entityClass, null, $query, $lowerBranches, null, null, $output, $initial, false);
         }
         // Simple tree.
         else {
@@ -487,7 +488,7 @@ class Reference extends AbstractPlugin
                 : array_map(function ($v) {
                     return strtolower(key($v));
                 }, $references);
-            $totals = $this->getReferencesList($termId, $type, $entityClass, null, $query, $lowerReferences, null, null, $output, $initial);
+            $totals = $this->getReferencesList($termId, $type, $entityClass, null, $query, $lowerReferences, null, null, $output, $initial, false);
         }
 
         $lowerTotals = [];
@@ -569,6 +570,7 @@ class Reference extends AbstractPlugin
             : $settings->get('reference_total', true));
 
         switch ($mode) {
+            default:
             case 'list':
                 $cleanedOptions['headings'] = (bool) (isset($options['headings'])
                     ? $options['headings']
@@ -579,6 +581,9 @@ class Reference extends AbstractPlugin
                 $cleanedOptions['slug'] = empty($options['slug'])
                     ? $this->DC_Subject_id
                     : $options['slug'];
+                $cleanedOptions['include_without_meta'] = (bool) (isset($options['include_without_meta'])
+                    ? $options['include_without_meta']
+                    : $settings->get('reference_include_without_meta'));
                 break;
 
             case 'tree':
@@ -616,6 +621,7 @@ class Reference extends AbstractPlugin
      * @param int $page One-based page number.
      * @param string $output May be "associative" (default), "list" or "withFirst".
      * @param bool $initial Get initial letter (useful for non-acii references).
+     * @param bool $includeWithoutMeta Get total of resources with no metadata.
      * @return array Associative list of references, with the total, the first
      * first record, and the first character, according to the parameters.
      */
@@ -629,10 +635,11 @@ class Reference extends AbstractPlugin
         $perPage = null,
         $page = null,
         $output = null,
-        $initial = false
+        $initial = false,
+        $includeWithoutMeta = false
     ) {
         if (empty($termId)) {
-            return $this->getReferencesMetaList($type, $entityClass, $order, $query, $values, $perPage, $page, $output, $initial);
+            return $this->getReferencesMetaList($type, $entityClass, $order, $query, $values, $perPage, $page, $output, $initial, $includeWithoutMeta);
         }
 
         $entityManager = $this->entityManager;
@@ -824,6 +831,7 @@ class Reference extends AbstractPlugin
      * @param int $page One-based page number.
      * @param string $output May be "associative" (default), "list" or "withFirst".
      * @param bool $initial Get initial letter (useful for non-acii references).
+     * @param bool $includeWithoutMeta Get total of resources with no metadata.
      * @return array Associative list of references, with the total, the first
      * first record, and the first character, according to the parameters.
      */
@@ -836,7 +844,8 @@ class Reference extends AbstractPlugin
         $perPage = null,
         $page = null,
         $output = null,
-        $initial = false
+        $initial = false,
+        $includeWithoutMeta = false
     ) {
         $entityManager = $this->entityManager;
         $qb = $entityManager->createQueryBuilder();
@@ -1093,6 +1102,11 @@ class Reference extends AbstractPlugin
                     }, $result);
                 }
                 $result = array_combine(array_column($result, 'val'), $result);
+
+                if (!$includeWithoutMeta) {
+                    unset($result['']);
+                }
+
                 return $result;
 
             case 'associative':
@@ -1106,6 +1120,11 @@ class Reference extends AbstractPlugin
                     array_column($result, 'val'),
                     array_column($result, 'total')
                 );
+
+                if (!$includeWithoutMeta) {
+                    unset($result['']);
+                }
+
                 return array_map('intval', $result);
         }
     }
@@ -1365,6 +1384,7 @@ class Reference extends AbstractPlugin
     protected function getType($type = 'properties')
     {
         $types = [
+            'properties',
             'resource_classes',
             'item_sets',
             'resource_templates',
