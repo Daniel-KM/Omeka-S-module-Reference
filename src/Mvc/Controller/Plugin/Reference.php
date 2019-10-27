@@ -43,6 +43,11 @@ class Reference extends AbstractPlugin
     protected $supportAnyValue;
 
     /**
+     * @param bool
+     */
+    protected $isOldOmeka;
+
+    /**
      * @param EntityManager $entityManager
      * @param AdapterManager $adapterManager
      * @param Api $api
@@ -58,6 +63,7 @@ class Reference extends AbstractPlugin
         $this->adapterManager = $adapterManager;
         $this->api = $api;
         $this->supportAnyValue = $supportAnyValue;
+        $this->isOldOmeka = strtok(\Omeka\Module::VERSION, '.') < 2;
     }
 
     /**
@@ -1147,9 +1153,10 @@ class Reference extends AbstractPlugin
             return;
         }
 
+        $alias = $this->isOldOmeka ? $entityClass : 'omeka_root';
         $subQb = $this->entityManager->createQueryBuilder()
-            ->select($entityClass . '.id')
-            ->from($entityClass, $entityClass);
+            ->select($alias . '.id')
+            ->from($entityClass, $alias);
         /** @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter */
         $resourceName = $this->mapEntityToResourceName($entityClass);
         $adapter = $this->adapterManager->get($resourceName);
