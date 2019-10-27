@@ -12,6 +12,7 @@
 $translate = $this->plugin('translate');
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 ?>
+
 <div id="primary" class="reference">
     <h2><?php echo sprintf($translate('Browse items by "%s" (%d headings)'), $label, $total); ?></h2>
     <?php if ($total): ?>

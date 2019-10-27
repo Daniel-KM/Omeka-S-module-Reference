@@ -9,6 +9,7 @@
 $translate = $this->plugin('translate');
 $this->htmlElement('body')->appendAttribute('class', 'reference browse hierarchy');
 ?>
+
 <div id="primary" class="reference">
     <h2><?php echo sprintf($translate('Tree of references (%d total)'), count($references)); ?></h2>
     <?php if (count($references)): ?>

@@ -9,10 +9,8 @@ class ReferenceFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $pluginManager = $services->get('ControllerPluginManager');
-        $reference = $pluginManager->get('reference');
         return new Reference(
-            $reference
+            $services->get('ControllerPluginManager')->get('reference')
         );
     }
 }

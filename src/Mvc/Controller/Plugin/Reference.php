@@ -350,7 +350,7 @@ class Reference extends AbstractPlugin
 
         $controller = $this->getController();
         $partial = $controller->viewHelpers()->get('partial');
-        $html = $partial('common/reference', [
+        return $partial('common/reference', [
             'references' => $references,
             'term' => $termId,
             'type' => $type,
@@ -361,8 +361,6 @@ class Reference extends AbstractPlugin
             'perPage' => $perPage,
             'page' => $page,
         ]);
-
-        return $html;
     }
 
     /**
@@ -532,7 +530,7 @@ class Reference extends AbstractPlugin
 
         $controller = $this->getController();
         $partial = $controller->viewHelpers()->get('partial');
-        $html = $partial('common/reference-tree', [
+        return $partial('common/reference-tree', [
             'references' => $result,
             'term' => $termId,
             'type' => $type,
@@ -541,8 +539,6 @@ class Reference extends AbstractPlugin
             'perPage' => null,
             'page' => null,
         ]);
-
-        return $html;
     }
 
     /**
@@ -794,8 +790,7 @@ class Reference extends AbstractPlugin
                         return $v;
                     }, $result);
                 }
-                $result = array_combine(array_column($result, 'val'), $result);
-                return $result;
+                return array_combine(array_column($result, 'val'), $result);
 
             case 'associative':
             default:
@@ -1209,8 +1204,7 @@ class Reference extends AbstractPlugin
 
         $this->limitQuery($qb, $entityClass, $query);
 
-        $totalRecords = $qb->getQuery()->getSingleScalarResult();
-        return $totalRecords;
+        return $qb->getQuery()->getSingleScalarResult();
     }
 
     /**
@@ -1234,7 +1228,7 @@ class Reference extends AbstractPlugin
         $adapter = $this->adapterManager->get($resourceName);
         $adapter->buildQuery($subQb, $query);
 
-        // There is no colision, because adapter query uses alias ":omeka_".
+        // There is no colision: the adapter query uses alias "omeka_" + index.
         $qb
             ->andWhere($qb->expr()->in('resource.id', $subQb->getDQL()));
 

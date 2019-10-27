@@ -42,9 +42,12 @@ class Module extends AbstractModule
     {
         $services = $this->getServiceLocator();
         $acl = $services->get('Omeka\Acl');
-
-        $controllerRights = ['browse', 'list', 'tree'];
-        $acl->allow(null, Controller\Site\ReferenceController::class, $controllerRights);
+        $acl
+            ->allow(
+                null,
+                [\Reference\Controller\Site\ReferenceController::class],
+                ['browse', 'list', 'tree']
+            );
     }
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
@@ -235,11 +238,14 @@ class Module extends AbstractModule
         }
 
         $view = $event->getTarget();
-        $view->headLink()->appendStylesheet($view->assetUrl('vendor/chosen-js/chosen.css', 'Omeka'));
-        $view->headLink()->appendStylesheet($view->assetUrl('css/reference.css', 'Reference'));
-        $view->headScript()->appendFile($view->assetUrl('vendor/chosen-js/chosen.jquery.js', 'Omeka'));
-        $view->headScript()->appendFile($view->assetUrl('js/reference-advanced-search.js', 'Reference'));
-        $view->headScript()->appendScript('var basePath = ' . json_encode($view->basePath()) . ';' . PHP_EOL
-            . 'var siteSlug = ' . json_encode($view->params()->fromRoute('site-slug')));
+        $assetUrl = $view->plugin('assetUrl');
+        $view->headLink()
+            ->appendStylesheet($assetUrl('vendor/chosen-js/chosen.css', 'Omeka'))
+            ->appendStylesheet($assetUrl('css/reference.css', 'Reference'));
+        $view->headScript()
+            ->appendFile($assetUrl('vendor/chosen-js/chosen.jquery.js', 'Omeka'))
+            ->appendFile($assetUrl('js/reference-advanced-search.js', 'Reference'))
+            ->appendScript('var basePath = ' . json_encode($view->basePath()) . ';' . PHP_EOL
+                . 'var siteSlug = ' . json_encode($view->params()->fromRoute('site-slug')));
     }
 }
