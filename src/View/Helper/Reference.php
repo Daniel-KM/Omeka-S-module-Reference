@@ -73,19 +73,6 @@ class Reference extends AbstractHelper
     }
 
     /**
-     * Get a list of references as tree.
-     *
-     * @deprecated 3.4.5 Useless since tree is stored as array.
-     *
-     * @param string $references The default one if null.
-     * @return array.
-     */
-    public function getTree($references = null)
-    {
-        return $this->reference->getTree($references);
-    }
-
-    /**
      * Count the total of distinct element texts for a term.
      *
      * @todo Manage multiple resource names (items, item sets, medias) at once.

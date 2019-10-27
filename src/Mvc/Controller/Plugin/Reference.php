@@ -122,28 +122,6 @@ class Reference extends AbstractPlugin
     }
 
     /**
-     * Get a list of references as tree.
-     *
-     * @deprecated 3.4.5 Useless since tree is stored as array.
-     *
-     * @param string $references The default one if null.
-     * @return array
-     */
-    public function getTree($references = null)
-    {
-        if (is_null($references)) {
-            $settings = $this->getController()->settings();
-            $tree = $settings->get('reference_tree_hierarchy', []);
-        } elseif (is_string($references)) {
-            // The str_replace() allows to fix Apple copy/paste.
-            $tree = array_filter(array_map('trim', explode("\n", str_replace(["\r\n", "\n\r", "\r"], ["\n", "\n", "\n"], $references))));
-        } else {
-            $tree = $references;
-        }
-        return $tree;
-    }
-
-    /**
      * Convert a tree from string format to an array of texts with level.
      *
      * Example of a dash tree:
@@ -207,57 +185,6 @@ class Reference extends AbstractPlugin
             return $level ? str_repeat('-', $level) . ' ' . $term : $term;
         }, $levels);
         return implode(PHP_EOL, $tree);
-    }
-
-    /**
-     * Convert a tree from string format to a flat array of texts with level.
-     *
-     * Example of a dash tree:
-     *
-     * Europe
-     * - France
-     * -- Paris
-     * - United Kingdom
-     * -- England
-     * --- London
-     * -- Scotland
-     * Asia
-     * - Japan
-     *
-     * Converted into:
-     *
-     * [
-     *     Europe => 0,
-     *     France => 1
-     *     Paris => 2
-     *     United Kingdom => 1
-     *     England => 2
-     *     London => 3
-     *     Scotland => 2
-     *     Asia => 0
-     *     Japan => 1
-     * ]
-     *
-     * @deprecated 3.4.7 Use convertTreeToLevels() that manage duplicates terms.
-     *
-     * @param string $dashTree A tree with levels represented with dashes.
-     * All strings should be unique.
-     * @return array Flat associative array with text as key and level as value
-     * (0 based).
-     */
-    public function convertTreeToFlatLevels($dashTree)
-    {
-        // The str_replace() allows to fix Apple copy/paste.
-        $values = array_filter(array_map('trim', explode("\n", str_replace(["\r\n", "\n\r", "\r"], ["\n", "\n", "\n"], $dashTree))));
-        $levels = array_reduce($values, function ($result, $item) {
-            $first = substr($item, 0, 1);
-            $space = strpos($item, ' ');
-            $level = ($first !== '-' || $space === false) ? 0 : $space;
-            $value = trim($level == 0 ? $item : substr($item, $space));
-            $result[$value] = $level;
-            return $result;
-        }, []);
-        return $levels;
     }
 
     /**
