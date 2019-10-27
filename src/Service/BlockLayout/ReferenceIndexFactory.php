@@ -16,8 +16,6 @@ class ReferenceIndexFactory implements FactoryInterface
     {
         $controllerPluginManager = $services->get('ControllerPluginManager');
         return new ReferenceIndex(
-            $services->get('FormElementManager'),
-            $services->get('Config')['reference']['block_settings']['referenceIndex'],
             $controllerPluginManager->get('api'),
             $controllerPluginManager->get('reference')
         );

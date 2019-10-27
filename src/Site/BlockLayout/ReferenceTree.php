@@ -8,22 +8,15 @@ use Omeka\Entity\SitePageBlock;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
 use Omeka\Stdlib\ErrorStore;
-use Reference\Form\ReferenceTreeBlockForm;
 use Reference\Mvc\Controller\Plugin\Reference as ReferencePlugin;
-use Zend\Form\FormElementManager\FormElementManagerV3Polyfill as FormElementManager;
 use Zend\View\Renderer\PhpRenderer;
 
 class ReferenceTree extends AbstractBlockLayout
 {
     /**
-     * @var FormElementManager
+     * The default partial view script.
      */
-    protected $formElementManager;
-
-    /**
-     * @var array
-     */
-    protected $defaultSettings = [];
+    const PARTIAL_NAME = 'common/block-layout/reference-tree';
 
     /**
      * @var Api
@@ -36,19 +29,13 @@ class ReferenceTree extends AbstractBlockLayout
     protected $referencePlugin;
 
     /**
-     * @param FormElementManager $formElementManager
-     * @param array $defaultSettings
      * @param Api $api
      * @param ReferencePlugin $referencePlugin
      */
     public function __construct(
-        FormElementManager $formElementManager,
-        array $defaultSettings,
         Api $api,
         ReferencePlugin $referencePlugin
     ) {
-        $this->formElementManager = $formElementManager;
-        $this->defaultSettings = $defaultSettings;
         $this->api = $api;
         $this->referencePlugin = $referencePlugin;
     }
@@ -58,36 +45,80 @@ class ReferenceTree extends AbstractBlockLayout
         return 'Reference tree'; // @translate
     }
 
-    public function form(PhpRenderer $view, SiteRepresentation $site,
-        SitePageRepresentation $page = null, SitePageBlockRepresentation $block = null
-    ) {
-        /** @var \Reference\Form\ReferenceTreeBlockForm $form */
-        $form = $this->formElementManager->get(ReferenceTreeBlockForm::class);
+    public function onHydrate(SitePageBlock $block, ErrorStore $errorStore)
+    {
+        $data = $block->getData();
 
-        $addedBlock = empty($block);
-        if ($addedBlock) {
-            $data = $this->defaultSettings;
-            $data['args']['query'] = 'site_id=' . $site->id();
-        } else {
-            $data = $block->data() + $this->defaultSettings;
+        // Check if data are already formatted, checking the main value.
+        if (is_array($data['args']['tree'])) {
+            return;
+        }
+
+        $data['args']['tree'] = $this->referencePlugin->convertTreeToLevels($data['args']['tree']);
+        if (empty($data['args']['resource_name'])) {
+            $data['args']['resource_name'] = 'items';
+        }
+        $query = [];
+        parse_str($data['args']['query'], $query);
+        $data['args']['query'] = $query;
+
+        // Make the search simpler and quicker later on display.
+        // TODO To be removed in Omeka 1.2.
+        $data['args']['termId'] = $this->api->searchOne('properties', [
+            'term' => $data['args']['term'],
+        ])->getContent()->id();
+
+        // Normalize options.
+        $data['options']['link_to_single'] = (bool) $data['options']['link_to_single'];
+        $data['options']['custom_url'] = (bool) $data['options']['custom_url'];
+        $data['options']['total'] = (bool) $data['options']['total'];
+        $data['options']['branch'] = (bool) $data['options']['branch'];
+        $data['options']['expanded'] = (bool) $data['options']['expanded'];
+        if (empty($data['options']['query_type'])) {
+            $data['options']['query_type'] = 'eq';
+        }
+
+        $block->setData($data);
+    }
+
+    public function form(
+        PhpRenderer $view,
+        SiteRepresentation $site,
+        SitePageRepresentation $page = null,
+        SitePageBlockRepresentation $block = null
+    ) {
+        // Factory is not used to make rendering simpler.
+        $services = $site->getServiceLocator();
+        $formElementManager = $services->get('FormElementManager');
+        $defaultSettings = $services->get('Config')['reference']['block_settings']['referenceTree'];
+        $blockFieldset = \Reference\Form\ReferenceTreeFieldset::class;
+
+        // TODO Fill the fieldset like other blocks (cf. blockplus).
+
+        if ($block) {
+            $data = $block->data() + $defaultSettings;
             if (is_array($data['args']['query'])) {
                 $data['args']['query'] = urldecode(
                     http_build_query($data['args']['query'], "\n", '&', PHP_QUERY_RFC3986)
                 );
             }
+        } else {
+            $data = $defaultSettings;
+            $data['args']['query'] = 'site_id=' . $site->id();
         }
 
         $data['args']['tree'] = $this->referencePlugin->convertLevelsToTree($data['args']['tree']);
 
+        $fieldset = $formElementManager->get($blockFieldset);
         // TODO Fix set data for radio buttons.
-        $form->setData([
+        $fieldset->setData([
             'o:block[__blockIndex__][o:data][args]' => $data['args'],
             'o:block[__blockIndex__][o:data][options]' => $data['options'],
         ]);
 
-        $form->prepare();
+        $fieldset->prepare();
 
-        $html = $view->formCollection($form);
+        $html = $view->formCollection($fieldset);
         return $html;
     }
 
@@ -117,41 +148,5 @@ class ReferenceTree extends AbstractBlockLayout
                 'options' => $options,
             ]
         );
-    }
-
-    public function onHydrate(SitePageBlock $block, ErrorStore $errorStore)
-    {
-        $data = $block->getData();
-
-        // Check if data are already formatted, checking the main value.
-        if (is_array($data['args']['tree'])) {
-            return;
-        }
-
-        $data['args']['tree'] = $this->referencePlugin->convertTreeToLevels($data['args']['tree']);
-        if (empty($data['args']['resource_name'])) {
-            $data['args']['resource_name'] = $this->defaultSettings['args']['resource_name'];
-        }
-        $query = [];
-        parse_str($data['args']['query'], $query);
-        $data['args']['query'] = $query;
-
-        // Make the search simpler and quicker later on display.
-        // TODO To be removed in Omeka 1.2.
-        $data['args']['termId'] = $this->api->searchOne('properties', [
-            'term' => $data['args']['term'],
-        ])->getContent()->id();
-
-        // Normalize options.
-        $data['options']['link_to_single'] = (bool) $data['options']['link_to_single'];
-        $data['options']['custom_url'] = (bool) $data['options']['custom_url'];
-        $data['options']['total'] = (bool) $data['options']['total'];
-        $data['options']['branch'] = (bool) $data['options']['branch'];
-        $data['options']['expanded'] = (bool) $data['options']['expanded'];
-        if (empty($data['options']['query_type'])) {
-            $data['options']['query_type'] = $this->defaultSettings['options']['query_type'];
-        }
-
-        $block->setData($data);
     }
 }

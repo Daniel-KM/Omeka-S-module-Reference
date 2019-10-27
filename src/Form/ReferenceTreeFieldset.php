@@ -5,13 +5,10 @@ use Omeka\Form\Element\PropertySelect;
 use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
-use Zend\I18n\Translator\TranslatorAwareInterface;
-use Zend\I18n\Translator\TranslatorAwareTrait;
 
-class ReferenceTreeBlockForm extends Form implements TranslatorAwareInterface
+// FIXME Use a fieldset, not a form.
+class ReferenceTreeFieldset extends Form
 {
-    use TranslatorAwareTrait;
-
     public function init()
     {
         $this->add([
@@ -38,10 +35,10 @@ class ReferenceTreeBlockForm extends Form implements TranslatorAwareInterface
             'type' => Element\Textarea::class,
             'options' => [
                 'label' => 'Static tree of references', // @translate
-                'info' => $this->translate('If any, write the hierarchy of all your references in order to display them in the "Tree of references" page.') // @translate
-                    . ' ' . $this->translate('Format is: one reference by line, preceded by zero, one or more "-" to indicate the hierarchy level.') // @translate
-                    . ' ' . $this->translate('Separate the "-" and the reference with a space. Empty lines are not considered.') // @translate
-                    . ' ' . $this->translate('Note: sql does case insensitive searches, so all references should be case-insensitively unique.'), // @translate
+                'info' => 'If any, write the hierarchy of all your references in order to display them in the "Tree of references" page.
+Format is: one reference by line, preceded by zero, one or more "-" to indicate the hierarchy level.
+Separate the "-" and the reference with a space. Empty lines are not considered.
+Note: sql does case insensitive searches, so all references should be case-insensitively unique.', // @translate
             ],
             'attributes' => [
                 'required' => true,
@@ -169,11 +166,5 @@ Asia ↵
             'name' => 'o:block[__blockIndex__][o:data][options]',
             'required' => false,
         ]);
-    }
-
-    protected function translate($args)
-    {
-        $translator = $this->getTranslator();
-        return $translator->translate($args);
     }
 }

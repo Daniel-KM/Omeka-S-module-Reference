@@ -7,7 +7,8 @@ use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
 
-class ReferenceIndexBlockForm extends Form
+// FIXME Use a fieldset, not a form.
+class ReferenceFieldset extends Form
 {
     public function init()
     {
@@ -18,35 +19,29 @@ class ReferenceIndexBlockForm extends Form
         $argsFieldset = $this->get('o:block[__blockIndex__][o:data][args]');
 
         $argsFieldset->add([
-            'name' => 'properties',
+            'name' => 'property',
             'type' => PropertySelect::class,
             'options' => [
-                'label' => 'Properties', // @translate
-                'empty_option' => 'Select properties…', // @translate
+                'label' => 'Property', // @translate
+                'empty_option' => 'Select a property…', // @translate
                 'term_as_value' => true,
             ],
             'attributes' => [
-                'id' => 'properties',
                 'required' => false,
-                'multiple' => true,
                 'class' => 'chosen-select',
-                'data-placeholder' => 'Select properties…', // @translate
             ],
         ]);
         $argsFieldset->add([
-            'name' => 'resource_classes',
+            'name' => 'resource_class',
             'type' => ResourceClassSelect::class,
             'options' => [
-                'label' => 'Resource classes', // @translate
-                'empty_option' => 'Select resource classes…', // @translate
+                'label' => 'Resource class', // @translate
+                'empty_option' => 'Select a resource class…', // @translate
                 'term_as_value' => true,
             ],
             'attributes' => [
-                'id' => 'resource_classes',
                 'required' => false,
-                'multiple' => true,
                 'class' => 'chosen-select',
-                'data-placeholder' => 'Select resource classes…', // @translate
             ],
         ]);
         $argsFieldset->add([
@@ -66,11 +61,7 @@ class ReferenceIndexBlockForm extends Form
                     // 'media' => 'Media',  // @translate
                 ],
             ],
-            'attributes' => [
-                'id' => 'resource_name',
-            ],
         ]);
-        /* // TODO Manage order of the terms (via totals).
         $argsFieldset->add([
             'name' => 'order',
             'type' => Element\Select::class,
@@ -84,16 +75,12 @@ class ReferenceIndexBlockForm extends Form
                 ],
             ],
         ]);
-        */
         $argsFieldset->add([
             'name' => 'query',
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Query to limit resources', // @translate
                 'info' => 'Limit the reference to a particular subset of resources, for example a site, via an advanced search query.', // @translate
-            ],
-            'attributes' => [
-                'id' => 'query',
             ],
         ]);
 
@@ -111,10 +98,37 @@ class ReferenceIndexBlockForm extends Form
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Heading', // @translate
-                'info' => 'Translatable title above references, if any.',
+                'info' => 'Translatable title above references, if any. The placeholder {total} can be used.', // @translate
             ],
-            'attributes' => [
-                'id' => 'heading',
+        ]);
+        $optionsFieldset->add([
+            'name' => 'link_to_single',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Link to single records', // @translate
+                'info' => 'When a reference has only one item, link to it directly instead of to the items/browse page.', // @translate
+            ],
+        ]);
+        $optionsFieldset->add([
+            'name' => 'custom_url',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Custom url for single', // @translate
+                'info' => 'May be set with modules such Clean Url or Ark. May slow the display when there are many single references.', // @translate
+            ],
+        ]);
+        $optionsFieldset->add([
+            'name' => 'skiplinks',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Add skiplinks above and below list', // @translate
+            ],
+        ]);
+        $optionsFieldset->add([
+            'name' => 'headings',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Add first letter as headings between references', // @translate
             ],
         ]);
         $optionsFieldset->add([
@@ -122,9 +136,6 @@ class ReferenceIndexBlockForm extends Form
             'type' => Element\Checkbox::class,
             'options' => [
                 'label' => 'Add the total of resources for each reference', // @translate
-            ],
-            'attributes' => [
-                'id' => 'total',
             ],
         ]);
 

@@ -16,8 +16,6 @@ class ReferenceFactory implements FactoryInterface
     {
         $controllerPluginManager = $services->get('ControllerPluginManager');
         return new Reference(
-            $services->get('FormElementManager'),
-            $services->get('Config')['reference']['block_settings']['reference'],
             $controllerPluginManager->get('api'),
             $controllerPluginManager->get('reference')
         );
