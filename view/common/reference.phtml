@@ -30,7 +30,7 @@ if (count($references)):
     $options += ['link_to_single' => true, 'total' => true, 'raw' => false, 'skiplinks' => true, 'headings' => true, 'custom_url' => false];
     $options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
     $hasInitial = array_key_exists('initial', $references[key($references)]);
-    $propertyTitle = version_compare(\Omeka\Module::VERSION, '1.2', '<') ? '1' : 'dcterms:title';
+    $propertyTitle = 'dcterms:title';
 
     // Set default templates according to options for improved performance.
     $template = '';

@@ -63,7 +63,7 @@ class Reference extends AbstractPlugin
         $this->adapterManager = $adapterManager;
         $this->api = $api;
         $this->supportAnyValue = $supportAnyValue;
-        $this->isOldOmeka = strtok(\Omeka\Module::VERSION, '.') < 2;
+        $this->isOldOmeka = \Omeka\Module::VERSION < 2;
     }
 
     /**
