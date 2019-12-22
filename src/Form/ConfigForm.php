@@ -129,8 +129,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             'type' => Element\Checkbox::class,
             'options' => [
                 'label' => 'Enable tree view', // @translate
-                'info' => $this->translate('Enable the page and display the link "%s" to the hierarchical view in the navigation bar.', // @translate
-                    '/subjects/tree'),
+                'info' => 'Enable the page and display the link "/subject/tree" to the hierarchical view in the navigation bar.', // @translate
             ],
         ]);
 
