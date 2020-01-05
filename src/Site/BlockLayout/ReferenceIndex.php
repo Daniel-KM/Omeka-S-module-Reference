@@ -78,6 +78,10 @@ class ReferenceIndex extends AbstractBlockLayout
             ? ['alphabetic' => 'ASC']
             : [strtok($data['args']['order'], ' ') => strtok(' ')];
 
+        $data['args']['languages'] = strlen(trim($data['args']['languages']))
+            ? array_unique(array_map('trim', explode('|', $data['args']['languages'])))
+            : [];
+
         // Normalize options.
         $data['options']['total'] = (bool) $data['options']['total'];
 
@@ -121,6 +125,10 @@ class ReferenceIndex extends AbstractBlockLayout
 
         $data['args']['order'] = (key($data['args']['order']) === 'alphabetic' ? 'alphabetic' : 'total') . ' ' . reset($data['args']['order']);
 
+        if (isset($data['args']['languages']) && is_array($data['args']['languages'])) {
+            $data['args']['languages'] = implode('|', $data['args']['languages']);
+        }
+
         $fieldset = $formElementManager->get($blockFieldset);
         // TODO Fix set data for radio buttons.
         $fieldset->setData([
@@ -149,6 +157,13 @@ class ReferenceIndex extends AbstractBlockLayout
         unset($args['terms']);
         unset($args['query']);
         $options = $options + $args;
+
+        $languages = @$options['languages'];
+        unset($options['languages']);
+        if ($languages) {
+            $options['filters']['languages'] = $languages;
+        }
+
         $options['sort_order'] = reset($args['order']);
         $options['sort_by'] = key($args['order']) === 'alphabetic' ? 'alphabetic' : 'total';
         $options['per_page'] = 0;

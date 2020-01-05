@@ -143,6 +143,7 @@ return [
                     'resource_name' => 'items',
                     'order' => ['alphabetic' => 'ASC'],
                     'query' => '',
+                    'languages' => [],
                 ],
                 'options' => [
                     'link_to_single' => true,
@@ -160,6 +161,7 @@ return [
                     'resource_name' => 'items',
                     'order' => ['alphabetic' => 'ASC'],
                     'query' => '',
+                    'languages' => [],
                 ],
                 'options' => [
                     'heading' => 'Reference index', // @translate

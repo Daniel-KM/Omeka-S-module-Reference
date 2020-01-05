@@ -66,6 +66,10 @@ class Reference extends AbstractBlockLayout
             ? ['alphabetic' => 'ASC']
             : [strtok($data['args']['order'], ' ') => strtok(' ')];
 
+        $data['args']['languages'] = strlen(trim($data['args']['languages']))
+            ? array_unique(array_map('trim', explode('|', $data['args']['languages'])))
+            : [];
+
         // Make the search simpler and quicker later on display.
         // TODO To be removed in Omeka 1.2.
         $data['args']['termId'] = $this->api->searchOne($data['args']['type'], [
@@ -122,6 +126,10 @@ class Reference extends AbstractBlockLayout
 
         $data['args']['order'] = (key($data['args']['order']) === 'alphabetic' ? 'alphabetic' : 'total') . ' ' . reset($data['args']['order']);
 
+        if (isset($data['args']['languages']) && is_array($data['args']['languages'])) {
+            $data['args']['languages'] = implode('|', $data['args']['languages']);
+        }
+
         $fieldset = $formElementManager->get($blockFieldset);
         // TODO Fix set data for radio buttons.
         $fieldset->setData([
@@ -155,6 +163,13 @@ class Reference extends AbstractBlockLayout
         unset($args['term']);
         unset($args['query']);
         $options = $options + $args;
+
+        $languages = @$options['languages'];
+        unset($options['languages']);
+        if ($languages) {
+            $options['filters']['languages'] = $languages;
+        }
+
         $options['sort_order'] = reset($args['order']);
         $options['sort_by'] = key($args['order']) === 'alphabetic' ? 'alphabetic' : 'total';
         $options['per_page'] = 0;

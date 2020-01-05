@@ -83,6 +83,18 @@ class ReferenceFieldset extends Form
                 'info' => 'Limit the reference to a particular subset of resources, for example a site, via an advanced search query.', // @translate
             ],
         ]);
+        $argsFieldset->add([
+            'name' => 'languages',
+            'type' => Element\Text::class,
+            'options' => [
+                'label' => 'Filter by language', // @translate
+                'info' => 'Limit the results to the specified languages. Use "|" to separate multiple languages. Use "||" for values without language.', // @translate
+            ],
+            'attributes' => [
+                'id' => 'languages',
+                'placeholder' => 'fra|way|apy||',
+            ],
+        ]);
 
         $this->add([
             'name' => 'o:block[__blockIndex__][o:data][options]',
