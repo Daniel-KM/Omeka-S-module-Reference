@@ -178,6 +178,10 @@ class References extends AbstractPlugin
         $filter = function ($v) {
             return is_string($v) ? (bool) strlen($v) : (bool) $v;
         };
+        unset($query['per_page']);
+        unset($query['page']);
+        unset($query['offset']);
+        unset($query['limit']);
         $this->query = $query ? array_filter($query, $filter) : [];
         return $this;
     }
