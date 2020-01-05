@@ -19,11 +19,13 @@ $connection = $services->get('Omeka\Connection');
 $config = require dirname(dirname(__DIR__)) . '/config/module.config.php';
 
 // The reference plugin is not available during upgrade.
+include_once dirname(dirname(__DIR__)) . '/src/Mvc/Controller/Plugin/References.php';
 include_once dirname(dirname(__DIR__)) . '/src/Mvc/Controller/Plugin/Reference.php';
 $entityManager = $services->get('Omeka\EntityManager');
 $controllerPluginManager = $services->get('ControllerPluginManager');
 $api = $controllerPluginManager->get('api');
-$referencePlugin = new Mvc\Controller\Plugin\Reference($entityManager, $services->get('Omeka\ApiAdapterManager'), $api, false);
+$referencesPlugin = new Mvc\Controller\Plugin\References($entityManager, $services->get('Omeka\ApiAdapterManager'), $api, $controllerPluginManager->get('translate'), [], [], [], false);
+$referencePlugin = new Mvc\Controller\Plugin\Reference($api, $referencesPlugin);
 
 if (version_compare($oldVersion, '3.4.5', '<')) {
     $referenceSlugs = $settings->get('reference_slugs');
