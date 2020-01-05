@@ -174,7 +174,7 @@ class References extends AbstractPlugin
         $translate = $this->translate;
 
         // All except properties.
-        $omekaFieldsToTypes = [
+        $metaToTypes = [
             // Item sets is only for items.
             'o:item_set' => 'item_sets',
             'o:resource_class' => 'resource_classes',
@@ -182,7 +182,7 @@ class References extends AbstractPlugin
             'o:property' => 'properties',
         ];
 
-        if (array_intersect($fields, array_keys($omekaFieldsToTypes))) {
+        if (array_intersect($fields, array_keys($metaToTypes))) {
             $labels = [
                 'o:item_set' => $translate('Item sets'), // @translate
                 'o:resource_class' => $translate('Classes'), // @translate
@@ -195,8 +195,8 @@ class References extends AbstractPlugin
 
         foreach ($fields as $field) {
             // For metadata other than properties.
-            if (isset($omekaFieldsToTypes[$field])) {
-                $type = $omekaFieldsToTypes[$field];
+            if (isset($metaToTypes[$field])) {
+                $type = $metaToTypes[$field];
 
                 // Manage an exception for the resource "items" exception.
                 if ($type === 'item_sets' && $options['resource_name'] !== 'items') {
@@ -213,10 +213,10 @@ class References extends AbstractPlugin
                     // Only for items.
                     case 'item_sets':
                         foreach (array_filter($values) as $value => $count) {
-                            $label = $api->read($type, ['id' => $value])->getContent()->displayTitle();
+                            $meta = $api->read($type, ['id' => $value])->getContent();
                             $result[$field]['o-module-reference:values'][] = [
-                                'o:id' => $value,
-                                'o:label' => $label,
+                                'o:id' => (int) $value,
+                                'o:label' => $meta->displayTitle(),
                                 '@language' => null,
                                 'count' => $count,
                             ];
@@ -224,10 +224,10 @@ class References extends AbstractPlugin
                         break;
                     case 'resource_classes':
                         foreach (array_filter($values) as $value => $count) {
-                            $label = $api->searchOne($type, ['term' => $value])->getContent()->label();
+                            $meta = $api->searchOne($type, ['term' => $value])->getContent();
                             $result[$field]['o-module-reference:values'][] = [
-                                'o:term' => $value,
-                                'o:label' => $label,
+                                'o:term' => $meta->term(),
+                                'o:label' => $meta->label(),
                                 '@language' => null,
                                 'count' => $count,
                             ];
@@ -235,10 +235,10 @@ class References extends AbstractPlugin
                         break;
                     case 'resource_templates':
                         foreach (array_filter($values) as $value => $count) {
-                            $id = $api->searchOne($type, ['label' => $value])->getContent()->id();
+                            $meta = $api->searchOne($type, ['label' => $value])->getContent();
                             $result[$field]['o-module-reference:values'][] = [
-                                'o:id' => $id,
-                                'o:label' => $value,
+                                'o:id' => $meta->id(),
+                                'o:label' => $meta->label(),
                                 '@language' => null,
                                 'count' => $count,
                             ];
@@ -249,7 +249,7 @@ class References extends AbstractPlugin
                             $property = $api->searchOne('properties', ['term' => $value])->getContent();
                             $result[$field]['o-module-reference:values'][] = [
                                 'o:id' => $property->id(),
-                                'o:term' => $value,
+                                'o:term' => $property->term(),
                                 'o:label' => $property->label(),
                                 '@language' => null,
                                 'count' => $count,
