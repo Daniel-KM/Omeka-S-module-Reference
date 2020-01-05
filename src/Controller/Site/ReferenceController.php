@@ -31,12 +31,12 @@ class ReferenceController extends AbstractActionController
         $query = ['site_id' => $this->currentSite()->id()];
 
         $view = new ViewModel();
-        $view->setVariable('references', $slugs);
-        $view->setVariable('types', array_keys($types));
-        $view->setVariable('resourceName', $resourceName);
-        $view->setVariable('query', $query);
-        $view->setVariable('site', $this->currentSite());
-        return $view;
+        return $view
+            ->setVariable('references', $slugs)
+            ->setVariable('types', array_keys($types))
+            ->setVariable('resourceName', $resourceName)
+            ->setVariable('query', $query)
+            ->setVariable('site', $this->currentSite());
     }
 
     public function listAction()
@@ -64,30 +64,29 @@ class ReferenceController extends AbstractActionController
         switch ($output) {
             case 'json':
                 $references = $this->reference()->getList($term, $type, $resourceName, $order, $query);
-                $view = new JsonModel($references);
-                return $view;
+                return new JsonModel($references);
         }
 
         $total = $this->reference()->count($term, $type, $resourceName, $query);
 
         $view = new ViewModel();
-        $view->setVariable('total', $total);
-        $view->setVariable('label', $slugData['label']);
-        $view->setVariable('term', $term);
-        $view->setVariable('args', [
-            'type' => $type,
-            'resource_name' => $resourceName,
-            'order' => $order,
-            'query' => $query,
-        ]);
-        $view->setVariable('options', [
-            'link_to_single' => $settings->get('reference_link_to_single', true),
-            'total' => $settings->get('reference_total', true),
-            'skiplinks' => $settings->get('reference_list_skiplinks', true),
-            'headings' => $settings->get('reference_list_headings', true),
-        ]);
-        $view->setVariable('slug', $slug);
-        return $view;
+        return $view
+            ->setVariable('total', $total)
+            ->setVariable('label', $slugData['label'])
+            ->setVariable('term', $term)
+            ->setVariable('args', [
+                'type' => $type,
+                'resource_name' => $resourceName,
+                'order' => $order,
+                'query' => $query,
+            ])
+            ->setVariable('options', [
+                'link_to_single' => $settings->get('reference_link_to_single', true),
+                'total' => $settings->get('reference_total', true),
+                'skiplinks' => $settings->get('reference_list_skiplinks', true),
+                'headings' => $settings->get('reference_list_headings', true),
+            ])
+            ->setVariable('slug', $slug);
     }
 
     public function treeAction()
@@ -106,21 +105,21 @@ class ReferenceController extends AbstractActionController
         $references = $settings->get('reference_tree_hierarchy', []);
 
         $view = new ViewModel();
-        $view->setVariable('references', $references);
-        $view->setVariable('args', [
-            'term' => $term,
-            'type' => $type,
-            'resource_name' => $resourceName,
-            'query' => $query,
-        ]);
-        $view->setVariable('options', [
-            'query_type' => $settings->get('reference_tree_query_type', 'eq'),
-            'link_to_single' => $settings->get('reference_link_to_single', true),
-            'branch' => $settings->get('reference_tree_branch', false),
-            'total' => $settings->get('reference_total', true),
-            'expanded' => $settings->get('reference_tree_expanded', true),
-        ]);
-        return $view;
+        return $view
+            ->setVariable('references', $references)
+            ->setVariable('args', [
+                'term' => $term,
+                'type' => $type,
+                'resource_name' => $resourceName,
+                'query' => $query,
+            ])
+            ->setVariable('options', [
+                'query_type' => $settings->get('reference_tree_query_type', 'eq'),
+                'link_to_single' => $settings->get('reference_link_to_single', true),
+                'branch' => $settings->get('reference_tree_branch', false),
+                'total' => $settings->get('reference_total', true),
+                'expanded' => $settings->get('reference_tree_expanded', true),
+            ]);
     }
 
     protected function forwardToItemBrowse()

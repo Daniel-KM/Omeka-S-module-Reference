@@ -1,7 +1,7 @@
 <?php
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
- * @var \Omka\Api\Representation\SitePageBlockRepresentation $block
+ * @var \Omeka\Api\Representation\SitePageBlockRepresentation $block
  * @var array $terms
  * @var array $args
  * @var array $options
@@ -13,11 +13,11 @@ $translate = $this->plugin('translate');
 
 <div class="reference-block">
     <?php if ($options['heading']): ?>
-    <h3><?php echo $translate($options['heading']); ?></h3>
+    <h3><?= $translate($options['heading']) ?></h3>
     <?php endif; ?>
 
     <?php if (empty($terms)): ?>
-    <p><?php echo $translate('There is no references.'); ?></p>
+    <p><?= $translate('There is no references.') ?></p>
     <?php else: ?>
     <?php
     echo $this->partial('common/reference-index', [

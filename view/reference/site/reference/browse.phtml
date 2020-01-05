@@ -22,9 +22,9 @@ $query = empty($query) ? ['site_id' => $site->id()] : $query;
 ?>
 
 <div id="primary" class="reference">
-    <h2><?php echo $translate('References'); ?></h2>
+    <h2><?= $translate('References') ?></h2>
     <?php if (empty($types)): ?>
-        <p><?php echo $translate('No references available.'); ?></p>
+        <p><?= $translate('No references available.') ?></p>
     <?php else: ?>
         <?php
     if (count($types) == 1): ?>

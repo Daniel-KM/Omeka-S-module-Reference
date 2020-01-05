@@ -11,10 +11,10 @@ $this->htmlElement('body')->appendAttribute('class', 'reference browse hierarchy
 ?>
 
 <div id="primary" class="reference">
-    <h2><?php echo sprintf($translate('Tree of references (%d total)'), count($references)); ?></h2>
+    <h2><?= sprintf($translate('Tree of references (%d total)'), count($references)) ?></h2>
     <?php if (count($references)): ?>
-    <?php echo $this->reference()->displayTree($references, $args, $options); ?>
+    <?= $this->reference()->displayTree($references, $args, $options) ?>
     <?php else: ?>
-    <p><?php echo $this->escapeHtml($translate('There is no list of references.')); ?></p>
+    <p><?= $this->escapeHtml($translate('There is no list of references.')) ?></p>
     <?php endif; ?>
 </div>

@@ -94,7 +94,7 @@ if (count($references)):
         $paginationList = $this->partial('common/reference-skiplinks', ['references' => $references]);
     ?>
 <div id="reference-skiplinks" class="pagination reference-pagination pagination-top">
-    <?php echo $paginationList; ?>
+    <?= $paginationList ?>
 </div>
     <?php endif; ?>
 <div id="reference-headings">
@@ -193,7 +193,7 @@ if (count($references)):
 </div>
     <?php if ($options['skiplinks']): ?>
 <div id="reference-skiplinks-bottom" class="pagination reference-pagination pagination-bottom">
-    <?php echo $paginationList; ?>
+    <?= $paginationList ?>
 </div>
     <?php endif;
 

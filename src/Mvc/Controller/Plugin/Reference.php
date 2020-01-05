@@ -797,7 +797,6 @@ class Reference extends AbstractPlugin
                 */
 
                 $entityClass = \Omeka\Entity\Item::class;
-                $qb = $entityManager->createQueryBuilder();
                 $qb
                     ->select(
                         'item_set.id as val',
@@ -821,7 +820,6 @@ class Reference extends AbstractPlugin
                 break;
 
             case 'resource_templates':
-                $qb = $entityManager->createQueryBuilder();
                 $qb
                     ->select(
                         'resource_template.label as val',
@@ -854,7 +852,6 @@ class Reference extends AbstractPlugin
                 GROUP BY val;
                 */
 
-                $qb = $entityManager->createQueryBuilder();
                 $qb
                     ->select(
                         // 'resource_class.label as val',
@@ -887,7 +884,6 @@ class Reference extends AbstractPlugin
 
             case 'properties':
             default:
-                $qb = $entityManager->createQueryBuilder();
                 $qb
                     ->select(
                         // 'property.label as val',
