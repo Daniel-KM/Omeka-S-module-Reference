@@ -31,7 +31,6 @@ class ReferencesFactory implements FactoryInterface
             $services->get('Omeka\EntityManager'),
             $services->get('Omeka\ApiAdapterManager'),
             $api,
-            $plugins->get('reference'),
             $plugins->get('translate'),
             $properties,
             $resourceClasses,

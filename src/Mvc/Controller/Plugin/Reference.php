@@ -7,6 +7,9 @@ use Omeka\Mvc\Controller\Plugin\Api;
 use Reference\Mvc\Controller\Plugin\References as ReferencesPlugin;
 use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 
+/**
+ * @deprecated Use \Reference\Mvc\Controller\Plugin\References and \Reference\View\Helper\References instead.
+ */
 class Reference extends AbstractPlugin
 {
     /**

@@ -7,7 +7,6 @@ use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Adapter\Manager as AdapterManager;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Mvc\Controller\Plugin\Translate;
-// use Reference\Mvc\Controller\Plugin\Reference;
 use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 
 class References extends AbstractPlugin
@@ -33,11 +32,6 @@ class References extends AbstractPlugin
      * @var Api
      */
     protected $api;
-
-    /**
-     * @var Reference
-     */
-    protected $reference;
 
     /**
      * @var Translate
@@ -88,7 +82,6 @@ class References extends AbstractPlugin
      * @param EntityManager $entityManager
      * @param AdapterManager $adapterManager
      * @param Api $api
-     * @param Reference $reference
      * @param Translate $translate
      * @param \Omeka\Api\Representation\PropertyRepresentation[] $properties
      * @param \Omeka\Api\Representation\ResourceClassRepresentation[] $resourceClasses
@@ -99,7 +92,6 @@ class References extends AbstractPlugin
         EntityManager $entityManager,
         AdapterManager $adapterManager,
         Api $api,
-        Reference $reference,
         Translate $translate,
         array $properties,
         array $resourceClasses,
@@ -109,7 +101,6 @@ class References extends AbstractPlugin
         $this->entityManager = $entityManager;
         $this->adapterManager = $adapterManager;
         $this->api = $api;
-        $this->reference = $reference;
         $this->translate = $translate;
         $this->properties = $properties;
         $this->resourceClasses = $resourceClasses;
