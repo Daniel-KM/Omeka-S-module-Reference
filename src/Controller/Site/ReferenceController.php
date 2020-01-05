@@ -25,17 +25,18 @@ class ReferenceController extends AbstractActionController
             return $this->notFoundAction();
         }
 
-        $resourceName = $settings->get('reference_resource_name', 'resources');
+        $resourceName = $settings->get('reference_resource_name', 'items');
 
         $query = ['site_id' => $this->currentSite()->id()];
 
         $view = new ViewModel();
         return $view
-            ->setVariable('references', $slugs)
+            ->setVariable('site', $this->currentSite())
+            ->setVariable('slugs', $slugs)
             ->setVariable('types', array_keys($types))
             ->setVariable('resourceName', $resourceName)
             ->setVariable('query', $query)
-            ->setVariable('site', $this->currentSite());
+        ;
     }
 
     public function listAction()
@@ -52,17 +53,9 @@ class ReferenceController extends AbstractActionController
         }
         $slugData = $slugs[$slug];
 
-        $termId = $slugData['term'];
-        $type = $slugData['type'];
+        $term = $slugData['term'];
         $resourceName = $settings->get('reference_resource_name', 'items');
 
-        try {
-            $term = $this->api()->read($type, $termId)->getContent();
-        } catch (\Omeka\Api\Exception\NotFoundException $e) {
-            return $this->notFoundAction();
-        }
-
-        $term = $term->term();
         $query = ['site_id' => $this->currentSite()->id()];
 
         $total = $this->references([$term], $query, ['resource_name' => $resourceName])->count();

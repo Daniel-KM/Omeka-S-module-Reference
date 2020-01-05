@@ -119,3 +119,26 @@ if (version_compare($oldVersion, '3.4.10', '<')) {
     }
     $entityManager->flush();
 }
+
+if (version_compare($oldVersion, '3.4.16', '<')) {
+    $properties = [];
+    foreach ($api->search('properties')->getContent() as $property) {
+        $properties[$property->id()] = $property->term();
+    }
+
+    $resourceClasses = [];
+    foreach ($api->search('resource_classes')->getContent() as $resourceClass) {
+        $resourceClasses[$resourceClass->id()] = $resourceClass->term();
+    }
+
+    $referenceSlugs = $settings->get('reference_slugs') ?: [];
+    foreach ($referenceSlugs as $slug => &$slugData) {
+        $slugData['term'] = $slugData['type'] === 'resource_classes'
+            ? @$resourceClasses[$slugData['term']]
+            : @$properties[$slugData['term']];
+        if (empty($slugData['term'])) {
+            unset($referenceSlugs[$slug]);
+        }
+    }
+    $settings->set('reference_slugs', $referenceSlugs);
+}
