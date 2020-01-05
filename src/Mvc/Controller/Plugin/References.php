@@ -292,7 +292,7 @@ class References extends AbstractPlugin
                     break;
 
                 case 'o:resource_class':
-                    $values = $reference('', $field['metatype'], $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+                    $values = $this->listResourceClasses();
                     foreach (array_filter($values) as $value => $count) {
                         $resourceClass = $this->resourceClasses[$value];
                         $result[$field['term']]['o-module-reference:values'][] = [
@@ -306,7 +306,7 @@ class References extends AbstractPlugin
                     break;
 
                 case 'o:resource_template':
-                    $values = $reference('', $field['metatype'], $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+                    $values = $this->listResourceTemplates();
                     foreach (array_filter($values) as $value => $count) {
                         $meta = $api->searchOne('resource_templates', ['label' => $value])->getContent();
                         $result[$field['term']]['o-module-reference:values'][] = [
@@ -323,7 +323,7 @@ class References extends AbstractPlugin
                     if ($field['type'] === 'o:item_set' && $options['resource_name'] !== 'items') {
                         $values = [];
                     } else {
-                        $values = $reference('', $field['metatype'], $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+                        $values = $this->listItemSets();
                     }
                     foreach (array_filter($values) as $value => $count) {
                         $meta = $api->read('item_sets', ['id' => $value])->getContent();
@@ -396,6 +396,145 @@ class References extends AbstractPlugin
 
         $this->appendAdditionalData($qb, 'o:property');
         return $this->outputMetadata($qb, 'o:property');
+    }
+
+    /**
+     * Get the list of used resource classes by metadata name, the total for
+     * each one and the first item.
+     *
+     * @return array Associative list of references, with the total, the first
+     * first record, and the first character, according to the parameters.
+     */
+    protected function listResourceClasses()
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        /*
+         SELECT resource_class.label AS val, resource.id AS val2, COUNT(resource.id) AS total
+         FROM resource resource
+         INNER JOIN item item ON item.id = resource.id
+         LEFT JOIN resource_class ON resource_class.id = resource.resource_class_id
+         GROUP BY val;
+         */
+
+        $qb
+            ->select(
+                // 'resource_class.label as val',
+                "CONCAT(vocabulary.prefix, ':', resource_class.localName) AS val",
+                'COUNT(resource.id) AS total'
+            )
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            // The left join allows to get the total of items without
+            // resource class.
+            ->leftJoin(
+                \Omeka\Entity\ResourceClass::class,
+                'resource_class',
+                Join::WITH,
+                $expr->eq('resource_class.id', 'resource.resourceClass')
+            )
+            ->innerJoin(
+                \Omeka\Entity\Vocabulary::class,
+                'vocabulary',
+                Join::WITH,
+                $expr->eq('vocabulary.id', 'resource_class.vocabulary')
+            )
+            ->groupBy('val')
+        ;
+        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+            $qb
+                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+        }
+
+        $this->appendAdditionalData($qb, 'o:resource_class');
+        return $this->outputMetadata($qb, 'o:resource_class');
+    }
+
+    /**
+     * Get the list of used resource templates by metadata name, the total for
+     * each one and the first item.
+     *
+     * @return array Associative list of references, with the total, the first
+     * first record, and the first character, according to the parameters.
+     */
+    protected function listResourceTemplates()
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        $qb
+            ->select(
+                'resource_template.label as val',
+                'COUNT(resource.id) AS total'
+            )
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            // The left join allows to get the total of items without
+            // resource template.
+            ->leftJoin(
+                \Omeka\Entity\ResourceTemplate::class,
+                'resource_template',
+                Join::WITH,
+                $expr->eq('resource_template.id', 'resource.resourceTemplate')
+            )
+            ->groupBy('val')
+        ;
+        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+            $qb
+                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+        }
+
+        $this->appendAdditionalData($qb, 'o:resource_template');
+        return $this->outputMetadata($qb, 'o:resource_template');
+    }
+
+    /**
+     * Get the list of used item sets, the total for each one and the first item.
+     *
+     * @return array Associative list of references, with the total, the first
+     * first record, and the first character, according to the parameters.
+     */
+    protected function listItemSets()
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        // Count the number of items by item set.
+        // TODO Extract the title via Omeka v2.0.
+
+        // TODO Get all item sets, even without items (or private items).
+        /*
+         SELECT DISTINCT item_set.id AS val, COUNT(item_item_set.item_id) AS total
+         FROM resource resource
+         INNER JOIN item_set item_set ON item_set.id = resource.id
+         LEFT JOIN item_item_set item_item_set ON item_item_set.item_set_id = item_set.id
+         GROUP BY val;
+         */
+
+        $qb
+            ->select(
+                'item_set.id as val',
+                'COUNT(resource.id) AS total'
+            )
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            ->innerJoin(\Omeka\Entity\Item::class, 'item', Join::WITH, $expr->eq('item.id', 'resource.id'))
+            // The left join allows to get the total of items without
+            // item set.
+            ->leftJoin('item.itemSets', 'item_set', Join::WITH, $expr->neq('item_set.id', 0))
+            // Check visibility automatically for item sets.
+            ->leftJoin(
+                \Omeka\Entity\Resource::class,
+                'resource_item_set',
+                Join::WITH,
+                $expr->eq('resource_item_set.id', 'item_set.id')
+            )
+            ->groupBy('val')
+        ;
+
+        $this->appendAdditionalData($qb, 'o:item_set');
+        return $this->outputMetadata($qb, 'o:item_set');
     }
 
     protected function appendAdditionalData(QueryBuilder $qb, $type)
