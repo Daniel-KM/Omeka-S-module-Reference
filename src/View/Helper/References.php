@@ -29,13 +29,13 @@ class References extends AbstractHelper
      * - resource_name: items (default), "item_sets", "media", "resources".
      * - sort_by: "alphabetic" (default), "count", or any available column.
      * - sort_order: "asc" (default) or "desc".
-     * - link_to_single: false (default, always as a list), or true (direct when
-     *   there is only one resource).
-     * - initial: false (default), or true (get first letter of each result).
      * - values: array Allow to limit the answer to the specified values.
+     * - first_id: false (default), or true (get first resource).
+     * - initial: false (default), or true (get first letter of each result).
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
-     * - output: "associative" (default), "list", or "withFirst".
+     * - output: "associative" (default) or "list" (set automatically when some
+     *   options (first_id or initial) are selected.
      * Some options and some combinations are not managed for some metadata.
      * @return array Associative array with total and first record ids.
      */
@@ -97,7 +97,8 @@ class References extends AbstractHelper
             $options = [];
         }
         $options['initial'] = @$options['initial'] || @$options['skiplinks'] || @$options['headings'];
-        $options['output'] = @$options['link_to_single'] ? 'withFirst' : 'list';
+        $options['first_id'] = @$options['first_id'] || @$options['link_to_single'];
+        $options['output'] = 'list';
 
         $ref = $this->references;
         $list = $ref([$term], $query, $options)->list();

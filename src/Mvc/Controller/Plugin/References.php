@@ -128,13 +128,13 @@ class References extends AbstractPlugin
      * - resource_name: items (default), "item_sets", "media", "resources".
      * - sort_by: "alphabetic" (default), "total", or any available column.
      * - sort_order: "asc" (default) or "desc".
-     * - link_to_single: false (default, always as a list), or true (direct when
-     *   there is only one resource).
+     * - first_id: false (default), or true (get first resource).
      * - initial: false (default), or true (get first letter of each result).
      * - values: array Allow to limit the answer to the specified values.
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
-     * - output: "associative" (default), "list", or "withFirst".
+     * - output: "associative" (default) or "list" (set automatically when some
+     *   options (first_id or initial) are selected.
      * Some options and some combinations are not managed for some metadata.
      * @return self
      */
@@ -202,7 +202,7 @@ class References extends AbstractPlugin
             'sort_by' => 'total',
             'sort_order' => 'DESC',
             // Output options.
-            'link_to_single' => false,
+            'first_id' => false,
             'initial' => false,
             'values' => [],
             'include_without_meta' => false,
@@ -212,6 +212,8 @@ class References extends AbstractPlugin
             $resourceName = in_array(@$options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
                 ? $options['resource_name']
                 : $defaults['resource_name'];
+            $firstId = (bool) @$options['first_id'];
+            $initial = (bool) @$options['initial'];
             $this->options = [
                 'resource_name' => $resourceName,
                 'entity_class' => $this->mapResourceNameToEntity($resourceName),
@@ -219,11 +221,11 @@ class References extends AbstractPlugin
                 'page' => @$options['page'] ?: $defaults['page'],
                 'sort_by' => @$options['sort_by'] ? $options['sort_by'] : 'alphabetic',
                 'sort_order' => strtolower(@$options['sort_order']) === 'asc' ? 'ASC' : 'DESC',
-                'link_to_single' => (bool) @$options['link_to_single'],
-                'initial' => (bool) @$options['initial'],
+                'first_id' => $firstId,
+                'initial' => $initial,
                 'values' => @$options['values'] ?: [],
                 'include_without_meta' => (bool) @$options['include_without_meta'],
-                'output' => in_array(@$options['output'], ['associative', 'list', 'withFirst']) ? $options['output'] : 'associative',
+                'output' => $firstId || $initial || @$options['output'] === 'list' ? 'list' : 'associative',
             ];
         } else {
             $this->options = $defaults;
@@ -452,7 +454,7 @@ class References extends AbstractPlugin
             ->groupBy('val')
         ;
 
-        $this->appendAdditionalData($qb, 'properties');
+        $this->manageOptions($qb, 'properties');
         return $this->outputMetadata($qb, 'properties');
     }
 
@@ -498,7 +500,7 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
         }
 
-        $this->appendAdditionalData($qb, 'resource_classes');
+        $this->manageOptions($qb, 'resource_classes');
         return $this->outputMetadata($qb, 'resource_classes');
     }
 
@@ -544,7 +546,7 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
         }
 
-        $this->appendAdditionalData($qb, 'resource_templates');
+        $this->manageOptions($qb, 'resource_templates');
         return $this->outputMetadata($qb, 'resource_templates');
     }
 
@@ -593,7 +595,7 @@ class References extends AbstractPlugin
         $qb
             ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id');
 
-        $this->appendAdditionalData($qb, 'item_sets');
+        $this->manageOptions($qb, 'item_sets');
         return $this->outputMetadata($qb, 'item_sets');
     }
 
@@ -642,7 +644,7 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
         }
 
-        $this->appendAdditionalData($qb, 'o:property');
+        $this->manageOptions($qb, 'o:property');
         return $this->outputMetadata($qb, 'o:property');
     }
 
@@ -695,7 +697,7 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
         }
 
-        $this->appendAdditionalData($qb, 'o:resource_class');
+        $this->manageOptions($qb, 'o:resource_class');
         return $this->outputMetadata($qb, 'o:resource_class');
     }
 
@@ -733,7 +735,7 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
         }
 
-        $this->appendAdditionalData($qb, 'o:resource_template');
+        $this->manageOptions($qb, 'o:resource_template');
         return $this->outputMetadata($qb, 'o:resource_template');
     }
 
@@ -781,37 +783,19 @@ class References extends AbstractPlugin
             ->groupBy('val')
         ;
 
-        $this->appendAdditionalData($qb, 'o:item_set');
+        $this->manageOptions($qb, 'o:item_set');
         return $this->outputMetadata($qb, 'o:item_set');
     }
 
-    protected function appendAdditionalData(QueryBuilder $qb, $type)
+    protected function manageOptions(QueryBuilder $qb, $type)
     {
         $expr = $qb->expr();
-
-        $sortBy = $this->options['sort_by'];
-        $sortOrder = $this->options['sort_order'];
-        switch ($sortBy) {
-            case 'total':
-                $qb
-                    ->orderBy('total', $sortOrder)
-                    // Add alphabetic order for ergonomy.
-                    ->addOrderBy('val', 'ASC');
-                break;
-            case 'alphabetic':
-                $sortBy = 'val';
-                // no break.
-            // Any available column.
-            default:
-                $qb
-                    ->orderBy($sortBy, $sortOrder);
-        }
 
         // Don't add useless order by resource id, since value are unique.
         // Furthermore, it may break mySql 5.7.5 and later, where ONLY_FULL_GROUP_BY
         // is set by default and requires to be grouped.
 
-        if ($this->options['link_to_single']) {
+        if ($this->options['first_id']) {
             // Add the first resource id.
             $qb
                 ->addSelect([
@@ -827,8 +811,6 @@ class References extends AbstractPlugin
                     $expr->upper($expr->substring('value.value', 1, 1)) . 'AS initial',
                 ]);
         }
-
-        $this->limitQuery($qb);
 
         if ($this->options['values']) {
             switch ($type) {
@@ -876,6 +858,26 @@ class References extends AbstractPlugin
             }
         }
 
+        $this->limitQuery($qb);
+
+        $sortBy = $this->options['sort_by'];
+        $sortOrder = $this->options['sort_order'];
+        switch ($sortBy) {
+            case 'total':
+                $qb
+                    ->orderBy('total', $sortOrder)
+                    // Add alphabetic order for ergonomy.
+                    ->addOrderBy('val', 'ASC');
+                break;
+            case 'alphabetic':
+                $sortBy = 'val';
+                // no break.
+                // Any available column.
+            default:
+                $qb
+                    ->orderBy($sortBy, $sortOrder);
+        }
+
         if ($this->options['per_page']) {
             $qb->setMaxResults($this->options['per_page']);
             if ($this->options['page'] > 1) {
@@ -887,61 +889,57 @@ class References extends AbstractPlugin
 
     protected function outputMetadata(QueryBuilder $qb, $type)
     {
-        switch ($this->options['output']) {
-            case 'list':
-            case 'withFirst':
-                $result = $qb->getQuery()->getScalarResult();
-                if ($this->options['initial'] && (extension_loaded('intl') || extension_loaded('iconv'))) {
-                    if (extension_loaded('intl')) {
-                        $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
-                        $result = array_map(function ($v) use ($transliterator) {
-                            $v['total'] = (int) $v['total'];
-                            $v['initial'] = $transliterator->transliterate($v['initial']);
-                            return $v;
-                        }, $result);
-                    } else {
-                        $result = array_map(function ($v) {
-                            $v['total'] = (int) $v['total'];
-                            $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);
-                            if ($trans) {
-                                $v['initial'] = $trans;
-                            }
-                            return $v;
-                        }, $result);
-                    }
+        if ($this->options['output'] === 'list') {
+            $result = $qb->getQuery()->getScalarResult();
+            if ($this->options['initial'] && (extension_loaded('intl') || extension_loaded('iconv'))) {
+                if (extension_loaded('intl')) {
+                    $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+                    $result = array_map(function ($v) use ($transliterator) {
+                        $v['total'] = (int) $v['total'];
+                        $v['initial'] = $transliterator->transliterate($v['initial']);
+                        return $v;
+                    }, $result);
                 } else {
                     $result = array_map(function ($v) {
                         $v['total'] = (int) $v['total'];
+                        $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);
+                        if ($trans) {
+                            $v['initial'] = $trans;
+                        }
                         return $v;
                     }, $result);
                 }
+            } else {
+                $result = array_map(function ($v) {
+                    $v['total'] = (int) $v['total'];
+                    return $v;
+                }, $result);
+            }
 
-                if (!$this->options['include_without_meta']) {
-                    $result = array_combine(array_column($result, 'val'), $result);
-                    unset($result['']);
-                    $result = array_values($result);
-                }
+            if (!$this->options['include_without_meta']) {
+                $result = array_combine(array_column($result, 'val'), $result);
+                unset($result['']);
+                $result = array_values($result);
+            }
 
-                return $result;
-
-            case 'associative':
-            default:
-                $result = $qb->getQuery()->getScalarResult();
-
-                // Array column cannot be used in one step, because the null
-                // value (no title) should be converted to "", not to "0".
-                // $result = array_column($result, 'total', 'val');
-                $result = array_combine(
-                    array_column($result, 'val'),
-                    array_column($result, 'total')
-                );
-
-                if (!$this->options['include_without_meta']) {
-                    unset($result['']);
-                }
-
-                return array_map('intval', $result);
+            return $result;
         }
+
+        $result = $qb->getQuery()->getScalarResult();
+
+        // Array column cannot be used in one step, because the null
+        // value (no title) should be converted to "", not to "0".
+        // $result = array_column($result, 'total', 'val');
+        $result = array_combine(
+            array_column($result, 'val'),
+            array_column($result, 'total')
+        );
+
+        if (!$this->options['include_without_meta']) {
+            unset($result['']);
+        }
+
+        return array_map('intval', $result);
     }
 
     protected function countResourcesForProperties($termId)
