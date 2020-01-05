@@ -134,21 +134,14 @@ class References extends AbstractPlugin
      *   resources with no metadata).
      * - output: "associative" (default), "list", or "withFirst".
      * Some options and some combinations are not managed for some metadata.
-     * @return array|null|self The result or null if called directly, else self.
+     * @return self
      */
-    public function __invoke(
-        array $metadata = null,
-        array $query = null,
-        array $options = null
-    ) {
-        $this
+    public function __invoke(array $metadata = null, array $query = null, array $options = null)
+    {
+        return $this
             ->setMetadata($metadata)
             ->setQuery($query)
             ->setOptions($options);
-
-        return is_null($metadata) && is_null($query)
-            ? $this
-            : $this->list();
     }
 
     /**
