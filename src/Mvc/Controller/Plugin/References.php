@@ -264,6 +264,7 @@ class References extends AbstractPlugin
         }
 
         $options = $this->getOptions();
+        $isAssociative = $this->options['output'] === 'associative';
 
         $api = $this->api;
         $translate = $this->translate;
@@ -325,39 +326,51 @@ class References extends AbstractPlugin
 
                 case 'o:property':
                     $values = $this->listProperties();
-                    foreach (array_filter($values) as $value => $count) {
-                        $property = $this->properties[$value];
-                        $result[$field['term']]['o-module-reference:values'][] = [
-                            'o:id' => $property->id(),
-                            'o:term' => $property->term(),
-                            'o:label' => $translate($property->label()),
-                            '@language' => null,
-                        ] + $count;
+                    if ($isAssociative) {
+                        $result[$field['term']]['o-module-reference:values'] = $values;
+                    } else {
+                        foreach (array_filter($values) as $value => $valueData) {
+                            $property = $this->properties[$valueData['val']];
+                            $result[$field['term']]['o-module-reference:values'][] = [
+                                'o:id' => $property->id(),
+                                'o:term' => $property->term(),
+                                'o:label' => $translate($property->label()),
+                                '@language' => null,
+                            ] + $valueData;
+                        }
                     }
                     break;
 
                 case 'o:resource_class':
                     $values = $this->listResourceClasses();
-                    foreach (array_filter($values) as $value => $count) {
-                        $resourceClass = $this->resourceClasses[$value];
-                        $result[$field['term']]['o-module-reference:values'][] = [
-                            'o:id' => $resourceClass->id(),
-                            'o:term' => $resourceClass->term(),
-                            'o:label' => $translate($resourceClass->label()),
-                            '@language' => null,
-                        ] + $count;
+                    if ($isAssociative) {
+                        $result[$field['term']]['o-module-reference:values'] = $values;
+                    } else {
+                        foreach (array_filter($values) as $value => $valueData) {
+                            $resourceClass = $this->resourceClasses[$valueData['val']];
+                            $result[$field['term']]['o-module-reference:values'][] = [
+                                'o:id' => $resourceClass->id(),
+                                'o:term' => $resourceClass->term(),
+                                'o:label' => $translate($resourceClass->label()),
+                                '@language' => null,
+                            ] + $valueData;
+                        }
                     }
                     break;
 
                 case 'o:resource_template':
                     $values = $this->listResourceTemplates();
-                    foreach (array_filter($values) as $value => $count) {
-                        $resourceTemplate = $this->resourceTemplates[$value];
-                        $result[$field['term']]['o-module-reference:values'][] = [
-                            'o:id' => $resourceTemplate->id(),
-                            'o:label' => $resourceTemplate->label(),
-                            '@language' => null,
-                        ] + $count;
+                    if ($isAssociative) {
+                        $result[$field['term']]['o-module-reference:values'] = $values;
+                    } else {
+                        foreach (array_filter($values) as $value => $valueData) {
+                            $resourceTemplate = $this->resourceTemplates[$valueData['val']];
+                            $result[$field['term']]['o-module-reference:values'][] = [
+                                'o:id' => $resourceTemplate->id(),
+                                'o:label' => $resourceTemplate->label(),
+                                '@language' => null,
+                            ] + $valueData;
+                        }
                     }
                     break;
 
@@ -368,15 +381,19 @@ class References extends AbstractPlugin
                     } else {
                         $values = $this->listItemSets();
                     }
-                    foreach (array_filter($values) as $value => $count) {
-                        // TODO Improve this process via the resource title (Omeka 2).
-                        $meta = $api->read('item_sets', ['id' => $value])->getContent();
-                        $result[$field['term']]['o-module-reference:values'][] = [
-                            '@type' => 'o:ItemSet',
-                            'o:id' => (int) $value,
-                            'o:label' => $meta->displayTitle(),
-                            '@language' => null,
-                        ] + $count;
+                    if ($isAssociative) {
+                        $result[$field['term']]['o-module-reference:values'] = $values;
+                    } else {
+                        foreach (array_filter($values) as $value => $valueData) {
+                            // TODO Improve this process via the resource title (Omeka 2).
+                            $meta = $api->read('item_sets', ['id' => $valueData['val']])->getContent();
+                            $result[$field['term']]['o-module-reference:values'][] = [
+                                '@type' => 'o:ItemSet',
+                                'o:id' => (int) $value,
+                                'o:label' => $meta->displayTitle(),
+                                '@language' => null,
+                            ] + $valueData;
+                        }
                     }
                     break;
 
@@ -822,21 +839,8 @@ class References extends AbstractPlugin
 
     protected function manageOptions(QueryBuilder $qb, $type)
     {
-        $expr = $qb->expr();
-
-        // Don't add useless order by resource id, since value are unique.
-        // Furthermore, it may break mySql 5.7.5 and later, where ONLY_FULL_GROUP_BY
-        // is set by default and requires to be grouped.
-
-        if ($this->options['first_id']) {
-            // Add the first resource id.
-            $qb
-                ->addSelect([
-                    'MIN(resource.id) AS first',
-                ]);
-        }
-
-        if ($this->options['initial']) {
+        if ($type === 'properties' && $this->options['initial']) {
+            $expr = $qb->expr();
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
             $qb
                 ->addSelect([
@@ -845,11 +849,19 @@ class References extends AbstractPlugin
                 ]);
         }
 
-        if ($this->options['lang']) {
+        if ($type === 'properties' && $this->options['lang']) {
             $qb
                 ->addSelect([
                     'value.lang AS lang',
                 ]);
+        }
+
+        if ($this->options['first_id']) {
+            // Add the first resource id.
+            $qb
+            ->addSelect([
+                'MIN(resource.id) AS first',
+            ]);
         }
 
         if ($this->options['values']) {
@@ -899,6 +911,10 @@ class References extends AbstractPlugin
         }
 
         $this->limitQuery($qb);
+
+        // Don't add useless order by resource id, since value are unique.
+        // Furthermore, it may break mySql 5.7.5 and later, where ONLY_FULL_GROUP_BY
+        // is set by default and requires to be grouped.
 
         $sortBy = $this->options['sort_by'];
         $sortOrder = $this->options['sort_order'];
