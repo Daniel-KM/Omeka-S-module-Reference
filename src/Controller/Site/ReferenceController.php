@@ -2,7 +2,6 @@
 namespace Reference\Controller\Site;
 
 use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\JsonModel;
 use Zend\View\Model\ViewModel;
 
 class ReferenceController extends AbstractActionController
@@ -64,16 +63,7 @@ class ReferenceController extends AbstractActionController
         }
 
         $term = $term->term();
-        $order = ['value.value' => 'ASC'];
         $query = ['site_id' => $this->currentSite()->id()];
-
-        // @deprecated Use format ".json" instead of query "?output=json". Will be reomoved in 3.4.12.
-        $output = $this->params()->fromRoute('output') ?: $this->params()->fromQuery('output');
-        switch ($output) {
-            case 'json':
-                $references = $this->reference()->getList($termId, $type, $resourceName, $order, $query);
-                return new JsonModel($references);
-        }
 
         $total = $this->references([$term], $query, ['resource_name' => $resourceName])->count();
         $total = reset($total);
