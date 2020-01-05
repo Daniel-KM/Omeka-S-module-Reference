@@ -396,6 +396,46 @@ class References extends AbstractPlugin
     }
 
     /**
+     * Count the total of distinct values for a term, a template or an item set.
+     *
+     * @return int[] The number of references for each type, according to query.
+     */
+    public function count()
+    {
+        $fields = $this->getMetadata();
+        if (empty($fields)) {
+            return [];
+        }
+
+        // @todo Manage multiple type at once.
+        // @todo Manage multiple resource names (items, item sets, medias) at once.
+
+        $result = [];
+        foreach ($fields as $inputField) {
+            $field = $this->prepareField($inputField);
+            switch ($field['type']) {
+                case 'properties':
+                    $result[$field['term']] = $this->countResourcesForProperties($field['id']);
+                    break;
+                case 'resource_classes':
+                    $result[$field['term']] = $this->countResourcesForResourceClasses($field['id']);
+                    break;
+                case 'resource_templates':
+                    $result[$field['term']] = $this->countResourcesForResourceTemplates($field['id']);
+                    break;
+                case 'item_sets':
+                    $result[$field['term']] = $this->countResourcesForItemSets($field['id']);
+                    break;
+                default:
+                    $result[$field['term']] = null;
+                    break;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Get the list of used values for a proeprty, the total for each one and
      * the first item.
      *
@@ -865,6 +905,104 @@ class References extends AbstractPlugin
 
                 return array_map('intval', $result);
         }
+    }
+
+    protected function countResourcesForProperties($termId)
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        $qb
+            ->select([
+                // Here, this is the count of references, not resources.
+                $expr->countDistinct('value.value'),
+            ])
+            ->from(\Omeka\Entity\Value::class, 'value')
+            // This join allow to check visibility automatically too.
+            ->innerJoin(\Omeka\Entity\Resource::class, 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
+            ->andWhere($expr->eq('value.property', ':property'))
+            ->setParameter('property', (int) $termId)
+            ->andWhere($expr->isNotNull('value.value'));
+
+        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+            $qb
+                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, 'res.id = resource.id');
+        }
+
+        $this->limitQuery($qb);
+
+        return $qb->getQuery()->getSingleScalarResult();
+    }
+
+    protected function countResourcesForResourceClasses($termId)
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        $qb
+            ->select([
+                $expr->countDistinct('resource.id'),
+            ])
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            ->andWhere($expr->eq('resource.resourceClass', ':resource_class'))
+            ->setParameter('resource_class', (int) $termId);
+
+        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+            $qb
+                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, 'res.id = resource.id');
+        }
+
+        $this->limitQuery($qb);
+
+        return $qb->getQuery()->getSingleScalarResult();
+    }
+
+    protected function countResourcesForResourceTemplate($id)
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        $qb
+            ->select([
+                $expr->countDistinct('resource.id'),
+            ])
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            ->andWhere($expr->eq('resource.resourceTemplate', ':resource_template'))
+            ->setParameter('resource_template', (int) $id);
+
+        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+            $qb
+                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, 'res.id = resource.id');
+        }
+
+        $this->limitQuery($qb);
+
+        return $qb->getQuery()->getSingleScalarResult();
+    }
+
+    protected function countResourcesForItemSet($id)
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        if ($this->options['entity_class'] !== \Omeka\Entity\Item::class) {
+            return 0;
+        }
+        $qb
+            ->select([
+                $expr->countDistinct('resource.id'),
+            ])
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            ->andWhere($expr->eq('resource.itemSet', ':item_set'))
+            ->setParameter('item_set', (int) $id);
+
+        // Always an item.
+        $qb
+            ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id');
+
+        $this->limitQuery($qb);
+
+        return $qb->getQuery()->getSingleScalarResult();
     }
 
     /**
