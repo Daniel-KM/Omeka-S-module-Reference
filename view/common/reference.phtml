@@ -1,5 +1,7 @@
 <?php
 /**
+ * @deprecated Use references instead.
+ *
  * @var \Zend\View\Renderer\PhpRenderer $this
  * @var string $term
  * @var array $query
@@ -33,11 +35,14 @@ if (count($references)):
     $term = @$field['o:term'];
 
     $queryKeys = [
+        'o:ResourceClass' => 'resource_class_id',
+        'o:ResourceTemplate' => 'resource_template_id',
+        'o:ItemSet' => 'item_set_id',
         'resource_classes' => 'resource_class_id',
         'resource_templates' => 'resource_template_id',
         'item_sets' => 'item_set_id',
     ];
-    $queryKey = @$queryKeys[$options['resource_name']];
+    $queryKey = @$queryKeys[$field['@type']];
 
     // Set default templates according to options for improved performance.
     $template = '';

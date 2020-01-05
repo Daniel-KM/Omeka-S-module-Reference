@@ -83,41 +83,27 @@ class References extends AbstractHelper
     public function displayListForTerm($term, array $query = null, array $options = null)
     {
         // Skip option output.
-        $options['output'] = @$options['link_to_single'] ? 'withFirst' : 'list';
+        if (!$options) {
+            $options = [];
+        }
         $options['initial'] = @$options['initial'] || @$options['skiplinks'] || @$options['headings'];
+        $options['output'] = @$options['link_to_single'] ? 'withFirst' : 'list';
 
         $ref = $this->references;
-        $ref = $ref([$term], $query, $options);
+        $list = $ref([$term], $query, $options)->list();
 
+        $first = reset($list);
         $options = $ref->getOptions() + $options;
 
-        $types = [
-            'properties' => 'properties',
-            'resource_classes' => 'resource_classes',
-            'resource_templates' => 'resource_templates',
-            'item_sets' => 'item_sets',
-            'o:property' => 'properties',
-            'o:resource_class' => 'resource_classes',
-            'o:resource_template' => 'resource_templates',
-            'o:item_set' => 'item_sets',
-        ];
-        $type = $types[$options['type']];
-
-        $list = $ref->list();
-        $list = reset($list);
+        $list = $first['o-module-reference:values'];
+        unset($first['o-module-reference:values']);
 
         return $this->getView()->partial('common/reference', [
-            'references' => $list['o-module-reference:values'],
-            'termId' => @$list['o:id'],
             'term' => $term,
-            'label' => $list['o:label'],
-            'type' => $type,
-            'resourceName' => $options['resource_name'],
-            'options' => $options,
-            'order' => [$options['sort_by'] => $options['sort_order']],
             'query' => $query,
-            'perPage' => $options['per_page'],
-            'page' => $options['page'],
+            'options' => $options,
+            'field' => $first,
+            'references' => $list,
         ]);
     }
 }

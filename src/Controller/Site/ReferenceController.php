@@ -53,9 +53,17 @@ class ReferenceController extends AbstractActionController
         }
         $slugData = $slugs[$slug];
 
-        $term = $slugData['term'];
+        $termId = $slugData['term'];
         $type = $slugData['type'];
-        $resourceName = $settings->get('reference_resource_name', 'resources');
+        $resourceName = $settings->get('reference_resource_name', 'items');
+
+        try {
+            $term = $this->api()->read($type, $termId)->getContent();
+        } catch (\Omeka\Api\Exception\NotFoundException $e) {
+            return $this->notFoundAction();
+        }
+
+        $term = $term->term();
         $order = ['value.value' => 'ASC'];
         $query = ['site_id' => $this->currentSite()->id()];
 
@@ -63,28 +71,27 @@ class ReferenceController extends AbstractActionController
         $output = $this->params()->fromRoute('output') ?: $this->params()->fromQuery('output');
         switch ($output) {
             case 'json':
-                $references = $this->reference()->getList($term, $type, $resourceName, $order, $query);
+                $references = $this->reference()->getList($termId, $type, $resourceName, $order, $query);
                 return new JsonModel($references);
         }
 
-        $total = $this->reference()->count($term, $type, $resourceName, $query);
+        $total = $this->references([$term], $query, ['resource_name' => $resourceName])->count();
+        $total = reset($total);
 
         $view = new ViewModel();
         return $view
             ->setVariable('total', $total)
             ->setVariable('label', $slugData['label'])
             ->setVariable('term', $term)
-            ->setVariable('args', [
-                'type' => $type,
-                'resource_name' => $resourceName,
-                'order' => $order,
-                'query' => $query,
-            ])
+            ->setVariable('query', $query)
             ->setVariable('options', [
-                'link_to_single' => $settings->get('reference_link_to_single', true),
-                'total' => $settings->get('reference_total', true),
-                'skiplinks' => $settings->get('reference_list_skiplinks', true),
-                'headings' => $settings->get('reference_list_headings', true),
+                'resource_name' => $resourceName,
+                'sort_by' => 'alphabetic',
+                'sort_order' => 'ASC',
+                'link_to_single' => (bool) $settings->get('reference_link_to_single', true),
+                'total' => (bool) $settings->get('reference_total', true),
+                'skiplinks' => (bool) $settings->get('reference_list_skiplinks', true),
+                'headings' => (bool) $settings->get('reference_list_headings', true),
             ])
             ->setVariable('slug', $slug);
     }
