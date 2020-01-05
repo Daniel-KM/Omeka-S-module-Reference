@@ -128,13 +128,14 @@ class References extends AbstractPlugin
      * - resource_name: items (default), "item_sets", "media", "resources".
      * - sort_by: "alphabetic" (default), "total", or any available column.
      * - sort_order: "asc" (default) or "desc".
+     * - values: array Allow to limit the answer to the specified values.
      * - first_id: false (default), or true (get first resource).
      * - initial: false (default), or true (get first letter of each result).
-     * - values: array Allow to limit the answer to the specified values.
+     * - lang: false (default), or true (include language of value to result).
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
      * - output: "associative" (default) or "list" (set automatically when some
-     *   options (first_id or initial) are selected.
+     *   options (first_id, initial or lang) are selected.
      * Some options and some combinations are not managed for some metadata.
      * @return self
      */
@@ -201,10 +202,11 @@ class References extends AbstractPlugin
             'page' => 1,
             'sort_by' => 'total',
             'sort_order' => 'DESC',
+            'values' => [],
             // Output options.
             'first_id' => false,
             'initial' => false,
-            'values' => [],
+            'lang' => false,
             'include_without_meta' => false,
             'output' => 'associative',
         ];
@@ -214,6 +216,7 @@ class References extends AbstractPlugin
                 : $defaults['resource_name'];
             $firstId = (bool) @$options['first_id'];
             $initial = (bool) @$options['initial'];
+            $lang = (bool) @$options['lang'];
             $this->options = [
                 'resource_name' => $resourceName,
                 'entity_class' => $this->mapResourceNameToEntity($resourceName),
@@ -221,11 +224,12 @@ class References extends AbstractPlugin
                 'page' => @$options['page'] ?: $defaults['page'],
                 'sort_by' => @$options['sort_by'] ? $options['sort_by'] : 'alphabetic',
                 'sort_order' => strtolower(@$options['sort_order']) === 'asc' ? 'ASC' : 'DESC',
+                'values' => @$options['values'] ?: [],
                 'first_id' => $firstId,
                 'initial' => $initial,
-                'values' => @$options['values'] ?: [],
+                'lang' => $lang,
                 'include_without_meta' => (bool) @$options['include_without_meta'],
-                'output' => $firstId || $initial || @$options['output'] === 'list' ? 'list' : 'associative',
+                'output' => $firstId || $initial || $lang || @$options['output'] === 'list' ? 'list' : 'associative',
             ];
         } else {
             $this->options = $defaults;
@@ -809,6 +813,13 @@ class References extends AbstractPlugin
                 ->addSelect([
                     // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
                     $expr->upper($expr->substring('value.value', 1, 1)) . 'AS initial',
+                ]);
+        }
+
+        if ($this->options['lang']) {
+            $qb
+                ->addSelect([
+                    'value.lang AS lang',
                 ]);
         }
 
