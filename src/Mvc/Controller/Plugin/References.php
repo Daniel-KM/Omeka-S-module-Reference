@@ -124,7 +124,7 @@ class References extends AbstractPlugin
      * @param array $query An Omeka search query.
      * @param array $options Options for output.
      * - resource_name: items (default), "item_sets", "media", "resources".
-     * - sort_by: "alphabetic" (default), "count", or any available column.
+     * - sort_by: "alphabetic" (default), "total", or any available column.
      * - sort_order: "asc" (default) or "desc".
      * - link_to_single: false (default, always as a list), or true (direct when
      *   there is only one resource).
@@ -197,7 +197,7 @@ class References extends AbstractPlugin
             // Options sql.
             'per_page' => 25,
             'page' => 1,
-            'sort_by' => 'count',
+            'sort_by' => 'total',
             'sort_order' => 'DESC',
             // Output options.
             'link_to_single' => false,
@@ -267,52 +267,34 @@ class References extends AbstractPlugin
                 case 'properties':
                     $values = $this->listResourcesForProperty($field['id']);
                     $result[$field['term']] = [
+                        '@type' => $field['@type'],
                         'o:id' => $field['id'],
                         'o:term' => $field['term'],
                         'o:label' => $field['label'],
-                        'o-module-reference:values' => [],
+                        'o-module-reference:values' => $values,
                     ];
-                    foreach (array_filter($values) as $value => $count) {
-                        $result[$field['term']]['o-module-reference:values'][] = [
-                            'o:label' => $value,
-                            '@language' => null,
-                            'count' => $count,
-                        ];
-                    }
                     break;
 
                 case 'resource_classes':
                     $values = $this->listResourcesForResourceClass($field['id']);
                     $result[$field['term']] = [
+                        '@type' => $field['@type'],
                         'o:id' => $field['id'],
                         'o:term' => $field['term'],
                         'o:label' => $field['label'],
-                        'o-module-reference:values' => [],
+                        'o-module-reference:values' => $values,
                     ];
-                    foreach (array_filter($values) as $value => $count) {
-                        $result[$field['term']]['o-module-reference:values'][] = [
-                            'o:label' => $value,
-                            '@language' => null,
-                            'count' => $count,
-                        ];
-                    }
                     break;
 
                 case 'resource_templates':
                     $values = $this->listResourcesForResourceTemplate($field['id']);
                     $result[$field['term']] = [
+                        '@type' => $field['@type'],
                         'o:id' => $field['id'],
                         'o:term' => $field['term'],
                         'o:label' => $field['label'],
-                        'o-module-reference:values' => [],
+                        'o-module-reference:values' => $values,
                     ];
-                    foreach (array_filter($values) as $value => $count) {
-                        $result[$field['term']]['o-module-reference:values'][] = [
-                            'o:label' => $value,
-                            '@language' => null,
-                            'count' => $count,
-                        ];
-                    }
                     break;
 
                 case 'o:property':
@@ -324,8 +306,7 @@ class References extends AbstractPlugin
                             'o:term' => $property->term(),
                             'o:label' => $translate($property->label()),
                             '@language' => null,
-                            'count' => $count,
-                        ];
+                        ] + $count;
                     }
                     break;
 
@@ -338,8 +319,7 @@ class References extends AbstractPlugin
                             'o:term' => $resourceClass->term(),
                             'o:label' => $translate($resourceClass->label()),
                             '@language' => null,
-                            'count' => $count,
-                        ];
+                        ] + $count;
                     }
                     break;
 
@@ -351,8 +331,7 @@ class References extends AbstractPlugin
                             'o:id' => $resourceTemplate->id(),
                             'o:label' => $resourceTemplate->label(),
                             '@language' => null,
-                            'count' => $count,
-                        ];
+                        ] + $count;
                     }
                     break;
 
@@ -367,11 +346,11 @@ class References extends AbstractPlugin
                         // TODO Improve this process via the resource title (Omeka 2).
                         $meta = $api->read('item_sets', ['id' => $value])->getContent();
                         $result[$field['term']]['o-module-reference:values'][] = [
+                            '@type' => 'o:ItemSet',
                             'o:id' => (int) $value,
                             'o:label' => $meta->displayTitle(),
                             '@language' => null,
-                            'count' => $count,
-                        ];
+                        ] + $count;
                     }
                     break;
 
@@ -440,6 +419,9 @@ class References extends AbstractPlugin
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
+
+        // Note: Doctrine requires simple label, without quote or double quote:
+        // "o:label" is not possible, neither "count".
 
         $qb
             ->select([
@@ -749,7 +731,7 @@ class References extends AbstractPlugin
         $sortBy = $this->options['sort_by'];
         $sortOrder = $this->options['sort_order'];
         switch ($sortBy) {
-            case 'count':
+            case 'total':
                 $qb
                     ->orderBy('total', $sortOrder)
                     // Add alphabetic order for ergonomy.
@@ -772,7 +754,7 @@ class References extends AbstractPlugin
             // Add the first resource id.
             $qb
                 ->addSelect([
-                    'MIN(resource.id) AS first_id',
+                    'MIN(resource.id) AS first',
                 ]);
         }
 
@@ -886,7 +868,7 @@ class References extends AbstractPlugin
 
                 // Array column cannot be used in one step, because the null
                 // value (no title) should be converted to "", not to "0".
-                // $result = array_column($result, 'total', 'value');
+                // $result = array_column($result, 'total', 'val');
                 $result = array_combine(
                     array_column($result, 'val'),
                     array_column($result, 'total')
@@ -1066,6 +1048,7 @@ class References extends AbstractPlugin
         if (isset($this->properties[$field])) {
             $property = $this->properties[$field];
             return [
+                '@type' => 'o:Property',
                 'type' => 'properties',
                 'id' => $property->id(),
                 'term' => $field,
@@ -1076,6 +1059,7 @@ class References extends AbstractPlugin
         if (isset($this->resourceClasses[$field])) {
             $resourceClass = $this->resourceClasses[$field];
             return [
+                '@type' => 'o:ResourceClass',
                 'type' => 'resource_classes',
                 'id' => $resourceClass->id(),
                 'term' => $field,
@@ -1086,6 +1070,7 @@ class References extends AbstractPlugin
         if (isset($this->resourceTemplates[$field])) {
             $resourceTemplate = $this->resourceTemplates[$field];
             return [
+                '@type' => 'o:ResourceTemplate',
                 'type' => 'resource_templates',
                 'id' => $resourceTemplate->id(),
                 'term' => $field,

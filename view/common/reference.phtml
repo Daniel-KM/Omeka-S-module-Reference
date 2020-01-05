@@ -1,14 +1,11 @@
 <?php
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
- * @var array $references
- * @var int $termId
  * @var string $term
- * @var string $label
- * @var string $resourceName
- * @var array $options
- * @var string $type
  * @var array $query
+ * @var array $options
+ * @var array $field
+ * @var array $references
  */
 
 // It is recommended to skip "link_to_single" when there are more than 5000
@@ -25,20 +22,22 @@ if (count($references)):
     $this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Reference'));
 
     $mapResourcesControllers = ['resources' => 'resource', 'items' => 'item', 'item_sets' => 'item-set', 'media' => 'media'];
-    $controllerName = $mapResourcesControllers[$resourceName];
+    $controllerName = $mapResourcesControllers[$options['resource_name']];
 
     // Set default values if needed.
     $options += ['link_to_single' => true, 'total' => true, 'raw' => false, 'skiplinks' => true, 'headings' => true, 'custom_url' => false];
     $options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
     $hasInitial = array_key_exists('initial', $references[key($references)]);
     $propertyTitle = 'dcterms:title';
+    $termId = $field['o:id'];
+    $term = @$field['o:term'];
 
     $queryKeys = [
         'resource_classes' => 'resource_class_id',
         'resource_templates' => 'resource_template_id',
         'item_sets' => 'item_set_id',
     ];
-    $queryKey = @$queryKeys[$resourceName];
+    $queryKey = @$queryKeys[$options['resource_name']];
 
     // Set default templates according to options for improved performance.
     $template = '';
@@ -180,7 +179,7 @@ if (count($references)):
                         $referenceUrl = str_replace('{reference}', rawurlencode($reference), $templateUrl);
                     endif;
                 else:
-                    $referenceUrl = str_replace('{reference}', rawurlencode($referenceData['first_id']), $templateUrlSingle);
+                    $referenceUrl = str_replace('{reference}', rawurlencode($referenceData['first']), $templateUrlSingle);
                 endif;
             endif;
 
