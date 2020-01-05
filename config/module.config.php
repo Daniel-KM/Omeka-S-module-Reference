@@ -40,6 +40,7 @@ return [
     'controller_plugins' => [
         'factories' => [
             'reference' => Service\ControllerPlugin\ReferenceFactory::class,
+            'references' => Service\ControllerPlugin\ReferencesFactory::class,
         ],
     ],
     'router' => [
