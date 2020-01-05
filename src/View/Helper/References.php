@@ -29,6 +29,9 @@ class References extends AbstractHelper
      * - resource_name: items (default), "item_sets", "media", "resources".
      * - sort_by: "alphabetic" (default), "count", or any available column.
      * - sort_order: "asc" (default) or "desc".
+     * - filters: array Limit values to the specified data. Currently managed:
+     *   - "languages": list of languages. Values without language are returned
+     *     with the empty value "". This option is used only for properties.
      * - values: array Allow to limit the answer to the specified values.
      * - first_id: false (default), or true (get first resource).
      * - initial: false (default), or true (get first letter of each result).

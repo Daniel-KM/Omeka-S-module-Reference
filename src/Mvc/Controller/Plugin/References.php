@@ -128,6 +128,9 @@ class References extends AbstractPlugin
      * - resource_name: items (default), "item_sets", "media", "resources".
      * - sort_by: "alphabetic" (default), "total", or any available column.
      * - sort_order: "asc" (default) or "desc".
+     * - filters: array Limit values to the specified data. Currently managed:
+     *   - "languages": list of languages. Values without language are returned
+     *     with the empty value "". This option is used only for properties.
      * - values: array Allow to limit the answer to the specified values.
      * - first_id: false (default), or true (get first resource).
      * - initial: false (default), or true (get first letter of each result).
@@ -200,8 +203,11 @@ class References extends AbstractPlugin
             // Options sql.
             'per_page' => 25,
             'page' => 1,
-            'sort_by' => 'total',
-            'sort_order' => 'DESC',
+            'sort_by' => 'alphabetic',
+            'sort_order' => 'ASC',
+            'filters' => [
+                'languages' => [],
+            ],
             'values' => [],
             // Output options.
             'first_id' => false,
@@ -223,7 +229,8 @@ class References extends AbstractPlugin
                 'per_page' => isset($options['per_page']) ? $options['per_page'] : $defaults['per_page'],
                 'page' => @$options['page'] ?: $defaults['page'],
                 'sort_by' => @$options['sort_by'] ? $options['sort_by'] : 'alphabetic',
-                'sort_order' => strtolower(@$options['sort_order']) === 'asc' ? 'ASC' : 'DESC',
+                'sort_order' => strtolower(@$options['sort_order']) === 'desc' ? 'DESC' : 'ASC',
+                'filters' => @$options['filters'] ? $options['filters'] + $defaults['filters'] : $defaults['filters'],
                 'values' => @$options['values'] ?: [],
                 'first_id' => $firstId,
                 'initial' => $initial,
@@ -231,6 +238,12 @@ class References extends AbstractPlugin
                 'include_without_meta' => (bool) @$options['include_without_meta'],
                 'output' => $firstId || $initial || $lang || @$options['output'] === 'list' ? 'list' : 'associative',
             ];
+
+            // The check for length avoids to add a filter on values without any
+            // language. It should be specified as "||" (or leading/trailing "|").
+            if (is_string($this->options['filters']['languages']) && strlen($this->options['filters']['languages'])) {
+                $this->options['filters']['languages'] = array_unique(array_map('trim', explode('|', $this->options['filters']['languages'])));
+            }
         } else {
             $this->options = $defaults;
         }
@@ -458,6 +471,7 @@ class References extends AbstractPlugin
             ->groupBy('val')
         ;
 
+        $this->filterByLanguage($qb);
         $this->manageOptions($qb, 'properties');
         return $this->outputMetadata($qb, 'properties');
     }
@@ -648,6 +662,7 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
         }
 
+        $this->filterByLanguage($qb);
         $this->manageOptions($qb, 'o:property');
         return $this->outputMetadata($qb, 'o:property');
     }
@@ -789,6 +804,25 @@ class References extends AbstractPlugin
 
         $this->manageOptions($qb, 'o:item_set');
         return $this->outputMetadata($qb, 'o:item_set');
+    }
+
+    protected function filterByLanguage(QueryBuilder $qb)
+    {
+        if ($this->options['filters']['languages']) {
+            $expr = $qb->expr();
+            $hasEmptyLanguage = in_array('', $this->options['filters']['languages']);
+            if ($hasEmptyLanguage) {
+                $qb
+                    ->andWhere($expr->orX(
+                        $expr->in('value.lang', $this->options['filters']['languages']),
+                        // FIXME For an unknown reason, doctrine may crash with "IS NULL" in some non-reproductible cases. Db version related?
+                        $expr->isNull('value.lang')
+                    ));
+            } else {
+                $qb
+                    ->andWhere($expr->in('value.lang', $this->options['filters']['languages']));
+            }
+        }
     }
 
     protected function manageOptions(QueryBuilder $qb, $type)
