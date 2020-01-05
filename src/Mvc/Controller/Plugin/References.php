@@ -13,6 +13,8 @@ use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 class References extends AbstractPlugin
 {
     /**
+     * @todo Use the title that is set in resource (Omeka 2).
+     *
      * @var int
      */
     protected $DC_Title_id = 1;
@@ -297,6 +299,16 @@ class References extends AbstractPlugin
                     ];
                     break;
 
+                case 'item_sets':
+                    $values = $this->listResourcesForItemSet($field['id']);
+                    $result[$field['term']] = [
+                        '@type' => $field['@type'],
+                        'o:id' => $field['id'],
+                        'o:label' => $field['label'],
+                        'o-module-reference:values' => $values,
+                    ];
+                    break;
+
                 case 'o:property':
                     $values = $this->listProperties();
                     foreach (array_filter($values) as $value => $count) {
@@ -413,7 +425,7 @@ class References extends AbstractPlugin
      *
      * @param int $termId
      * @return array Associative list of references, with the total, the first
-     * first record, and the first character, according to the parameters.
+     * record, and the first character, according to the parameters.
      */
     protected function listResourcesForProperty($termId)
     {
@@ -450,7 +462,7 @@ class References extends AbstractPlugin
      *
      * @param int $termId
      * @return array Associative list of references, with the total, the first
-     * first record, and the first character, according to the parameters.
+     * record, and the first character, according to the parameters.
      */
     protected function listResourcesForResourceClass($termId)
     {
@@ -496,7 +508,7 @@ class References extends AbstractPlugin
      *
      * @param int $termId
      * @return array Associative list of references, with the total, the first
-     * first record, and the first character, according to the parameters.
+     * record, and the first character, according to the parameters.
      */
     protected function listResourcesForResourceTemplate($termId)
     {
@@ -537,11 +549,60 @@ class References extends AbstractPlugin
     }
 
     /**
+     * Get the list of used values for an item set, the total for each one and
+     * the first item.
+     *
+     * @param int $termId
+     * @return array Associative list of references, with the total, the first
+     * record, and the first character, according to the parameters.
+     */
+    protected function listResourcesForItemSet($termId)
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        if ($this->options['entity_class'] !== \Omeka\Entity\Item::class) {
+            return [];
+        }
+
+        $itemSetId = $termId;
+        $termId = $this->DC_Title_id;
+
+        $qb
+            ->select([
+                'DISTINCT value.value AS val',
+                // "Distinct" avoids to count duplicate values in properties in
+                // a resource: we count resources, not properties.
+                $expr->countDistinct('resource.id') . ' AS total',
+            ])
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            ->leftJoin(
+                \Omeka\Entity\Value::class,
+                'value',
+                Join::WITH,
+                'value.resource = resource AND value.property = :property_id'
+            )
+            ->setParameter('property_id', $termId)
+            ->groupBy('val')
+            ->andWhere($expr->eq('resource.itemSet', ':item_set'))
+            ->setParameter('item_set', (int) $itemSetId)
+        ;
+
+        // Always an item.
+        $qb
+            ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id');
+
+        $this->appendAdditionalData($qb, 'item_sets');
+        return $this->outputMetadata($qb, 'item_sets');
+    }
+
+    /**
      * Get the list of used properties references by metadata name, the total
      * for each one and the first item.
      *
      * @return array Associative list of references, with the total, the first
-     * first record, and the first character, according to the parameters.
+     * record, and the first character, according to the parameters.
      */
     protected function listProperties()
     {
@@ -590,7 +651,7 @@ class References extends AbstractPlugin
      * each one and the first item.
      *
      * @return array Associative list of references, with the total, the first
-     * first record, and the first character, according to the parameters.
+     * record, and the first character, according to the parameters.
      */
     protected function listResourceClasses()
     {
@@ -643,7 +704,7 @@ class References extends AbstractPlugin
      * each one and the first item.
      *
      * @return array Associative list of references, with the total, the first
-     * first record, and the first character, according to the parameters.
+     * record, and the first character, according to the parameters.
      */
     protected function listResourceTemplates()
     {
@@ -680,7 +741,7 @@ class References extends AbstractPlugin
      * Get the list of used item sets, the total for each one and the first item.
      *
      * @return array Associative list of references, with the total, the first
-     * first record, and the first character, according to the parameters.
+     * record, and the first character, according to the parameters.
      */
     protected function listItemSets()
     {
@@ -1015,6 +1076,12 @@ class References extends AbstractPlugin
         }
     }
 
+    /**
+     * Get field from a string: property, class, template, item set or specific.
+     *
+     * @param string|int $field
+     * @return array
+     */
     protected function prepareField($field)
     {
         static $labels;
@@ -1077,6 +1144,20 @@ class References extends AbstractPlugin
                 'term' => $field,
                 'label' => $resourceTemplate->label(),
             ];
+        }
+
+        if (is_numeric($field)) {
+            try {
+                $itemSet = $this->api->read('item_sets', $field)->getContent();
+                return [
+                    '@type' => 'o:ItemSet',
+                    'type' => 'item_sets',
+                    'id' => $itemSet->id(),
+                    'term' => $field,
+                    'label' => $itemSet->displayTitle(),
+                ];
+            } catch (\Omeka\Api\Exception\NotFoundException $e) {
+            }
         }
 
         return [
