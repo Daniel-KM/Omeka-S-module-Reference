@@ -2,12 +2,12 @@
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
  * @var string $term
- * @var array $args
+ * @var array $query
  * @var array $options
- * @var int $total
  */
 
 $translate = $this->plugin('translate');
+$total = $this->references()->count($term, $query, $options);
 ?>
 
 <div class="reference-block">
@@ -16,7 +16,7 @@ $translate = $this->plugin('translate');
     <?php endif; ?>
     <?php
     if ($total):
-        echo $this->reference()->displayListForTerm($term, $args, $options);
+        echo $this->references()->displayListForTerm($term, $query, $options);
     else:
     ?>
     <p><?= $translate('There is no references.') ?></p>

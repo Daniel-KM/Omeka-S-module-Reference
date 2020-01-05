@@ -8,7 +8,6 @@ use Omeka\Entity\SitePageBlock;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
 use Omeka\Stdlib\ErrorStore;
-use Reference\Mvc\Controller\Plugin\Reference as ReferencePlugin;
 use Zend\View\Renderer\PhpRenderer;
 
 class Reference extends AbstractBlockLayout
@@ -24,20 +23,12 @@ class Reference extends AbstractBlockLayout
     protected $api;
 
     /**
-     * @var ReferencePlugin
-     */
-    protected $referencePlugin;
-
-    /**
      * @param Api $api
-     * @param ReferencePlugin $referencePlugin
      */
     public function __construct(
-        Api $api,
-        ReferencePlugin $referencePlugin
+        Api $api
     ) {
         $this->api = $api;
-        $this->referencePlugin = $referencePlugin;
     }
 
     public function getLabel()
@@ -120,17 +111,16 @@ class Reference extends AbstractBlockLayout
             $data['args']['query'] = 'site_id=' . $site->id();
         }
 
-        switch ($data['args']['type']) {
-            case 'resource_classes':
-                $data['args']['resource_class'] = $data['args']['term'];
-                break;
-            case 'properties':
-                $data['args']['property'] = $data['args']['term'];
-                break;
+        if (empty($data['args']['term'])) {
+            // Nothing.
+        } elseif ($this->isResourceClass($data['args']['term'])) {
+            $data['args']['resource_class'] = $data['args']['term'];
+        } else {
+            $data['args']['property'] = $data['args']['term'];
         }
-        unset($data['args']['terms']);
+        unset($data['args']['term']);
 
-        $data['args']['order'] = key($data['args']['order']) . ' ' . reset($data['args']['order']);
+        $data['args']['order'] = (key($data['args']['order']) === 'alphabetic' ? 'alphabetic' : 'total') . ' ' . reset($data['args']['order']);
 
         $fieldset = $formElementManager->get($blockFieldset);
         // TODO Fix set data for radio buttons.
@@ -158,23 +148,38 @@ class Reference extends AbstractBlockLayout
         $args = $data['args'];
         $options = $data['options'];
 
+        // TODO Update forms and saved params.
+        // Use new format for references.
         $term = $args['term'];
-        $total = $this->referencePlugin->count(
-            $args['term'],
-            $args['type'],
-            $args['resource_name'],
-            $args['query']
-        );
+        $query = $args['query'];
+        unset($args['term']);
+        unset($args['query']);
+        $options = $options + $args;
+        $options['sort_order'] = reset($args['order']);
+        $options['sort_by'] = key($args['order']) === 'alphabetic' ? 'alphabetic' : 'total';
+        $options['per_page'] = 0;
 
         return $view->partial(
             self::PARTIAL_NAME,
             [
-                'block' => $block,
                 'term' => $term,
-                'total' => $total,
-                'args' => $args,
+                'query' => $query,
                 'options' => $options,
             ]
         );
+    }
+
+    protected function isResourceClass($term)
+    {
+        static $resourceClasses;
+
+        if (is_null($resourceClasses)) {
+            $resourceClasses = [];
+            foreach ($this->api->search('resource_classes')->getContent() as $resourceClass) {
+                $resourceClasses[$resourceClass->term()] = $resourceClass;
+            }
+        }
+
+        return isset($resourceClasses[$term]);
     }
 }

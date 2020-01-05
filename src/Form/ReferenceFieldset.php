@@ -70,8 +70,8 @@ class ReferenceFieldset extends Form
                 'value_options' => [
                     'alphabetic ASC' => 'Alphabetic ascendant',  // @translate
                     'alphabetic DESC' => 'Alphabetic descendant',  // @translate
-                    'count ASC' => 'Count ascendant',  // @translate
-                    'count DESC' => 'Count descendant',  // @translate
+                    'total ASC' => 'Total ascendant',  // @translate
+                    'total DESC' => 'Total descendant',  // @translate
                 ],
             ],
         ]);

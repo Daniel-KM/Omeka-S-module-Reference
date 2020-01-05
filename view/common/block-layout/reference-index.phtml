@@ -2,10 +2,9 @@
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
  * @var \Omeka\Api\Representation\SitePageBlockRepresentation $block
- * @var array $terms
- * @var array $args
+ * @var array $metadata
+ * @var array $query
  * @var array $options
- * @var bool $totals
  */
 
 $translate = $this->plugin('translate');
@@ -16,17 +15,14 @@ $translate = $this->plugin('translate');
     <h3><?= $translate($options['heading']) ?></h3>
     <?php endif; ?>
 
-    <?php if (empty($terms)): ?>
+    <?php if (empty($metadata)): ?>
     <p><?= $translate('There is no references.') ?></p>
     <?php else: ?>
     <?php
     echo $this->partial('common/reference-index', [
         'site' => $block->page()->site(),
-        'terms' => $terms,
-        'type' => $args['type'],
-        'resourceName' => $args['resource_name'],
-        'totals' => $totals,
-        'args' => $args,
+        'metadata' => $metadata,
+        'query' => $query,
         'options' => $options,
     ]);
     ?>

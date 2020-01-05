@@ -14,7 +14,7 @@ $url = $this->plugin('url');
 $api = $this->plugin('api');
 $siteSlug = $this->params()->fromRoute('site-slug');
 
-$reference = $this->plugin('reference');
+$references = $this->plugin('references');
 
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 ?>
@@ -25,22 +25,23 @@ $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
     // TODO Currently, the totals are determined one by one.
     if ($totals):
         // TODO Get the properties labels one time.
-        $label = $api->searchOne($type, ['term' => $term])->getContent()->label();
-        $total = $reference()->count($term, $type, $resourceName, $args['query']);
+        $element = $api->searchOne($type, ['term' => $term])->getContent();
+        $total = $references->count([$term], $args['query'], ['resource_name' => $resourceName]);
+        $total = reset($total);
         echo $hyperlink(
-            sprintf($translate('%s (%d)'), $label, $total),
+            sprintf($translate('%s (%d)'), $element->label(), $total),
             // TODO Define the link to the reference page.
             $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $term)]),
-            ['title' => sprintf($translate('Browse %s'), $label)]
+            ['title' => sprintf($translate('Browse %s'), $element->label())]
         );
     else:
-        $label = $api->searchOne($type, ['term' => $term])->getContent()->label();
-        $total = $reference()->count($term, $type, $resourceName, $args['query']);
+        $element = $api->searchOne($type, ['term' => $term])->getContent();
+        $total = $references->count([$term], $args['query'], ['resource_name' => $resourceName]);
         echo $hyperlink(
-            $label,
+            $element->label(),
             // TODO Define the link to the reference page.
             $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $term)]),
-            ['title' => sprintf($translate('Browse %s'), $label)]
+            ['title' => sprintf($translate('Browse %s'), $element->label())]
         );
     endif;
     ?>
