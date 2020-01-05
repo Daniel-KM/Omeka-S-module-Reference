@@ -41,14 +41,18 @@ class ReferencesFactory implements FactoryInterface
 
     protected function supportAnyValue(ContainerInterface $services)
     {
+        /** @var \Doctrine\DBAL\Connection $connection */
         $connection = $services->get('Omeka\Connection');
 
-        $sql = 'SHOW VARIABLES LIKE "version";';
-        $stmt = $connection->query($sql);
-        $version = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
-        $version = reset($version);
-
-        return stripos($version, 'mysql') !== false
-            && version_compare($version, '5.7.5', '>=');
+        // To do a request is the simpler way to check if the flag ONLY_FULL_GROUP_BY
+        // is set in any databases, systems and versions and that it can be
+        // bypassed by Any_value().
+        $sql = 'SELECT ANY_VALUE(id) FROM user LIMIT 1;';
+        try {
+            $connection->query($sql)->fetchColumn();
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }
