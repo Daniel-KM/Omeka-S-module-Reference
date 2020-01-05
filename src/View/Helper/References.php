@@ -39,10 +39,15 @@ class References extends AbstractHelper
      * Some options and some combinations are not managed for some metadata.
      * @return array Associative array with total and first record ids.
      */
-    public function list(array $metadata = null, array $query = null, array $options = null)
+    public function list($metadata = null, array $query = null, array $options = null)
     {
         $ref = $this->references;
-        return $ref($metadata, $query, $options)->list();
+        $isSingle = is_string($metadata);
+        if ($isSingle) {
+            $metadata = [$metadata];
+        }
+        $count = $ref($metadata, $query, $options)->list();
+        return $isSingle ? reset($count) : $count;
     }
 
     /**
@@ -50,15 +55,20 @@ class References extends AbstractHelper
      *
      * @see \Reference\View\Helper\Reference::list()
      *
-     * @param array $metadata
+     * @param string|array $metadata
      * @param array $query
      * @param array $options
-     * @return array Associative array with the metadata and the total.
+     * @return int|array The total or an associative array with the metadata and the total.
      */
-    public function count(array $metadata = null, array $query = null, array $options = null)
+    public function count($metadata = null, array $query = null, array $options = null)
     {
         $ref = $this->references;
-        return $ref($metadata, $query, $options)->count();
+        $isSingle = is_string($metadata);
+        if ($isSingle) {
+            $metadata = [$metadata];
+        }
+        $count = $ref($metadata, $query, $options)->count();
+        return $isSingle ? reset($count) : $count;
     }
 
     /**
