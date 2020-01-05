@@ -82,7 +82,7 @@ class References extends AbstractPlugin
      */
     public function setMetadata(array $metadata = null)
     {
-        $this->metadata = $metadata ? array_unique($metadata) : [''];
+        $this->metadata = $metadata ? array_unique($metadata) : [];
         return $this;
     }
 
@@ -153,7 +153,7 @@ class References extends AbstractPlugin
     }
 
     /**
-     * @return array|null The result or null if empty request.
+     * @return array
      */
     public function list()
     {
@@ -162,7 +162,7 @@ class References extends AbstractPlugin
 
         // Either metadata or query is required.
         if (empty($fields) && empty($query)) {
-            return null;
+            return [];
         }
 
         $options = $this->getOptions();
@@ -180,6 +180,7 @@ class References extends AbstractPlugin
             'o:media' => 'media',
             'o:resource_class' => 'resource_classes',
             'o:resource_template' => 'resource_templates',
+            'o:property' => 'properties',
         ];
 
         if (array_intersect($fields, array_keys($omekaFieldsToTypes))) {
@@ -189,6 +190,7 @@ class References extends AbstractPlugin
                 'o:media' => $translate('Media'), // @translate
                 'o:resource_class' => $translate('Classes'), // @translate
                 'o:resource_template' => $translate('Templates'), // @translate
+                'o:property' => $translate('Properties'), // @translate
             ];
         }
 
@@ -239,47 +241,39 @@ class References extends AbstractPlugin
                             ];
                         }
                         break;
+                    case 'properties':
+                        foreach (array_filter($values) as $value => $count) {
+                            $property = $api->searchOne('properties', ['term' => $value])->getContent();
+                            $result[$field]['o-module-reference:values'][] = [
+                                'o:id' => $property->id(),
+                                'o:term' => $value,
+                                'o:label' => $property->label(),
+                                '@language' => null,
+                                'count' => $count,
+                            ];
+                        }
                     default:
                         break;
                 }
             }
-            // For properties.
+            // For any properties.
             else {
-                $values = $reference($field, 'properties', $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
-                // TODO Add a key for field "".
-                if (empty($field)) {
-                    foreach (array_filter($values) as $value => $count) {
-                        $property = $api->searchOne('properties', ['term' => $value])->getContent();
-                        $result[$value] = [
-                            'o:id' => $property->id(),
-                            'o:term' => $value,
-                            'o:label' => $property->label(),
-                            'o-module-reference:values' => [],
-                        ];
-                        $result[$value]['o-module-reference:values'][] = [
-                            // TODO Get the label of the term.
-                            'o:label' => $value,
-                            '@language' => null,
-                            'count' => $count,
-                        ];
-                    }
+                /** @var \Omeka\Api\Representation\PropertyRepresentation $property */
+                $property = $api->searchOne('properties', ['term' => $field])->getContent();
+                // When field is unknown, Omeka may return dcterms:title.
+                if (empty($property) || $property->term() !== $field) {
+                    $result[$field] = [
+                        'o:label' => $field, // @translate
+                        'o-module-reference:values' => [],
+                    ];
                 } else {
-                    /** @var \Omeka\Api\Representation\PropertyRepresentation $property */
-                    $property = $api->searchOne('properties', ['term' => $field])->getContent();
-                    // When field is unknown, Omeka may return dcterms:title.
-                    if ($property && $property->term() === $field) {
-                        $result[$field] = [
-                            'o:id' => $property->id(),
-                            'o:term' => $field,
-                            'o:label' => $property->label(),
-                            'o-module-reference:values' => [],
-                        ];
-                    } else {
-                        $result[$field] = [
-                            'o:label' => $translate('Properties'), // @translate
-                            'o-module-reference:values' => [],
-                        ];
-                    }
+                    $values = $reference($field, 'properties', $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+                    $result[$field] = [
+                        'o:id' => $property->id(),
+                        'o:term' => $field,
+                        'o:label' => $property->label(),
+                        'o-module-reference:values' => [],
+                    ];
                     foreach (array_filter($values) as $value => $count) {
                         $result[$field]['o-module-reference:values'][] = [
                             'o:label' => $value,

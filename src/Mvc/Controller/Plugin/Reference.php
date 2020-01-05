@@ -124,6 +124,10 @@ class Reference extends AbstractPlugin
         }
 
         $termId = $this->getTermId($term, $type);
+        if ($termId === 0) {
+            return [];
+        }
+
         return $this->getReferencesList($termId, $type, $entityClass, $order, $query, [], $perPage, $page, null, false, false);
     }
 
@@ -1299,7 +1303,9 @@ class Reference extends AbstractPlugin
         }
 
         if (!strpos($term, ':')) {
-            return 0;
+            return $type === 'properties' || $type === 'resource_classes'
+                ? ''
+                : 0;
         }
 
         $result = $this->api->searchOne($type, ['term' => $term])->getContent();
