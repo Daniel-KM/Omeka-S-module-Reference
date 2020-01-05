@@ -4,7 +4,8 @@ Reference (module for Omeka S)
 [Reference] is a module for [Omeka S] that allows to serve a glossary (an
 alphabetized index) of links to records or to searches for all resources classes
 (item types) and properties (metadata fields) of all resources of an Omeka S
-instance, or an expandable hierarchical tree of statically specified references.
+instance.
+
 These lists can be displayed in any page via a helper or a block. References can
 be limited by site or any other pool, and ordered alphabetically or by count.
 
@@ -39,17 +40,32 @@ necessary to modify the config.
 Usage
 -----
 
-The plugin adds pages in all sites, that can be added to the navigation:
-* "Browse by reference" (http://www.example.com/s/my-site/reference).
-* "Hierarchy of references" (http://www.example.com/s/my-site/reference-tree).
-
-The results are available via json too: simply add `.json` to the url (available
-only for lists). The old `?output=json` is deprecated and will be removed in
-version 3.4.12.
+The config form allows to select the terms to display.
 
 The config is the same in the main config form or in the block form for pages.
 
-For the tree view, the references are formatted like:
+### Lists
+
+A block allows to display the lists in any page. Furthermore, the module adds
+pages in all sites, that can be added to the navigation at https://www.example.com/s/my-site/reference).
+
+These contents can be displayed anywere via the view helper `references()`:
+
+```php
+// With default values.
+echo $this->references()->displayListForTerm('dcterms:subject', $query, $options);
+```
+
+The results are available via json too via the module [ApiInfo].
+
+### Tree view
+
+Note: The tree of references will move in another module in a future version.
+
+The tree of references is available at http://www.example.com/s/my-site/reference-tree,
+but it's recommenced to use a block in a page.
+
+The references should be formatted like:
 
 ```
 Europe
@@ -71,33 +87,10 @@ level.
 - A reference cannot begin with a "-" or a space.
 - Empty lines are not considered.
 
-These contents can be displayed on any page via the view helper `reference()`:
+Via the helper:
 
 ```php
-// With default values.
-echo $this->reference()->displayListForTerm($term,
-    [
-        'type' => 'properties',
-        'resource_name' => 'items',
-        'order' => ['alphabetic' => 'ASC'],
-        'query' => ['site_id' => 1],
-        'per_page' => null,
-        'page' => null,
-    ],
-    [
-        'query_type' => 'eq',
-        'link_to_single' => true,
-        'custom_url' => false,
-        'total' => true,
-        'skiplinks' => true,
-        'headings' => true,
-        'raw' => false,
-    ]
-);
-```
-
-For tree view:
-```php
+// With custom values.
 $references = $this->reference()->getTree();
 echo $this->reference()->displayTree($references,
     [
@@ -122,7 +115,7 @@ echo $this->reference()->displayTree($references,
 All arguments are optional and the default ones are set in the config page or in
 the block, but they can be overridden in the theme.
 
-For `order`, the sort can be `['count' => 'DESC']` too.
+For `order`, the sort can be `['total' => 'DESC']` too.
 
 For `query`, it is the standard query used in the api of Omeka, or the arguments
 taken from the url of an advanced search, converted into an array with `parse_str`.
@@ -138,6 +131,7 @@ TODO
 - Create automatically the pages related to the block index in order to remove
   the global pages.
 - Manage advanced search reference by site and in admin board.
+- Display values other than literal.
 
 
 Warning
@@ -186,7 +180,7 @@ Copyright
 
 * Copyright William Mayo, 2011
 * Copyright Philip Collins, 2013 ([jQuery tree view])
-* Copyright Daniel Berthereau, 2014-2019 (see [Daniel-KM] on GitHub)
+* Copyright Daniel Berthereau, 2014-2020 (see [Daniel-KM] on GitHub)
 
 This module is inspired from earlier work done by William Mayo (see [pobocks] on
 GitHub) in [Subject Browse], with some ideas from [Metadata Browser] and
@@ -201,6 +195,7 @@ Performance fixes were made for Article 19.
 [Omeka]: https://omeka.org/classic
 [Reference plugin]: https://github.com/Daniel-KM/Omeka-plugin-Reference
 [Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
+[ApiInfo]: https://github.com/Daniel-KM/Omeka-S-module-ApiInfo
 [module issues]: https://github.com/Daniel-KM/Omeka-S-module-Reference/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
