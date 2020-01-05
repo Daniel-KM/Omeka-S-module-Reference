@@ -13,6 +13,7 @@ return [
     'view_helpers' => [
         'factories' => [
             'reference' => Service\ViewHelper\ReferenceFactory::class,
+            'references' => Service\ViewHelper\ReferencesFactory::class,
         ],
     ],
     'block_layouts' => [
