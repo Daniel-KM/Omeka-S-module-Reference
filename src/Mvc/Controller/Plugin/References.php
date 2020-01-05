@@ -53,6 +53,11 @@ class References extends AbstractPlugin
     protected $resourceClasses;
 
     /**
+     * @var \Omeka\Api\Representation\ResourceTemplateRepresentation[]
+     */
+    protected $resourceTemplates;
+
+    /**
      * @param bool
      */
     protected $supportAnyValue;
@@ -85,6 +90,7 @@ class References extends AbstractPlugin
      * @param Translate $translate
      * @param \Omeka\Api\Representation\PropertyRepresentation[] $properties
      * @param \Omeka\Api\Representation\ResourceClassRepresentation[] $resourceClasses
+     * @param \Omeka\Api\Representation\ResourceTemplateRepresentation[] $resourceTemplates
      * @param bool $supportAnyValue
      */
     public function __construct(
@@ -95,6 +101,7 @@ class References extends AbstractPlugin
         Translate $translate,
         array $properties,
         array $resourceClasses,
+        array $resourceTemplates,
         $supportAnyValue
     ) {
         $this->entityManager = $entityManager;
@@ -104,6 +111,7 @@ class References extends AbstractPlugin
         $this->translate = $translate;
         $this->properties = $properties;
         $this->resourceClasses = $resourceClasses;
+        $this->resourceTemplates = $resourceTemplates;
         $this->supportAnyValue = $supportAnyValue;
         $this->isOldOmeka = \Omeka\Module::VERSION < 2;
     }
@@ -111,7 +119,8 @@ class References extends AbstractPlugin
     /**
      * Get the references.
      *
-     * @param array $metadata Classes, properties terms or Omeka metadata names.
+     * @param array $metadata Classes, properties terms, template names, or
+     * other Omeka metadata names.
      * @param array $query An Omeka search query.
      * @param array $options Options for output.
      * - resource_name: items (default), "item_sets", "media", "resources".
@@ -245,11 +254,9 @@ class References extends AbstractPlugin
             return [];
         }
 
-        $query = $this->getQuery();
         $options = $this->getOptions();
 
         $api = $this->api;
-        $reference = $this->reference;
         $translate = $this->translate;
 
         // TODO Convert all queries into a single or two sql queries (at least for properties and classes).
@@ -298,6 +305,23 @@ class References extends AbstractPlugin
                     }
                     break;
 
+                case 'resource_templates':
+                    $values = $this->listValuesForResourceTemplate($field['term']);
+                    $result[$field['term']] = [
+                        'o:id' => $field['id'],
+                        'o:term' => $field['term'],
+                        'o:label' => $field['label'],
+                        'o-module-reference:values' => [],
+                    ];
+                    foreach (array_filter($values) as $value => $count) {
+                        $result[$field['term']]['o-module-reference:values'][] = [
+                            'o:label' => $value,
+                            '@language' => null,
+                            'count' => $count,
+                        ];
+                    }
+                    break;
+
                 case 'o:property':
                     $values = $this->listProperties();
                     foreach (array_filter($values) as $value => $count) {
@@ -329,10 +353,10 @@ class References extends AbstractPlugin
                 case 'o:resource_template':
                     $values = $this->listResourceTemplates();
                     foreach (array_filter($values) as $value => $count) {
-                        $meta = $api->searchOne('resource_templates', ['label' => $value])->getContent();
+                        $resourceTemplate = $this->resourceTemplates[$value];
                         $result[$field['term']]['o-module-reference:values'][] = [
-                            'o:id' => $meta->id(),
-                            'o:label' => $meta->label(),
+                            'o:id' => $resourceTemplate->id(),
+                            'o:label' => $resourceTemplate->label(),
                             '@language' => null,
                             'count' => $count,
                         ];
@@ -450,6 +474,52 @@ class References extends AbstractPlugin
 
         $this->appendAdditionalData($qb, 'resource_classes');
         return $this->outputMetadata($qb, 'resource_classes');
+    }
+
+    /**
+     * Get the list of used values for a resource template, the total for each
+     * one and the first item.
+     *
+     * @param string $term
+     * @return array Associative list of references, with the total, the first
+     * first record, and the first character, according to the parameters.
+     */
+    protected function listValuesForResourceTemplate($term)
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        $resourceTemplateId = $this->resourceTemplates[$term]->id();
+        $termId = $this->DC_Title_id;
+
+        $qb
+            ->select([
+                'DISTINCT value.value AS val',
+                // "Distinct" avoids to count duplicate values in properties in
+                // a resource: we count resources, not properties.
+                $expr->countDistinct('resource.id') . ' AS total',
+            ])
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            ->leftJoin(
+                \Omeka\Entity\Value::class,
+                'value',
+                Join::WITH,
+                'value.resource = resource AND value.property = :property_id'
+            )
+            ->setParameter('property_id', $termId)
+            ->groupBy('val')
+            ->where($expr->eq('resource.resourceTemplate', ':resource_template'))
+            ->setParameter('resource_template', (int) $resourceTemplateId)
+        ;
+
+        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+            $qb
+                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+        }
+
+        $this->appendAdditionalData($qb, 'resource_templates');
+        return $this->outputMetadata($qb, 'resource_templates');
     }
 
     /**
@@ -689,6 +759,7 @@ class References extends AbstractPlugin
             switch ($type) {
                 case 'properties':
                 case 'resource_classes':
+                case 'resource_templates':
                     $qb
                         ->andWhere('value.value IN (:values)')
                         ->setParameter('values', $this->options['values']);
@@ -882,6 +953,16 @@ class References extends AbstractPlugin
             ];
         }
 
+        if (isset($this->resourceTemplates[$field])) {
+            $resourceTemplate = $this->resourceTemplates[$field];
+            return [
+                'type' => 'resource_templates',
+                'id' => $resourceTemplate->id(),
+                'term' => $field,
+                'label' => $resourceTemplate->label(),
+            ];
+        }
+
         return [
             'type' => null,
             'term' => $field,
@@ -914,6 +995,21 @@ class References extends AbstractPlugin
     protected function listResourceClassIds(array $values)
     {
         $result = array_intersect_key($this->resourceClasses, array_fill_keys($values, null));
+        return array_map(function ($v) {
+            return $v->id();
+        }, $result);
+    }
+
+    /**
+     * Convert a list of labels into a list of resource template ids.
+     *
+     * @param array $values
+     * @return array Only values that are terms are converted into ids, the
+     * other are removed.
+     */
+    protected function listResourceTemplateIds(array $values)
+    {
+        $result = array_intersect_key($this->resourceTemplates, array_fill_keys($values, null));
         return array_map(function ($v) {
             return $v->id();
         }, $result);

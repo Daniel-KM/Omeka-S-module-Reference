@@ -22,6 +22,11 @@ class ReferencesFactory implements FactoryInterface
             $resourceClasses[$resourceClass->term()] = $resourceClass;
         }
 
+        $resourceTemplates = [];
+        foreach ($api->search('resource_templates')->getContent() as $resourceTemplate) {
+            $resourceTemplates[$resourceTemplate->label()] = $resourceTemplate;
+        }
+
         return new References(
             $services->get('Omeka\EntityManager'),
             $services->get('Omeka\ApiAdapterManager'),
@@ -30,6 +35,7 @@ class ReferencesFactory implements FactoryInterface
             $plugins->get('translate'),
             $properties,
             $resourceClasses,
+            $resourceTemplates,
             $this->supportAnyValue($services)
         );
     }
