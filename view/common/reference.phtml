@@ -2,7 +2,9 @@
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
  * @var array $references
- * @var term $term
+ * @var int $termId
+ * @var string $term
+ * @var string $label
  * @var string $resourceName
  * @var array $options
  * @var string $type
@@ -19,7 +21,6 @@ if (count($references)):
     $siteSlug = $this->params()->fromRoute('site-slug');
     // This is the Omeka default title. May be different in the database.
     $emptyTitle = $translate('[Untitled]');
-    // $api = $this->api();
 
     $this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Reference'));
 
@@ -31,6 +32,13 @@ if (count($references)):
     $options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
     $hasInitial = array_key_exists('initial', $references[key($references)]);
     $propertyTitle = 'dcterms:title';
+
+    $queryKeys = [
+        'resource_classes' => 'resource_class_id',
+        'resource_templates' => 'resource_template_id',
+        'item_sets' => 'item_set_id',
+    ];
+    $queryKey = @$queryKeys[$resourceName];
 
     // Set default templates according to options for improved performance.
     $template = '';
@@ -68,17 +76,17 @@ if (count($references)):
             $templateUrlSingle = str_replace($tempPlaceholder, '{reference}',
                 $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $tempPlaceholder], false));
             $query = [];
-            if ($type === 'resource_classes'):
+            if ($queryKey):
                 // The default url helper doesn't encode "&" as "&amp;".
-                // $query['resource_class_id'] = $term;
+                // $query['resource_class_id'] = $termId;
                 // $query['property'] = [['property' => $propertyTitle, 'type' => 'nex']];
                 // $templateUrlEmpty = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
                 // $query['property'] = [['property' => $propertyTitle, 'type' => 'eq', 'text' => $tempPlaceholder]];
                 // $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
                 $templateUrlEmpty = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false)
-                    . '?resource_class_id=' . rawurlencode($term) . '&amp;property%5B0%5D%5Bproperty%5D=' . rawurlencode($propertyTitle) . '&amp;property%5B0%5D%5Btype%5D=nex';
+                    . '?' . $queryKey . '=' . rawurlencode($termId) . '&amp;property%5B0%5D%5Bproperty%5D=' . rawurlencode($propertyTitle) . '&amp;property%5B0%5D%5Btype%5D=nex';
                 $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false)
-                    . '?resource_class_id=' . rawurlencode($term) . '&amp;property%5B0%5D%5Bproperty%5D=' . rawurlencode($propertyTitle) . '&amp;property%5B0%5D%5Btype%5D=eq&amp;property%5B0%5D%5Btext%5D={reference}';
+                    . '?' . $queryKey . '=' . rawurlencode($termId) . '&amp;property%5B0%5D%5Bproperty%5D=' . rawurlencode($propertyTitle) . '&amp;property%5B0%5D%5Btype%5D=eq&amp;property%5B0%5D%5Btext%5D={reference}';
             else:
                 // $query['property'] = [['property' => $term, 'type' => 'eq', 'text' => $tempPlaceholder]];
                 // $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
@@ -145,9 +153,9 @@ if (count($references)):
 
             if ($options['custom_url']):
                 if ($referenceNumber):
-                    if ($type === 'resource_classes'):
+                    if ($queryKey):
                         $query = [];
-                        $query['resource_class_id'] = $term;
+                        $query[$queryKey] = $termId;
                         $query['property'] = $emptyReferenceValue
                             ? [['property' => $propertyTitle, 'type' => 'nex']]
                             : [['property' => $propertyTitle, 'type' => 'eq', 'text' => $reference]];
@@ -164,7 +172,7 @@ if (count($references)):
 
             else:
                 if ($referenceNumber):
-                    if ($type === 'resource_classes'):
+                    if ($queryKey):
                         $referenceUrl = $emptyReferenceValue
                             ? $templateUrlEmpty
                             : str_replace('{reference}', rawurlencode($reference), $templateUrl);

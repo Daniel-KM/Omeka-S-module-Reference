@@ -289,7 +289,8 @@ class Reference extends AbstractPlugin
         $partial = $controller->viewHelpers()->get('partial');
         return $partial('common/reference', [
             'references' => $references,
-            'term' => $termId,
+            'termId' => $termId,
+            'term' => $term,
             'type' => $type,
             'resourceName' => $resourceName,
             'options' => $options,
@@ -469,7 +470,8 @@ class Reference extends AbstractPlugin
         $partial = $controller->viewHelpers()->get('partial');
         return $partial('common/reference-tree', [
             'references' => $result,
-            'term' => $termId,
+            'termId' => $termId,
+            'term' => $term,
             'type' => $type,
             'resourceName' => $resourceName,
             'options' => $options,
