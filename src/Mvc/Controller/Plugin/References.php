@@ -272,7 +272,7 @@ class References extends AbstractPlugin
 
             switch ($field['type']) {
                 case 'properties':
-                    $values = $this->listValuesForProperty($field['term']);
+                    $values = $this->listResourcesForProperty($field['id']);
                     $result[$field['term']] = [
                         'o:id' => $field['id'],
                         'o:term' => $field['term'],
@@ -289,7 +289,7 @@ class References extends AbstractPlugin
                     break;
 
                 case 'resource_classes':
-                    $values = $this->listValuesForResourceClass($field['term']);
+                    $values = $this->listResourcesForResourceClass($field['id']);
                     $result[$field['term']] = [
                         'o:id' => $field['id'],
                         'o:term' => $field['term'],
@@ -306,7 +306,7 @@ class References extends AbstractPlugin
                     break;
 
                 case 'resource_templates':
-                    $values = $this->listValuesForResourceTemplate($field['term']);
+                    $values = $this->listResourcesForResourceTemplate($field['id']);
                     $result[$field['term']] = [
                         'o:id' => $field['id'],
                         'o:term' => $field['term'],
@@ -371,6 +371,7 @@ class References extends AbstractPlugin
                         $values = $this->listItemSets();
                     }
                     foreach (array_filter($values) as $value => $count) {
+                        // TODO Improve this process via the resource title (Omeka 2).
                         $meta = $api->read('item_sets', ['id' => $value])->getContent();
                         $result[$field['term']]['o-module-reference:values'][] = [
                             'o:id' => (int) $value,
@@ -398,16 +399,14 @@ class References extends AbstractPlugin
      * Get the list of used values for a proeprty, the total for each one and
      * the first item.
      *
-     * @param string $term
+     * @param int $termId
      * @return array Associative list of references, with the total, the first
      * first record, and the first character, according to the parameters.
      */
-    protected function listValuesForProperty($term)
+    protected function listResourcesForProperty($termId)
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
-
-        $termId = $this->properties[$term]->id();
 
         $qb
             ->select([
@@ -434,16 +433,16 @@ class References extends AbstractPlugin
      * Get the list of used values for a resource class, the total for each one
      * and the first item.
      *
-     * @param string $term
+     * @param int $termId
      * @return array Associative list of references, with the total, the first
      * first record, and the first character, according to the parameters.
      */
-    protected function listValuesForResourceClass($term)
+    protected function listResourcesForResourceClass($termId)
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
 
-        $resourceClassId = $this->resourceClasses[$term]->id();
+        $resourceClassId = $termId;
         $termId = $this->DC_Title_id;
 
         $qb
@@ -480,16 +479,16 @@ class References extends AbstractPlugin
      * Get the list of used values for a resource template, the total for each
      * one and the first item.
      *
-     * @param string $term
+     * @param int $termId
      * @return array Associative list of references, with the total, the first
      * first record, and the first character, according to the parameters.
      */
-    protected function listValuesForResourceTemplate($term)
+    protected function listResourcesForResourceTemplate($termId)
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
 
-        $resourceTemplateId = $this->resourceTemplates[$term]->id();
+        $resourceTemplateId = $termId;
         $termId = $this->DC_Title_id;
 
         $qb
@@ -907,21 +906,21 @@ class References extends AbstractPlugin
         static $labels;
 
         $metaToTypes = [
-            // Item sets is only for items.
-            'o:item_set' => 'item_sets',
+            'o:property' => 'properties',
             'o:resource_class' => 'resource_classes',
             'o:resource_template' => 'resource_templates',
-            'o:property' => 'properties',
+            // Item sets is only for items.
+            'o:item_set' => 'item_sets',
         ];
 
         if (isset($metaToTypes[$field])) {
             if (is_null($labels)) {
                 $translate = $this->translate;
                 $labels = [
-                    'o:item_set' => $translate('Item sets'), // @translate
+                    'o:property' => $translate('Properties'), // @translate
                     'o:resource_class' => $translate('Classes'), // @translate
                     'o:resource_template' => $translate('Templates'), // @translate
-                    'o:property' => $translate('Properties'), // @translate
+                    'o:item_set' => $translate('Item sets'), // @translate
                 ];
             }
 
