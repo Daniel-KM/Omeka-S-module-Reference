@@ -1,13 +1,10 @@
 <?php
 namespace Reference\Mvc\Controller\Plugin;
 
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Query\Expr\Join;
-use Doctrine\ORM\QueryBuilder;
-use Omeka\Api\Adapter\Manager as AdapterManager;
 use Omeka\Api\Representation\PropertyRepresentation;
 use Omeka\Api\Representation\ResourceClassRepresentation;
 use Omeka\Mvc\Controller\Plugin\Api;
+use Reference\Mvc\Controller\Plugin\References as ReferencesPlugin;
 use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 
 class Reference extends AbstractPlugin
@@ -23,47 +20,25 @@ class Reference extends AbstractPlugin
     protected $DC_Subject_id = 3;
 
     /**
-     * @param EntityManager
-     */
-    protected $entityManager;
-
-    /**
-     * @param AdapterManager
-     */
-    protected $adapterManager;
-
-    /**
      * @param Api
      */
     protected $api;
 
     /**
-     * @param bool
+     * @param ReferencesPlugin
      */
-    protected $supportAnyValue;
+    protected $references;
 
     /**
-     * @param bool
-     */
-    protected $isOldOmeka;
-
-    /**
-     * @param EntityManager $entityManager
-     * @param AdapterManager $adapterManager
      * @param Api $api
-     * @param bool $supportAnyValue
+     * @param ReferencesPlugin $references
      */
     public function __construct(
-        EntityManager $entityManager,
-        AdapterManager $adapterManager,
         Api $api,
-        $supportAnyValue
+        ReferencesPlugin $references
     ) {
-        $this->entityManager = $entityManager;
-        $this->adapterManager = $adapterManager;
         $this->api = $api;
-        $this->supportAnyValue = $supportAnyValue;
-        $this->isOldOmeka = \Omeka\Module::VERSION < 2;
+        $this->references = $references;
     }
 
     /**
@@ -577,173 +552,12 @@ class Reference extends AbstractPlugin
             return $this->getReferencesMetaList($type, $entityClass, $order, $query, $values, $perPage, $page, $output, $initial, $includeWithoutMeta);
         }
 
-        $entityManager = $this->entityManager;
-        $qb = $entityManager->createQueryBuilder();
-        $expr = $qb->expr();
-
-        switch ($type) {
-            case 'resource_classes':
-            case 'resource_templates':
-                $resourceClassOrTemplateId = $termId;
-                $termId = $this->DC_Title_id;
-
-                $qb
-                    ->select([
-                        'DISTINCT value.value AS val',
-                        // "Distinct" avoids to count duplicate values in properties in
-                        // a resource: we count resources, not properties.
-                        $expr->countDistinct('resource.id') . ' AS total',
-                    ])
-                    // The use of resource checks visibility automatically.
-                    ->from(\Omeka\Entity\Resource::class, 'resource')
-                    ->leftJoin(
-                        \Omeka\Entity\Value::class,
-                        'value',
-                        Join::WITH,
-                        'value.resource = resource AND value.property = :property_id'
-                    )
-                    ->setParameter('property_id', $termId)
-                    ->groupBy('val')
-                ;
-
-                if ($type === 'resource_class') {
-                    $qb
-                        ->where($expr->eq('resource.resourceClass', ':resource_class'))
-                        ->setParameter('resource_class', (int) $resourceClassOrTemplateId);
-                } else {
-                    $qb
-                        ->where($expr->eq('resource.resourceTemplate', ':resource_template'))
-                        ->setParameter('resource_template', (int) $resourceClassOrTemplateId);
-                }
-
-                if ($entityClass !== \Omeka\Entity\Resource::class) {
-                    $qb
-                        ->innerJoin($entityClass, 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
-                }
-                break;
-
-            case 'properties':
-            default:
-                $qb
-                    ->select([
-                        $this->supportAnyValue ? 'ANY_VALUE(value.value) AS val' : 'value.value AS val',
-                        // "Distinct" avoids to count duplicate values in properties in
-                        // a resource: we count resources, not properties.
-                        $expr->countDistinct('resource.id') . ' AS total',
-                    ])
-                    ->from(\Omeka\Entity\Value::class, 'value')
-                    // This join allow to check visibility automatically too.
-                    ->innerJoin($entityClass, 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
-                    ->andWhere($expr->eq('value.property', ':property'))
-                    ->setParameter('property', $termId)
-                    // Only literal values.
-                    ->andWhere($expr->isNotNull('value.value'))
-                    ->groupBy('val')
-                ;
-                break;
+        $term = $this->returnTerm($termId, $type);
+        if (empty($term)) {
+            return [];
         }
 
-        if ($order) {
-            $direction = reset($order);
-            $order = strtolower(key($order));
-            switch ($order) {
-                case 'count':
-                    $qb
-                        ->orderBy('total', $direction)
-                        // Add alphabetic order for ergonomy.
-                        ->addOrderBy('val', 'ASC');
-                    break;
-                case 'alphabetic':
-                    $order = 'val';
-                    // no break;
-                default:
-                    $qb
-                        ->orderBy($order, $direction);
-            }
-        } else {
-            $qb
-                ->orderBy('val', 'ASC');
-        }
-
-        // Don't add useless order by resource id, since value are unique.
-        // Furthermore, it may break mySql 5.7.5 and later, where ONLY_FULL_GROUP_BY
-        // is set by default and requires to be grouped.
-
-        if ($output === 'withFirst') {
-            $qb
-                ->addSelect([
-                    'MIN(resource.id) AS first_id',
-                ]);
-        }
-
-        if ($initial) {
-            // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
-            $qb
-                ->addSelect([
-                    // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
-                    $expr->upper($expr->substring('value.value', 1, 1)) . 'AS initial',
-                ]);
-        }
-
-        $this->limitQuery($qb, $entityClass, $query);
-
-        if ($values) {
-            $qb
-                ->andWhere('value.value IN (:values)')
-                ->setParameter('values', $values);
-        }
-
-        if ($perPage) {
-            $qb->setMaxResults($perPage);
-            if ($page > 1) {
-                $offset = ($page - 1) * $perPage;
-                $qb->setFirstResult($offset);
-            }
-        }
-
-        switch ($output) {
-            case 'list':
-            case 'withFirst':
-                $result = $qb->getQuery()->getScalarResult();
-                if ($initial && (extension_loaded('intl') || extension_loaded('iconv'))) {
-                    if (extension_loaded('intl')) {
-                        $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
-                        $result = array_map(function ($v) use ($transliterator) {
-                            $v['total'] = (int) $v['total'];
-                            $v['initial'] = $transliterator->transliterate($v['initial']);
-                            return $v;
-                        }, $result);
-                    } else {
-                        $result = array_map(function ($v) {
-                            $v['total'] = (int) $v['total'];
-                            $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);
-                            if ($trans) {
-                                $v['initial'] = $trans;
-                            }
-                            return $v;
-                        }, $result);
-                    }
-                } else {
-                    $result = array_map(function ($v) {
-                        $v['total'] = (int) $v['total'];
-                        return $v;
-                    }, $result);
-                }
-                return array_combine(array_column($result, 'val'), $result);
-
-            case 'associative':
-            default:
-                $result = $qb->getQuery()->getScalarResult();
-
-                // Array column cannot be used in one step, because the null
-                // value (no title) should be converted to "", not to "0".
-                // $result = array_column($result, 'total', 'value');
-                $result = array_combine(
-                    array_column($result, 'val'),
-                    array_column($result, 'total')
-                );
-                return array_map('intval', $result);
-        }
+        return $this->returnReferences($term, $entityClass, $order, $query, $values, $perPage, $page, $output, $initial, $includeWithoutMeta);
     }
 
     /**
@@ -781,282 +595,15 @@ class Reference extends AbstractPlugin
         $initial = false,
         $includeWithoutMeta = false
     ) {
-        $entityManager = $this->entityManager;
-        $qb = $entityManager->createQueryBuilder();
-        $expr = $qb->expr();
+        $types = [
+            'properties' => 'o:property',
+            'resource_classes' => 'o:resource_class',
+            'resource_templates' => 'o:resource_template',
+            'item_sets' => 'o:item_set',
+        ];
+        $term = isset($types[$type]) ? $types[$type] : 'o:property';
 
-        switch ($type) {
-            // Count the number of items by item set.
-            // TODO Extract the title via Omeka v2.0.
-            case 'item_sets':
-                // TODO Get all item sets, even without items (or private items).
-                /*
-                SELECT DISTINCT item_set.id AS val, COUNT(item_item_set.item_id) AS total
-                FROM resource resource
-                INNER JOIN item_set item_set ON item_set.id = resource.id
-                LEFT JOIN item_item_set item_item_set ON item_item_set.item_set_id = item_set.id
-                GROUP BY val;
-                */
-
-                $entityClass = \Omeka\Entity\Item::class;
-                $qb
-                    ->select(
-                        'item_set.id as val',
-                        'COUNT(resource.id) AS total'
-                    )
-                    // The use of resource checks visibility automatically.
-                    ->from(\Omeka\Entity\Resource::class, 'resource')
-                    ->innerJoin(\Omeka\Entity\Item::class, 'item', Join::WITH, $expr->eq('item.id', 'resource.id'))
-                    // The left join allows to get the total of items without
-                    // item set.
-                    ->leftJoin('item.itemSets', 'item_set', Join::WITH, $expr->neq('item_set.id', 0))
-                    // Check visibility automatically for item sets.
-                    ->leftJoin(
-                        \Omeka\Entity\Resource::class,
-                        'resource_item_set',
-                        Join::WITH,
-                        $expr->eq('resource_item_set.id', 'item_set.id')
-                    )
-                    ->groupBy('val')
-                ;
-                break;
-
-            case 'resource_templates':
-                $qb
-                    ->select(
-                        'resource_template.label as val',
-                        'COUNT(resource.id) AS total'
-                    )
-                    // The use of resource checks visibility automatically.
-                    ->from(\Omeka\Entity\Resource::class, 'resource')
-                    // The left join allows to get the total of items without
-                    // resource template.
-                    ->leftJoin(
-                        \Omeka\Entity\ResourceTemplate::class,
-                        'resource_template',
-                        Join::WITH,
-                        $expr->eq('resource_template.id', 'resource.resourceTemplate')
-                    )
-                    ->groupBy('val')
-                ;
-                if ($entityClass !== \Omeka\Entity\Resource::class) {
-                    $qb
-                        ->innerJoin($entityClass, 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
-                }
-                break;
-
-            case 'resource_classes':
-                /*
-                SELECT resource_class.label AS val, resource.id AS val2, COUNT(resource.id) AS total
-                FROM resource resource
-                INNER JOIN item item ON item.id = resource.id
-                LEFT JOIN resource_class ON resource_class.id = resource.resource_class_id
-                GROUP BY val;
-                */
-
-                $qb
-                    ->select(
-                        // 'resource_class.label as val',
-                        "CONCAT(vocabulary.prefix, ':', resource_class.localName) AS val",
-                        'COUNT(resource.id) AS total'
-                    )
-                    // The use of resource checks visibility automatically.
-                    ->from(\Omeka\Entity\Resource::class, 'resource')
-                    // The left join allows to get the total of items without
-                    // resource class.
-                    ->leftJoin(
-                        \Omeka\Entity\ResourceClass::class,
-                        'resource_class',
-                        Join::WITH,
-                        $expr->eq('resource_class.id', 'resource.resourceClass')
-                    )
-                    ->innerJoin(
-                        \Omeka\Entity\Vocabulary::class,
-                        'vocabulary',
-                        Join::WITH,
-                        $expr->eq('vocabulary.id', 'resource_class.vocabulary')
-                    )
-                    ->groupBy('val')
-                ;
-                if ($entityClass !== \Omeka\Entity\Resource::class) {
-                    $qb
-                        ->innerJoin($entityClass, 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
-                }
-                break;
-
-            case 'properties':
-            default:
-                $qb
-                    ->select(
-                        // 'property.label as val',
-                        "CONCAT(vocabulary.prefix, ':', property.localName) AS val",
-                        // "Distinct" avoids to count resources with multiple
-                        // values multiple times for the same property: we count
-                        // resources, not properties.
-                        $expr->countDistinct('value.resource') . ' AS total'
-                    )
-                    // The use of resource checks visibility automatically.
-                    ->from(\Omeka\Entity\Resource::class, 'resource')
-                    ->innerJoin(\Omeka\Entity\Value::class, 'value', Join::WITH, $expr->eq('value.resource', 'resource'))
-                    // The left join allows to get the total of items without
-                    // property.
-                    ->leftJoin(
-                        \Omeka\Entity\Property::class,
-                        'property',
-                        Join::WITH,
-                        $expr->eq('property.id', 'value.property')
-                    )
-                    ->innerJoin(
-                        \Omeka\Entity\Vocabulary::class,
-                        'vocabulary',
-                        Join::WITH,
-                        $expr->eq('vocabulary.id', 'property.vocabulary')
-                    )
-                    ->groupBy('val')
-                ;
-                if ($entityClass !== \Omeka\Entity\Resource::class) {
-                    $qb
-                        ->innerJoin($entityClass, 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
-                }
-                break;
-        }
-
-        if ($order) {
-            $direction = reset($order);
-            $order = strtolower(key($order));
-            switch ($order) {
-                case 'count':
-                    $qb
-                        ->orderBy('total', $direction)
-                        // Add alphabetic order for ergonomy.
-                        ->addOrderBy('val', 'ASC');
-                    break;
-                case 'alphabetic':
-                    $order = 'val';
-                    // no break;
-                default:
-                    $qb
-                        ->orderBy($order, $direction);
-            }
-        } else {
-            $qb
-                ->orderBy('val', 'ASC');
-        }
-
-        // Don't add useless order by resource id, since value are unique.
-        // Furthermore, it may break mySql 5.7.5 and later, where ONLY_FULL_GROUP_BY
-        // is set by default and requires to be grouped.
-
-        if ($output === 'withFirst') {
-            $qb
-                ->addSelect([
-                    'MIN(resource.id) AS first_id',
-                ]);
-        }
-
-        if ($initial) {
-            // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
-            $qb
-                ->addSelect([
-                    // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
-                    $expr->upper($expr->substring('value.value', 1, 1)) . 'AS initial',
-                ]);
-        }
-
-        $this->limitQuery($qb, $entityClass, $query);
-
-        if ($values) {
-            switch ($type) {
-                case 'item_sets':
-                    $qb
-                        ->andWhere('item_set.id IN (:ids)')
-                        ->setParameter('ids', $values);
-                    break;
-                case 'resource_classes':
-                    if ($this->isTerm($values[0])) {
-                        $values = $this->listResourceClassIds($values);
-                    }
-                    // no break.
-                case 'resource_templates':
-                    $table = trim($type, 'es');
-                    if (is_numeric($values[0])) {
-                        $qb
-                            ->andWhere($table . '.id IN (:ids)')
-                            ->setParameter('ids', $values);
-                    } else {
-                        $qb
-                            ->andWhere($table . '.label IN (:labels)')
-                            ->setParameter('labels', $values);
-                    }
-                    break;
-                case 'properties':
-                default:
-                    break;
-            }
-        }
-
-        if ($perPage) {
-            $qb->setMaxResults($perPage);
-            if ($page > 1) {
-                $offset = ($page - 1) * $perPage;
-                $qb->setFirstResult($offset);
-            }
-        }
-
-        switch ($output) {
-            case 'list':
-            case 'withFirst':
-                $result = $qb->getQuery()->getScalarResult();
-                if ($initial && (extension_loaded('intl') || extension_loaded('iconv'))) {
-                    if (extension_loaded('intl')) {
-                        $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
-                        $result = array_map(function ($v) use ($transliterator) {
-                            $v['total'] = (int) $v['total'];
-                            $v['initial'] = $transliterator->transliterate($v['initial']);
-                            return $v;
-                        }, $result);
-                    } else {
-                        $result = array_map(function ($v) {
-                            $v['total'] = (int) $v['total'];
-                            $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);
-                            if ($trans) {
-                                $v['initial'] = $trans;
-                            }
-                            return $v;
-                        }, $result);
-                    }
-                } else {
-                    $result = array_map(function ($v) {
-                        $v['total'] = (int) $v['total'];
-                        return $v;
-                    }, $result);
-                }
-                $result = array_combine(array_column($result, 'val'), $result);
-
-                if (!$includeWithoutMeta) {
-                    unset($result['']);
-                }
-
-                return $result;
-
-            case 'associative':
-            default:
-                $result = $qb->getQuery()->getScalarResult();
-
-                // Array column cannot be used in one step, because the null
-                // value (no title) should be converted to "", not to "0".
-                // $result = array_column($result, 'total', 'value');
-                $result = array_combine(
-                    array_column($result, 'val'),
-                    array_column($result, 'total')
-                );
-
-                if (!$includeWithoutMeta) {
-                    unset($result['']);
-                }
-
-                return array_map('intval', $result);
-        }
+        return $this->returnReferences($term, $entityClass, $order, $query, $values, $perPage, $page, $output, $initial, $includeWithoutMeta);
     }
 
     /**
@@ -1078,201 +625,99 @@ class Reference extends AbstractPlugin
      */
     protected function countReferences($termId, $type, $entityClass, array $query = null)
     {
-        $entityManager = $this->entityManager;
-        $qb = $entityManager->createQueryBuilder();
-        $expr = $qb->expr();
+        $term = $this->returnTerm($termId, $type);
+        if (empty($term)) {
+            return 0;
+        }
 
+        $resourceName = $this->mapEntityToResourceName($entityClass);
+
+        $references = $this->references;
+        $result = $references([$term], $query, ['resource_name' => $resourceName])->count();
+        return $result ? reset($result) : 0;
+    }
+
+    protected function returnTerm($termId, $type)
+    {
         switch ($type) {
-            case 'item_sets':
-                if ($entityClass !== \Omeka\Entity\Item::class) {
-                    return 0;
-                }
-                $qb
-                    ->select([
-                        $expr->countDistinct('resource.id'),
-                    ])
-                    ->from(\Omeka\Entity\Resource::class, 'resource')
-                    ->andWhere($expr->eq('resource.itemSet', ':item_set'))
-                    ->setParameter('item_set', (int) $termId);
-                break;
-
-            case 'resource_templates':
-                $qb
-                    ->select([
-                        $expr->countDistinct('resource.id'),
-                    ])
-                    ->from(\Omeka\Entity\Resource::class, 'resource')
-                    ->andWhere($expr->eq('resource.resourceTemplate', ':resource_template'))
-                    ->setParameter('resource_template', (int) $termId);
-                break;
-
             case 'resource_classes':
-                $qb
-                    ->select([
-                        $expr->countDistinct('resource.id'),
-                    ])
-                    ->from(\Omeka\Entity\Resource::class, 'resource')
-                    ->andWhere($expr->eq('resource.resourceClass', ':resource_class'))
-                    ->setParameter('resource_class', (int) $termId);
+                try {
+                    $term = $this->api->read('resource_classes', ['id' => $termId])->getContent();
+                    return $term->term();
+                } catch (\Omeka\Api\Exception\NotFoundException $e) {
+                    return null;
+                }
                 break;
-
+            case 'resource_templates':
+                try {
+                    $term = $this->api->read('resource_templates', ['id' => $termId])->getContent();
+                    return $term->label();
+                } catch (\Omeka\Api\Exception\NotFoundException $e) {
+                    return null;
+                }
+                break;
             case 'properties':
             default:
-                $qb
-                    ->select([
-                        // Here, this is the count of references, not resources.
-                        $expr->countDistinct('value.value'),
-                    ])
-                    ->from(\Omeka\Entity\Value::class, 'value')
-                    // This join allow to check visibility automatically too.
-                    ->innerJoin(\Omeka\Entity\Resource::class, 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
-                    ->andWhere($expr->eq('value.property', ':property'))
-                    ->setParameter('property', (int) $termId)
-                    ->andWhere($expr->isNotNull('value.value'));
+                try {
+                    $term = $this->api->read('properties', ['id' => $termId])->getContent();
+                    return $term->term();
+                } catch (\Omeka\Api\Exception\NotFoundException $e) {
+                    return null;
+                }
                 break;
         }
+    }
 
-        if ($entityClass !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->innerJoin($entityClass, 'res', Join::WITH, 'res.id = resource.id');
+    protected function returnReferences(
+        $term,
+        $entityClass,
+        $order = null,
+        array $query = null,
+        array $values = [],
+        $perPage = null,
+        $page = null,
+        $output = null,
+        $initial = false,
+        $includeWithoutMeta = false
+    ) {
+        if ($order) {
+            $sortOrder = reset($order);
+            $sortBy = strtolower(key($order));
+            if ($sortBy === 'count') {
+                $sortBy = 'total';
+            }
+        } else {
+            $sortOrder = null;
+            $sortBy = null;
         }
 
-        $this->limitQuery($qb, $entityClass, $query);
+        $options = [
+            'resource_name' => $this->mapEntityToResourceName($entityClass),
+            // Options sql.
+            'per_page' => $perPage,
+            'page' => $page,
+            'sort_by' => $sortBy,
+            'sort_order' => $sortOrder,
+            'filters' => [
+                'languages' => [],
+            ],
+            'values' => $values,
+            // Output options.
+            'first_id' => false,
+            'initial' => $initial,
+            'lang' => false,
+            'include_without_meta' => $includeWithoutMeta,
+            'output' => in_array($output, ['list', 'withFirst']) ? 'list' : 'associative',
+        ];
 
-        return $qb->getQuery()->getSingleScalarResult();
-    }
-
-    /**
-     * Limit the results with a query (generally the site query).
-     *
-     * @param QueryBuilder $qb
-     * @param string $entityClass
-     * @param array $query
-     */
-    protected function limitQuery(QueryBuilder $qb, $entityClass, array $query = null)
-    {
-        if (empty($query)) {
-            return;
+        $references = $this->references;
+        $result = $references([$term], $query, $options)->list();
+        if (empty($result)) {
+            return [];
         }
 
-        $alias = $this->isOldOmeka ? $entityClass : 'omeka_root';
-        $subQb = $this->entityManager->createQueryBuilder()
-            ->select($alias . '.id')
-            ->from($entityClass, $alias);
-        /** @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter */
-        $resourceName = $this->mapEntityToResourceName($entityClass);
-        $adapter = $this->adapterManager->get($resourceName);
-        $adapter->buildQuery($subQb, $query);
-
-        // There is no colision: the adapter query uses alias "omeka_" + index.
-        $qb
-            ->andWhere($qb->expr()->in('resource.id', $subQb->getDQL()));
-
-        $subParams = $subQb->getParameters();
-        foreach ($subParams as $parameter) {
-            $qb->setParameter(
-                $parameter->getName(),
-                $parameter->getValue(),
-                $parameter->getType()
-            );
-        }
-    }
-
-    /**
-     * Determine whether a string is a valid JSON-LD term.
-     *
-     * @see \Omeka\Api\Adapter\AbstractEntityAdapter::isTerm()
-     *
-     * @param string $term
-     * @return bool
-     */
-    protected function isTerm($term)
-    {
-        return (bool) preg_match('/^[a-z0-9-_]+:[a-z0-9-_]+$/i', $term);
-    }
-
-    /**
-     * Convert a list of terms into a list of property ids.
-     *
-     * @param array $values
-     * @return array Only values that are terms are converted into ids, the
-     * other are removed.
-     */
-    protected function listPropertyIds(array $values)
-    {
-        return array_intersect_key($this->getPropertyIds(), array_fill_keys($values, null));
-    }
-
-    /**
-     * Get all property ids by term.
-     *
-     * @return array Associative array of ids by term.
-     */
-    protected function getPropertyIds()
-    {
-        static $properties;
-
-        if (is_null($properties)) {
-            $qb = $this->entityManager->createQueryBuilder();
-            $qb
-                ->select([
-                    "CONCAT(vocabulary.prefix, ':', property.localName) AS term",
-                    'property.id AS id',
-                ])
-                ->from(\Omeka\Entity\Property::class, 'property')
-                ->innerJoin(
-                    \Omeka\Entity\Vocabulary::class,
-                    'vocabulary',
-                    Join::WITH,
-                    $qb->expr()->eq('vocabulary.id', 'property.vocabulary')
-                )
-            ;
-            $properties = $qb->getQuery()->getScalarResult();
-        }
-
-        return $properties;
-    }
-
-    /**
-     * Convert a list of terms into a list of resource class ids.
-     *
-     * @param array $values
-     * @return array Only values that are terms are converted into ids, the
-     * other are removed.
-     */
-    protected function listResourceClassIds(array $values)
-    {
-        return array_intersect_key($this->getResourceClassIds(), array_fill_keys($values, null));
-    }
-
-    /**
-     * Get all resource class ids by term.
-     *
-     * @return array Associative array of ids by term.
-     */
-    protected function getResourceClassIds()
-    {
-        static $resourceClasses;
-
-        if (is_null($resourceClasses)) {
-            $qb = $this->entityManager->createQueryBuilder();
-            $qb
-                ->select([
-                    "CONCAT(vocabulary.prefix, ':', resource_class.localName) AS term",
-                    'resource_class.id AS id',
-                ])
-                ->from(\Omeka\Entity\ResourceClass::class, 'resource_class')
-                ->innerJoin(
-                    \Omeka\Entity\Vocabulary::class,
-                    'vocabulary',
-                    Join::WITH,
-                    $qb->expr()->eq('vocabulary.id', 'resource_class.vocabulary')
-                )
-            ;
-            $resourceClasses = $qb->getQuery()->getScalarResult();
-        }
-
-        return $resourceClasses;
+        $result = reset($result);
+        return $result['o-module-reference:values'];
     }
 
     /**

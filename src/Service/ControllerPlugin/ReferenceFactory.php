@@ -11,24 +11,8 @@ class ReferenceFactory implements FactoryInterface
     {
         $plugins = $services->get('ControllerPluginManager');
         return new Reference(
-            $services->get('Omeka\EntityManager'),
-            $services->get('Omeka\ApiAdapterManager'),
             $plugins->get('api'),
-            $plugins->get('references'),
-            $this->supportAnyValue($services)
+            $plugins->get('references')
         );
-    }
-
-    protected function supportAnyValue(ContainerInterface $services)
-    {
-        $connection = $services->get('Omeka\Connection');
-
-        $sql = 'SHOW VARIABLES LIKE "version";';
-        $stmt = $connection->query($sql);
-        $version = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
-        $version = reset($version);
-
-        return stripos($version, 'mysql') !== false
-            && version_compare($version, '5.7.5', '>=');
     }
 }
