@@ -814,8 +814,35 @@ class References extends AbstractPlugin
             ->groupBy('val')
         ;
 
+        // By exeption, the query for item sets should add public site, because
+        // item sets are limited by sites.
+        $this->limitItemSetsToSite($qb);
+
         $this->manageOptions($qb, 'o:item_set');
         return $this->outputMetadata($qb, 'o:item_set');
+    }
+
+    protected function limitItemSetsToSite(QueryBuilder $qb)
+    {
+        // @see \Omeka\Api\Adapter\ItemSetAdapter::buildQuery()
+        if (isset($this->query['site_id']) && is_numeric($this->query['site_id'])) {
+            $expr = $qb->expr();
+
+            // TODO Check if this useful here.
+            // Though $site isn't used here, this is intended to ensure that the
+            // user cannot perform a query against a private site he doesn't
+            // have access to.
+            try {
+                $site = $this->adapterManager->get('sites')->findEntity($this->query['site_id']);
+            } catch (\Omeka\Api\Exception\NotFoundException$e) {
+                $site = null;
+            }
+
+            $qb
+                ->innerJoin('item_set.siteItemSets', 'ref_site_item_set')
+                ->andWhere($expr->eq('ref_site_item_set.site', ':ref_site_item_set_site'))
+                ->setParameter(':ref_site_item_set_site', $this->query['site_id']);
+        }
     }
 
     protected function filterByLanguage(QueryBuilder $qb)
@@ -1112,7 +1139,7 @@ class References extends AbstractPlugin
             ->select($alias . '.id')
             ->from($this->options['entity_class'], $alias);
         /** @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter */
-        $adapter = $this->adapterManager
+        $this->adapterManager
             ->get($this->options['resource_name'])
             ->buildQuery($subQb, $this->query);
 
