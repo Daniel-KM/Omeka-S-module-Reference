@@ -181,102 +181,105 @@ class References extends AbstractPlugin
         $query = $this->getQuery();
         $options = $this->getOptions();
 
-        $result = [];
-
         $api = $this->api;
         $reference = $this->reference;
+        $translate = $this->translate;
 
         // TODO Convert all queries into a single or two sql queries (at least for properties and classes).
         // TODO Return all needed columns.
 
+        $result = [];
         foreach ($fields as $inputField) {
             $field = $this->prepareField($inputField);
-            // For metadata other than properties or classes.
-            if ($field['is_meta']) {
-                $type = $field['type'];
-
-                // Manage an exception for the resource "items" exception.
-                if ($type === 'item_sets' && $options['resource_name'] !== 'items') {
-                    $values = [];
-                } else {
-                    $values = $reference('', $type, $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
-                }
-
-                $result[$field['term']] = [
-                    'o:label' => $field['label'],
-                    'o-module-reference:values' => [],
-                ];
-                switch ($type) {
-                    // Only for items.
-                    case 'item_sets':
-                        foreach (array_filter($values) as $value => $count) {
-                            $meta = $api->read($type, ['id' => $value])->getContent();
-                            $result[$field['term']]['o-module-reference:values'][] = [
-                                'o:id' => (int) $value,
-                                'o:label' => $meta->displayTitle(),
-                                '@language' => null,
-                                'count' => $count,
-                            ];
-                        }
-                        break;
-                    case 'resource_classes':
-                        foreach (array_filter($values) as $value => $count) {
-                            $result[$field['term']]['o-module-reference:values'][] = [
-                                'o:term' => $field['term'],
-                                'o:label' => $value,
-                                '@language' => null,
-                                'count' => $count,
-                            ];
-                        }
-                        break;
-                    case 'resource_templates':
-                        foreach (array_filter($values) as $value => $count) {
-                            $meta = $api->searchOne('resource_templates', ['label' => $value])->getContent();
-                            $result[$field['term']]['o-module-reference:values'][] = [
-                                'o:id' => $meta->id(),
-                                'o:label' => $meta->label(),
-                                '@language' => null,
-                                'count' => $count,
-                            ];
-                        }
-                        break;
-                    case 'properties':
-                        foreach (array_filter($values) as $value => $count) {
-                            $result[$field['term']]['o-module-reference:values'][] = [
-                                'o:id' => $field['id'],
-                                'o:term' => $field['term'],
-                                'o:label' => $field['label'],
-                                '@language' => null,
-                                'count' => $count,
-                            ];
-                        }
-                    default:
-                        break;
-                }
-            }
-            // Classes and properties
-            elseif ($field['is_term']) {
-                $values = $reference($field['term'], $field['type'], $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
-                $result[$field['term']] = [
-                    'o:id' => $field['id'],
-                    'o:term' => $field['term'],
-                    'o:label' => $field['label'],
-                    'o-module-reference:values' => [],
-                ];
-                foreach (array_filter($values) as $value => $count) {
-                    $result[$field['term']]['o-module-reference:values'][] = [
-                        'o:label' => $value,
-                        '@language' => null,
-                        'count' => $count,
+            $result[$field['term']] = [
+                'o:label' => $field['label'],
+                'o-module-reference:values' => [],
+            ];
+            switch ($field['type']) {
+                case 'properties':
+                case 'resource_classes':
+                    $values = $reference($field['term'], $field['type'], $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+                    $result[$field['term']] = [
+                        'o:id' => $field['id'],
+                        'o:term' => $field['term'],
+                        'o:label' => $field['label'],
+                        'o-module-reference:values' => [],
                     ];
-                }
-            }
-            // Unknown.
-            else {
-                $result[$field['term']][] = [
-                    'o:label' => $field['label'],
-                    'o-module-reference:values' => [],
-                ];
+                    foreach (array_filter($values) as $value => $count) {
+                        $result[$field['term']]['o-module-reference:values'][] = [
+                            'o:label' => $value,
+                            '@language' => null,
+                            'count' => $count,
+                        ];
+                    }
+                    break;
+
+                case 'o:property':
+                    $values = $reference('', $field['metatype'], $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+                    foreach (array_filter($values) as $value => $count) {
+                        $property = $this->properties[$value];
+                        $result[$field['term']]['o-module-reference:values'][] = [
+                            'o:id' => $property->id(),
+                            'o:term' => $property->term(),
+                            'o:label' => $translate($property->label()),
+                            '@language' => null,
+                            'count' => $count,
+                        ];
+                    }
+                    break;
+
+                case 'o:resource_class':
+                    $values = $reference('', $field['metatype'], $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+                    foreach (array_filter($values) as $value => $count) {
+                        $resourceClass = $this->resourceClasses[$value];
+                        $result[$field['term']]['o-module-reference:values'][] = [
+                            'o:id' => $resourceClass->id(),
+                            'o:term' => $resourceClass->term(),
+                            'o:label' => $translate($resourceClass->label()),
+                            '@language' => null,
+                            'count' => $count,
+                        ];
+                    }
+                    break;
+
+                case 'o:resource_template':
+                    $values = $reference('', $field['metatype'], $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+                    foreach (array_filter($values) as $value => $count) {
+                        $meta = $api->searchOne('resource_templates', ['label' => $value])->getContent();
+                        $result[$field['term']]['o-module-reference:values'][] = [
+                            'o:id' => $meta->id(),
+                            'o:label' => $meta->label(),
+                            '@language' => null,
+                            'count' => $count,
+                        ];
+                    }
+                    break;
+
+                case 'o:item_set':
+                    // Manage an exception for the resource "items" exception.
+                    if ($field['type'] === 'o:item_set' && $options['resource_name'] !== 'items') {
+                        $values = [];
+                    } else {
+                        $values = $reference('', $field['metatype'], $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+                    }
+                    foreach (array_filter($values) as $value => $count) {
+                        $meta = $api->read('item_sets', ['id' => $value])->getContent();
+                        $result[$field['term']]['o-module-reference:values'][] = [
+                            'o:id' => (int) $value,
+                            'o:label' => $meta->displayTitle(),
+                            '@language' => null,
+                            'count' => $count,
+                        ];
+                    }
+                    break;
+
+                // Unknown.
+                default:
+                    $result[$field['term']][] = [
+                        'o:label' => $field['label'],
+                        'o-module-reference:values' => [],
+                    ];
+                    break;
             }
         }
 
@@ -286,8 +289,6 @@ class References extends AbstractPlugin
     protected function prepareField($field)
     {
         static $labels;
-
-        // All except properties and classes.
 
         $metaToTypes = [
             // Item sets is only for items.
@@ -309,11 +310,10 @@ class References extends AbstractPlugin
             }
 
             return [
-                'type' => $metaToTypes[$field],
+                'type' => $field,
+                'metatype' => $metaToTypes[$field],
                 'term' => $field,
                 'label' => $labels[$field],
-                'is_meta' => true,
-                'is_term' => false,
             ];
         }
 
@@ -324,8 +324,6 @@ class References extends AbstractPlugin
                 'id' => $property->id(),
                 'term' => $field,
                 'label' => $property->label(),
-                'is_meta' => false,
-                'is_term' => true,
             ];
         }
 
@@ -336,8 +334,6 @@ class References extends AbstractPlugin
                 'id' => $resourceClass->id(),
                 'term' => $field,
                 'label' => $resourceClass->label(),
-                'is_meta' => false,
-                'is_term' => true,
             ];
         }
 
@@ -345,8 +341,6 @@ class References extends AbstractPlugin
             'type' => null,
             'term' => $field,
             'label' => $field,
-            'is_meta' =>  false,
-            'is_term' =>  false,
         ];
     }
 }
