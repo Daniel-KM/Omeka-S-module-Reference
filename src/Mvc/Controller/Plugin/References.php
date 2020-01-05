@@ -1,6 +1,10 @@
 <?php
 namespace Reference\Mvc\Controller\Plugin;
 
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Query\Expr\Join;
+use Doctrine\ORM\QueryBuilder;
+use Omeka\Api\Adapter\Manager as AdapterManager;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Mvc\Controller\Plugin\Translate;
 // use Reference\Mvc\Controller\Plugin\Reference;
@@ -8,6 +12,16 @@ use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 
 class References extends AbstractPlugin
 {
+    /**
+     * @param EntityManager
+     */
+    protected $entityManager;
+
+    /**
+     * @param AdapterManager
+     */
+    protected $adapterManager;
+
     /**
      * @var Api
      */
@@ -34,6 +48,16 @@ class References extends AbstractPlugin
     protected $resourceClasses;
 
     /**
+     * @param bool
+     */
+    protected $supportAnyValue;
+
+    /**
+     * @param bool
+     */
+    protected $isOldOmeka;
+
+    /**
      * @var array
      */
     protected $metadata;
@@ -49,24 +73,34 @@ class References extends AbstractPlugin
     protected $options;
 
     /**
+     * @param EntityManager $entityManager
+     * @param AdapterManager $adapterManager
      * @param Api $api
      * @param Reference $reference
      * @param Translate $translate
      * @param \Omeka\Api\Representation\PropertyRepresentation[] $properties
      * @param \Omeka\Api\Representation\ResourceClassRepresentation[] $resourceClasses
+     * @param bool $supportAnyValue
      */
     public function __construct(
+        EntityManager $entityManager,
+        AdapterManager $adapterManager,
         Api $api,
         Reference $reference,
         Translate $translate,
         array $properties,
-        array $resourceClasses
+        array $resourceClasses,
+        $supportAnyValue
     ) {
+        $this->entityManager = $entityManager;
+        $this->adapterManager = $adapterManager;
         $this->api = $api;
         $this->reference = $reference;
         $this->translate = $translate;
         $this->properties = $properties;
         $this->resourceClasses = $resourceClasses;
+        $this->supportAnyValue = $supportAnyValue;
+        $this->isOldOmeka = \Omeka\Module::VERSION < 2;
     }
 
     /**
@@ -75,7 +109,18 @@ class References extends AbstractPlugin
      * @param array $metadata Classes, properties terms or Omeka metadata names.
      * @param array $query An Omeka search query.
      * @param array $options Options for output.
-     * @return self|array|null The result or null if called directly, else self.
+     * - resource_name: items (default), "item_sets", "media", "resources".
+     * - sort_by: "alphabetic" (default), "count", or any available column.
+     * - sort_order: "asc" (default) or "desc".
+     * - link_to_single: false (default, always as a list), or true (direct when
+     *   there is only one resource).
+     * - initial: false (default), or true (get first letter of each result).
+     * - values: array Allow to limit the answer to the specified values.
+     * - include_without_meta: false (default), or true (include total of
+     *   resources with no metadata).
+     * - output: "associative" (default), "list", or "withFirst".
+     * Some options and some combinations are not managed for some metadata.
+     * @return array|null|self The result or null if called directly, else self.
      */
     public function __invoke(
         array $metadata = null,
@@ -140,20 +185,37 @@ class References extends AbstractPlugin
     {
         $defaults = [
             'resource_name' => 'items',
+            // Not an option, but simpler to set it here.
+            'entity_class' => \Omeka\Entity\Item::class,
+            // Options sql.
             'per_page' => 25,
             'page' => 1,
             'sort_by' => 'count',
             'sort_order' => 'DESC',
+            // Output options.
+            'link_to_single' => false,
+            'initial' => false,
+            'values' => [],
+            'include_without_meta' => false,
+            'output' => 'associative',
         ];
         if ($options) {
-            $defaults = [
-                'resource_name' => in_array(@$options['resource_name'], ['items', 'item_sets', 'media', 'resources']) ? $options['resource_name'] : $defaults['resource_name'],
+            $resourceName = in_array(@$options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
+                ? $options['resource_name']
+                : $defaults['resource_name'];
+            $this->options = [
+                'resource_name' => $resourceName,
+                'entity_class' => $this->mapResourceNameToEntity($resourceName),
                 'per_page' => @$options['per_page'] ?: $defaults['per_page'],
                 'page' => @$options['page'] ?: $defaults['page'],
-                'sort_by' => strtolower(@$options['sort_by']) === 'alphabetic' ? 'alphabetic' : 'count',
+                'sort_by' => @$options['sort_by'] ? $options['sort_by'] : 'alphabetic',
                 'sort_order' => strtolower(@$options['sort_order']) === 'asc' ? 'ASC' : 'DESC',
+                'link_to_single' => (bool) @$options['link_to_single'],
+                'initial' => (bool) @$options['initial'],
+                'values' => @$options['values'] ?: [],
+                'include_without_meta' => (bool) @$options['include_without_meta'],
+                'output' => in_array(@$options['output'], ['associative', 'list', 'withFirst']) ? $options['output'] : 'associative',
             ];
-            $this->options = array_filter($options) + $defaults;
         } else {
             $this->options = $defaults;
         }
@@ -195,6 +257,7 @@ class References extends AbstractPlugin
                 'o:label' => $field['label'],
                 'o-module-reference:values' => [],
             ];
+
             switch ($field['type']) {
                 case 'properties':
                 case 'resource_classes':
@@ -215,7 +278,7 @@ class References extends AbstractPlugin
                     break;
 
                 case 'o:property':
-                    $values = $reference('', $field['metatype'], $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+                    $values = $this->listProperties();
                     foreach (array_filter($values) as $value => $count) {
                         $property = $this->properties[$value];
                         $result[$field['term']]['o-module-reference:values'][] = [
@@ -286,6 +349,240 @@ class References extends AbstractPlugin
         return $result;
     }
 
+    /**
+     * Get the list of used properties references by metadata name, the total
+     * for each one and the first item.
+     *
+     * @return array Associative list of references, with the total, the first
+     * first record, and the first character, according to the parameters.
+     */
+    protected function listProperties()
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        $qb
+            ->select(
+                // 'property.label as val',
+                "CONCAT(vocabulary.prefix, ':', property.localName) AS val",
+                // "Distinct" avoids to count resources with multiple
+                // values multiple times for the same property: we count
+                // resources, not properties.
+                $expr->countDistinct('value.resource') . ' AS total'
+            )
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            ->innerJoin(\Omeka\Entity\Value::class, 'value', Join::WITH, $expr->eq('value.resource', 'resource'))
+            // The left join allows to get the total of items without
+            // property.
+            ->leftJoin(
+                \Omeka\Entity\Property::class,
+                'property',
+                Join::WITH,
+                $expr->eq('property.id', 'value.property')
+            )
+            ->innerJoin(
+                \Omeka\Entity\Vocabulary::class,
+                'vocabulary',
+                Join::WITH,
+                $expr->eq('vocabulary.id', 'property.vocabulary')
+            )
+            ->groupBy('val')
+        ;
+        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+            $qb
+                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+        }
+
+        $this->appendAdditionalData($qb, 'o:property');
+        return $this->outputMetadata($qb, 'o:property');
+    }
+
+    protected function appendAdditionalData(QueryBuilder $qb, $type)
+    {
+        $expr = $qb->expr();
+
+        $sortBy = $this->options['sort_by'];
+        $sortOrder = $this->options['sort_order'];
+        switch ($sortBy) {
+            case 'count':
+                $qb
+                    ->orderBy('total', $sortOrder)
+                    // Add alphabetic order for ergonomy.
+                    ->addOrderBy('val', 'ASC');
+                break;
+            case 'alphabetic':
+                $sortBy = 'val';
+                // no break.
+            // Any available column.
+            default:
+                $qb
+                    ->orderBy($sortBy, $sortOrder);
+        }
+
+        // Don't add useless order by resource id, since value are unique.
+        // Furthermore, it may break mySql 5.7.5 and later, where ONLY_FULL_GROUP_BY
+        // is set by default and requires to be grouped.
+
+        if ($this->options['link_to_single']) {
+            // Add the first resource id.
+            $qb
+                ->addSelect([
+                    'MIN(resource.id) AS first_id',
+                ]);
+        }
+
+        if ($this->options['initial']) {
+            // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
+            $qb
+                ->addSelect([
+                    // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
+                    $expr->upper($expr->substring('value.value', 1, 1)) . 'AS initial',
+                ]);
+        }
+
+        $this->limitQuery($qb);
+
+        if ($this->options['values']) {
+            switch ($type) {
+                case 'o:property':
+                    $values = is_numeric($this->options['values'][0])
+                        ? $this->options['values']
+                        : $this->listPropertyIds($this->options['values']);
+                    $qb
+                        ->andWhere('property' . '.id IN (:ids)')
+                        ->setParameter('ids', $values);
+                    break;
+                case 'o:resource_class':
+                    $values = is_numeric($this->options['values'][0])
+                        ? $this->options['values']
+                        : $this->listResourceClassIds($this->options['values']);
+                    $qb
+                        ->andWhere('resource_class' . '.id IN (:ids)')
+                        ->setParameter('ids', $values);
+                    break;
+                case 'o:resource_template':
+                    if (is_numeric($this->options['values'][0])) {
+                        $qb
+                            ->andWhere('resource_template' . '.id IN (:ids)')
+                            ->setParameter('ids', $this->options['values']);
+                    } else {
+                        $qb
+                            ->andWhere('resource_template' . '.label IN (:labels)')
+                            ->setParameter('labels', $this->options['values']);
+                    }
+                    break;
+                case 'o:item_set':
+                    $qb
+                        ->andWhere('item_set.id IN (:ids)')
+                        ->setParameter('ids', $this->options['values']);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if ($this->options['per_page']) {
+            $qb->setMaxResults($this->options['per_page']);
+            if ($this->options['page'] > 1) {
+                $offset = ($this->options['page'] - 1) * $this->options['per_page'];
+                $qb->setFirstResult($offset);
+            }
+        }
+    }
+
+    protected function outputMetadata(QueryBuilder $qb, $type)
+    {
+        switch ($this->options['output']) {
+            case 'list':
+            case 'withFirst':
+                $result = $qb->getQuery()->getScalarResult();
+                if ($this->options['initial'] && (extension_loaded('intl') || extension_loaded('iconv'))) {
+                    if (extension_loaded('intl')) {
+                        $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+                        $result = array_map(function ($v) use ($transliterator) {
+                            $v['total'] = (int) $v['total'];
+                            $v['initial'] = $transliterator->transliterate($v['initial']);
+                            return $v;
+                        }, $result);
+                    } else {
+                        $result = array_map(function ($v) {
+                            $v['total'] = (int) $v['total'];
+                            $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);
+                            if ($trans) {
+                                $v['initial'] = $trans;
+                            }
+                            return $v;
+                        }, $result);
+                    }
+                } else {
+                    $result = array_map(function ($v) {
+                        $v['total'] = (int) $v['total'];
+                        return $v;
+                    }, $result);
+                }
+                $result = array_combine(array_column($result, 'val'), $result);
+
+                if (!$this->options['include_without_meta']) {
+                    unset($result['']);
+                }
+
+                return $result;
+
+            case 'associative':
+            default:
+                $result = $qb->getQuery()->getScalarResult();
+
+                // Array column cannot be used in one step, because the null
+                // value (no title) should be converted to "", not to "0".
+                // $result = array_column($result, 'total', 'value');
+                $result = array_combine(
+                    array_column($result, 'val'),
+                    array_column($result, 'total')
+                );
+
+                if (!$this->options['include_without_meta']) {
+                    unset($result['']);
+                }
+
+                return array_map('intval', $result);
+        }
+    }
+
+    /**
+     * Limit the results with a query (generally the site query).
+     *
+     * @param QueryBuilder $qb
+     */
+    protected function limitQuery(QueryBuilder $qb)
+    {
+        if (empty($this->query)) {
+            return;
+        }
+
+        $alias = $this->isOldOmeka ? $this->options['entity_class'] : 'omeka_root';
+        $subQb = $this->entityManager->createQueryBuilder()
+            ->select($alias . '.id')
+            ->from($this->options['entity_class'], $alias);
+        /** @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter */
+        $adapter = $this->adapterManager
+            ->get($this->options['resource_name'])
+            ->buildQuery($subQb, $this->query);
+
+        // There is no colision: the adapter query uses alias "omeka_" + index.
+        $qb
+            ->andWhere($qb->expr()->in('resource.id', $subQb->getDQL()));
+
+        $subParams = $subQb->getParameters();
+        foreach ($subParams as $parameter) {
+            $qb->setParameter(
+                $parameter->getName(),
+                $parameter->getValue(),
+                $parameter->getType()
+            );
+        }
+    }
+
     protected function prepareField($field)
     {
         static $labels;
@@ -342,5 +639,55 @@ class References extends AbstractPlugin
             'term' => $field,
             'label' => $field,
         ];
+    }
+
+    /**
+     * Convert a list of terms into a list of property ids.
+     *
+     * @param array $values
+     * @return array Only values that are terms are converted into ids, the
+     * other are removed.
+     */
+    protected function listPropertyIds(array $values)
+    {
+        $result = array_intersect_key($this->properties, array_fill_keys($values, null));
+        return array_map(function ($v) {
+            return $v->id();
+        }, $result);
+    }
+
+    /**
+     * Convert a list of terms into a list of resource class ids.
+     *
+     * @param array $values
+     * @return array Only values that are terms are converted into ids, the
+     * other are removed.
+     */
+    protected function listResourceClassIds(array $values)
+    {
+        $result = array_intersect_key($this->resourceClasses, array_fill_keys($values, null));
+        return array_map(function ($v) {
+            return $v->id();
+        }, $result);
+    }
+
+    /**
+     * Normalize the resource name as an entity class.
+     *
+     * @param string $resourceName
+     * @return string
+     */
+    protected function mapResourceNameToEntity($resourceName)
+    {
+        $resourceEntityMap = [
+            null => \Omeka\Entity\Resource::class,
+            'items' => \Omeka\Entity\Item::class,
+            'item_sets' => \Omeka\Entity\ItemSet::class,
+            'media' => \Omeka\Entity\Media::class,
+            'resources' => \Omeka\Entity\Resource::class,
+        ];
+        return isset($resourceEntityMap[$resourceName])
+            ? $resourceEntityMap[$resourceName]
+            : \Omeka\Entity\Resource::class;
     }
 }
