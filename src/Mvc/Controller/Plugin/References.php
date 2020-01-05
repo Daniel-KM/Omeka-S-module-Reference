@@ -854,10 +854,11 @@ class References extends AbstractPlugin
                         return $v;
                     }, $result);
                 }
-                $result = array_combine(array_column($result, 'val'), $result);
 
                 if (!$this->options['include_without_meta']) {
+                    $result = array_combine(array_column($result, 'val'), $result);
                     unset($result['']);
+                    $result = array_values($result);
                 }
 
                 return $result;
