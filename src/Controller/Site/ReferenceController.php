@@ -76,6 +76,8 @@ class ReferenceController extends AbstractActionController
             ->setVariable('query', $query)
             ->setVariable('options', [
                 'resource_name' => $resourceName,
+                'per_page' => 0,
+                'page' => 1,
                 'sort_by' => 'alphabetic',
                 'sort_order' => 'ASC',
                 'link_to_single' => (bool) $settings->get('reference_link_to_single', true),

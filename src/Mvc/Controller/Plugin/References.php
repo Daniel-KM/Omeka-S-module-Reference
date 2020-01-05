@@ -213,7 +213,7 @@ class References extends AbstractPlugin
             $this->options = [
                 'resource_name' => $resourceName,
                 'entity_class' => $this->mapResourceNameToEntity($resourceName),
-                'per_page' => @$options['per_page'] ?: $defaults['per_page'],
+                'per_page' => isset($options['per_page']) ? $options['per_page'] : $defaults['per_page'],
                 'page' => @$options['page'] ?: $defaults['page'],
                 'sort_by' => @$options['sort_by'] ? $options['sort_by'] : 'alphabetic',
                 'sort_order' => strtolower(@$options['sort_order']) === 'asc' ? 'ASC' : 'DESC',
