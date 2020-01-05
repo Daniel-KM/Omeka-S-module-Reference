@@ -175,9 +175,8 @@ class References extends AbstractPlugin
 
         // All except properties.
         $omekaFieldsToTypes = [
-            'o:item' => 'items',
+            // Item sets is only for items.
             'o:item_set' => 'item_sets',
-            'o:media' => 'media',
             'o:resource_class' => 'resource_classes',
             'o:resource_template' => 'resource_templates',
             'o:property' => 'properties',
@@ -185,9 +184,7 @@ class References extends AbstractPlugin
 
         if (array_intersect($fields, array_keys($omekaFieldsToTypes))) {
             $labels = [
-                'o:item' => $translate('Items'), // @translate
                 'o:item_set' => $translate('Item sets'), // @translate
-                'o:media' => $translate('Media'), // @translate
                 'o:resource_class' => $translate('Classes'), // @translate
                 'o:resource_template' => $translate('Templates'), // @translate
                 'o:property' => $translate('Properties'), // @translate
@@ -200,15 +197,21 @@ class References extends AbstractPlugin
             // For metadata other than properties.
             if (isset($omekaFieldsToTypes[$field])) {
                 $type = $omekaFieldsToTypes[$field];
-                $values = $reference('', $type, $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+
+                // Manage an exception for the resource "items" exception.
+                if ($type === 'item_sets' && $options['resource_name'] !== 'items') {
+                    $values = [];
+                } else {
+                    $values = $reference('', $type, $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+                }
+
                 $result[$field] = [
                     'o:label' => @$labels[$field],
                     'o-module-reference:values' => [],
                 ];
                 switch ($type) {
-                    case 'items':
+                    // Only for items.
                     case 'item_sets':
-                    case 'media':
                         foreach (array_filter($values) as $value => $count) {
                             $label = $api->read($type, ['id' => $value])->getContent()->displayTitle();
                             $result[$field]['o-module-reference:values'][] = [
