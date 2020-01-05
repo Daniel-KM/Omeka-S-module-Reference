@@ -10,10 +10,24 @@ class ReferencesFactory implements FactoryInterface
     public function __invoke(ContainerInterface $services, $name, array $options = null)
     {
         $plugins = $services->get('ControllerPluginManager');
+        $api = $plugins->get('api');
+
+        $properties = [];
+        foreach ($api->search('properties')->getContent() as $property) {
+            $properties[$property->term()] = $property;
+        }
+
+        $resourceClasses = [];
+        foreach ($api->search('resource_classes')->getContent() as $resourceClass) {
+            $resourceClasses[$resourceClass->term()] = $resourceClass;
+        }
+
         return new References(
-            $plugins->get('api'),
+            $api,
             $plugins->get('reference'),
-            $plugins->get('translate')
+            $plugins->get('translate'),
+            $properties,
+            $resourceClasses
         );
     }
 }
