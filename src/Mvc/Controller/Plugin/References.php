@@ -13,6 +13,11 @@ use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 class References extends AbstractPlugin
 {
     /**
+     * @var int
+     */
+    protected $DC_Title_id = 1;
+
+    /**
      * @param EntityManager
      */
     protected $entityManager;
@@ -260,8 +265,24 @@ class References extends AbstractPlugin
 
             switch ($field['type']) {
                 case 'properties':
+                    $values = $this->listValuesForProperty($field['term']);
+                    $result[$field['term']] = [
+                        'o:id' => $field['id'],
+                        'o:term' => $field['term'],
+                        'o:label' => $field['label'],
+                        'o-module-reference:values' => [],
+                    ];
+                    foreach (array_filter($values) as $value => $count) {
+                        $result[$field['term']]['o-module-reference:values'][] = [
+                            'o:label' => $value,
+                            '@language' => null,
+                            'count' => $count,
+                        ];
+                    }
+                    break;
+
                 case 'resource_classes':
-                    $values = $reference($field['term'], $field['type'], $options['resource_name'], [$options['sort_by'] => $options['sort_order']], $query, $options['per_page'], $options['page']);
+                    $values = $this->listValuesForResourceClass($field['term']);
                     $result[$field['term']] = [
                         'o:id' => $field['id'],
                         'o:term' => $field['term'],
@@ -347,6 +368,88 @@ class References extends AbstractPlugin
         }
 
         return $result;
+    }
+
+    /**
+     * Get the list of used values for a proeprty, the total for each one and
+     * the first item.
+     *
+     * @param string $term
+     * @return array Associative list of references, with the total, the first
+     * first record, and the first character, according to the parameters.
+     */
+    protected function listValuesForProperty($term)
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        $termId = $this->properties[$term]->id();
+
+        $qb
+            ->select([
+                $this->supportAnyValue ? 'ANY_VALUE(value.value) AS val' : 'value.value AS val',
+                // "Distinct" avoids to count duplicate values in properties in
+                // a resource: we count resources, not properties.
+                $expr->countDistinct('resource.id') . ' AS total',
+            ])
+            ->from(\Omeka\Entity\Value::class, 'value')
+            // This join allow to check visibility automatically too.
+            ->innerJoin($this->options['entity_class'], 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
+            ->andWhere($expr->eq('value.property', ':property'))
+            ->setParameter('property', $termId)
+            // Only literal values.
+            ->andWhere($expr->isNotNull('value.value'))
+            ->groupBy('val')
+        ;
+
+        $this->appendAdditionalData($qb, 'properties');
+        return $this->outputMetadata($qb, 'properties');
+    }
+
+    /**
+     * Get the list of used values for a resource class, the total for each one
+     * and the first item.
+     *
+     * @param string $term
+     * @return array Associative list of references, with the total, the first
+     * first record, and the first character, according to the parameters.
+     */
+    protected function listValuesForResourceClass($term)
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        $resourceClassId = $this->resourceClasses[$term]->id();
+        $termId = $this->DC_Title_id;
+
+        $qb
+            ->select([
+                'DISTINCT value.value AS val',
+                // "Distinct" avoids to count duplicate values in properties in
+                // a resource: we count resources, not properties.
+                $expr->countDistinct('resource.id') . ' AS total',
+            ])
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            ->leftJoin(
+                \Omeka\Entity\Value::class,
+                'value',
+                Join::WITH,
+                'value.resource = resource AND value.property = :property_id'
+            )
+            ->setParameter('property_id', $termId)
+            ->groupBy('val')
+            ->where($expr->eq('resource.resourceClass', ':resource_class'))
+            ->setParameter('resource_class', (int) $resourceClassId)
+        ;
+
+        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+            $qb
+                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+        }
+
+        $this->appendAdditionalData($qb, 'resource_classes');
+        return $this->outputMetadata($qb, 'resource_classes');
     }
 
     /**
@@ -584,6 +687,12 @@ class References extends AbstractPlugin
 
         if ($this->options['values']) {
             switch ($type) {
+                case 'properties':
+                case 'resource_classes':
+                    $qb
+                        ->andWhere('value.value IN (:values)')
+                        ->setParameter('values', $this->options['values']);
+                    break;
                 case 'o:property':
                     $values = is_numeric($this->options['values'][0])
                         ? $this->options['values']
