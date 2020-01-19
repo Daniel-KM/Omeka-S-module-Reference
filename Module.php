@@ -72,10 +72,11 @@ class Module extends AbstractModule
         // Because there may be more than 1000 input values, that is the default
         // "max_input_vars" limit in php.ini, a js merges all resource classes
         // and properties before submit.
-        $renderer->headScript()->appendFile($renderer->assetUrl('js/reference-config.js', __NAMESPACE__));
+        // TODO Simplify process (see simple form in module Search).
+        $renderer->headScript()->appendFile($renderer->assetUrl('js/reference-config.js', 'Reference'));
 
         $data = [];
-        $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
+        $defaultSettings = $config['reference']['config'];
         foreach ($defaultSettings as $name => $value) {
             //  TODO Manage the values of the config form via the config form.
             $currentValue = $settings->get($name, $value);
@@ -84,12 +85,17 @@ class Module extends AbstractModule
                     $referenceSlugs = $currentValue;
 
                     $fields = [];
+                    $termsToIds = [];
+                    /** @var \Omeka\Api\Representation\ResourceClassRepresentation[] $resourceClasses */
                     $resourceClasses = $api->search('resource_classes')->getContent();
                     foreach ($resourceClasses as $resourceClass) {
+                        $termsToIds['resource_classes'][$resourceClass->term()] = $resourceClass->id();
                         $fields['resource_classes'][$resourceClass->id()] = $resourceClass;
                     }
+                    /** @var \Omeka\Api\Representation\PropertyRepresentation[] $properties */
                     $properties = $api->search('properties')->getContent();
                     foreach ($properties as $property) {
+                        $termsToIds['properties'][$property->term()] = $property->id();
                         $fields['properties'][$property->id()] = $property;
                     }
 
@@ -110,7 +116,12 @@ class Module extends AbstractModule
                     // Set true values.
                     foreach ($referenceSlugs as $slug => $slugData) {
                         $type = $slugData['type'];
-                        $id = $slugData['term'];
+                        $term = $slugData['term'];
+                        // Manage new vocabularies.
+                        if (empty($termsToIds[$type][$term])) {
+                            continue;
+                        }
+                        $id = $termsToIds[$type][$term];
                         // Manage removed vocabularies.
                         if (empty($fields[$type][$id])) {
                             continue;
@@ -177,6 +188,23 @@ class Module extends AbstractModule
         // $params = $form->getData();
         $params = $params->toArray();
 
+        // Prepare the list of the properties and classes, because the values
+        // are saved by terms but the form is still using ids.
+
+        $api = $services->get('Omeka\ApiManager');
+
+        $idsToTerms = [];
+        /** @var \Omeka\Api\Representation\ResourceClassRepresentation[] $resourceClasses */
+        $resourceClasses = $api->search('resource_classes')->getContent();
+        foreach ($resourceClasses as $resourceClass) {
+            $idsToTerms['resource_classes'][$resourceClass->id()] = $resourceClass->term();
+        }
+        /** @var \Omeka\Api\Representation\PropertyRepresentation[] $properties */
+        $properties = $api->search('properties')->getContent();
+        foreach ($properties as $property) {
+            $idsToTerms['properties'][$property->id()] = $property->term();
+        }
+
         // Fix the "max_input_vars" limit in php.ini via js.
         // Recreate the array that was json encoded via js.
         $fieldsData = [];
@@ -201,7 +229,7 @@ class Module extends AbstractModule
                 }
                 $referenceSlug = [];
                 $referenceSlug['type'] = $type;
-                $referenceSlug['term'] = $id;
+                $referenceSlug['term'] = $idsToTerms[$type][$id];
                 $referenceSlug['label'] = $field['label'];
                 $referenceSlug['active'] = $field['active'];
                 $referenceSlugs[$field['slug']] = $referenceSlug;
@@ -222,7 +250,7 @@ class Module extends AbstractModule
         $params['reference_tree_hierarchy'] = $referencePlugin
             ->convertTreeToLevels($params['reference_tree_hierarchy']);
 
-        $defaultSettings = $config[strtolower(__NAMESPACE__)]['config'];
+        $defaultSettings = $config['reference']['config'];
         $params = array_intersect_key($params, $defaultSettings);
         foreach ($params as $name => $value) {
             $settings->set($name, $value);
