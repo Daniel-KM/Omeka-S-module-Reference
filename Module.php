@@ -243,8 +243,8 @@ class Module extends AbstractModule
             ->appendStylesheet($assetUrl('vendor/chosen-js/chosen.css', 'Omeka'))
             ->appendStylesheet($assetUrl('css/reference.css', 'Reference'));
         $view->headScript()
-            ->appendFile($assetUrl('vendor/chosen-js/chosen.jquery.js', 'Omeka'))
-            ->appendFile($assetUrl('js/reference-advanced-search.js', 'Reference'))
+            ->appendFile($assetUrl('vendor/chosen-js/chosen.jquery.js', 'Omeka'), 'text/javascript', ['defer' => 'defer'])
+            ->appendFile($assetUrl('js/reference-advanced-search.js', 'Reference'), 'text/javascript', ['defer' => 'defer'])
             ->appendScript('var basePath = ' . json_encode($view->basePath()) . ';' . PHP_EOL
                 . 'var siteSlug = ' . json_encode($view->params()->fromRoute('site-slug')));
     }
