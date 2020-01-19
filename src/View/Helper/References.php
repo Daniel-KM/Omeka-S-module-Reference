@@ -67,7 +67,7 @@ class References extends AbstractHelper
     public function count($metadata = null, array $query = null, array $options = null)
     {
         $ref = $this->references;
-        $isSingle = is_string($metadata);
+        $isSingle = !is_array($metadata);
         if ($isSingle) {
             $metadata = [$metadata];
         }
