@@ -1111,12 +1111,15 @@ class References extends AbstractPlugin
                 $expr->countDistinct('resource.id'),
             ])
             ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->andWhere($expr->eq('resource.itemSet', ':item_set'))
-            ->setParameter('item_set', (int) $id);
-
-        // Always an item.
-        $qb
-            ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id');
+            ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id')
+            // See \Omeka\Api\Adapter\ItemAdapter::buildQuery()
+            ->innerJoin(
+                'res.itemSets',
+                'item_set',
+                Join::WITH,
+                $expr->in('item_set.id', ':item_sets')
+            )
+            ->setParameter('item_sets', (int) $id);
 
         $this->limitQuery($qb);
 
