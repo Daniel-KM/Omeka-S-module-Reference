@@ -2,8 +2,8 @@
 namespace Reference\Mvc\Controller\Plugin;
 
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Query\Expr\Join;
 use Omeka\Api\Adapter\Manager as AdapterManager;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Mvc\Controller\Plugin\Translate;
@@ -430,16 +430,16 @@ class References extends AbstractPlugin
             $field = $this->prepareField($inputField);
             switch ($field['type']) {
                 case 'properties':
-                    $result[$field['term']] = $this->countResourcesForProperties($field['id']);
+                    $result[$field['term']] = $this->countResourcesForProperty($field['id']);
                     break;
                 case 'resource_classes':
-                    $result[$field['term']] = $this->countResourcesForResourceClasses($field['id']);
+                    $result[$field['term']] = $this->countResourcesForResourceClass($field['id']);
                     break;
                 case 'resource_templates':
-                    $result[$field['term']] = $this->countResourcesForResourceTemplates($field['id']);
+                    $result[$field['term']] = $this->countResourcesForResourceTemplate($field['id']);
                     break;
                 case 'item_sets':
-                    $result[$field['term']] = $this->countResourcesForItemSets($field['id']);
+                    $result[$field['term']] = $this->countResourcesForItemSet($field['id']);
                     break;
                 default:
                     $result[$field['term']] = null;
@@ -1025,7 +1025,7 @@ class References extends AbstractPlugin
         return array_map('intval', $result);
     }
 
-    protected function countResourcesForProperties($termId)
+    protected function countResourcesForProperty($termId)
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
@@ -1052,7 +1052,7 @@ class References extends AbstractPlugin
         return $qb->getQuery()->getSingleScalarResult();
     }
 
-    protected function countResourcesForResourceClasses($termId)
+    protected function countResourcesForResourceClass($termId)
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
