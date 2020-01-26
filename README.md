@@ -54,6 +54,10 @@ These contents can be displayed anywere via the view helper `references()`:
 ```php
 // With default values.
 echo $this->references()->displayListForTerm('dcterms:subject', $query, $options);
+// Get the lists.
+echo $this->references()->list('dcterms:subject', $query, $options);
+// Get the count.
+echo $this->references()->count('dcterms:subject', $query, $options);
 ```
 
 The results are available via json too via the module [ApiInfo].
