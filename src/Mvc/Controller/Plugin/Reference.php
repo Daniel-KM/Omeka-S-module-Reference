@@ -405,14 +405,18 @@ class Reference extends AbstractPlugin
             $totals = $this->getReferencesList($termId, $type, $entityClass, null, $query, $lowerReferences, null, null, $output, $initial, false);
         }
 
-        $lowerTotals = [];
+        $lowerValues = [];
         if ($hasMb) {
-            foreach ($totals as $key => $value) {
-                $lowerTotals[mb_strtolower($key)] = $value;
+            foreach ($totals as $value) {
+                $key = mb_strtolower($value['val']);
+                unset($value['val']);
+                $lowerValues[$key] = $value;
             }
         } else {
-            foreach ($totals as $key => $value) {
-                $lowerTotals[strtolower($key)] = $value;
+            foreach ($totals as $value) {
+                $key = strtolower($value['val']);
+                unset($value['val']);
+                $lowerValues[$key] = $value;
             }
         }
 
@@ -423,11 +427,11 @@ class Reference extends AbstractPlugin
             $level = reset($referenceLevel);
             $reference = key($referenceLevel);
             $lower = $lowers[$key];
-            if (isset($lowerTotals[$lower])) {
+            if (isset($lowerValues[$lower])) {
                 $referenceData = [
-                    'total' => $lowerTotals[$lower]['total'],
+                    'total' => $lowerValues[$lower]['total'],
                     'first_id' => $options['link_to_single']
-                        ? $lowerTotals[$lower]['first_id']
+                        ? $lowerValues[$lower]['first']
                         : null,
                 ];
             } else {
@@ -436,7 +440,7 @@ class Reference extends AbstractPlugin
                     'first_id' => null,
                 ];
             }
-            $referenceData['value'] = $reference;
+            $referenceData['val'] = $reference;
             $referenceData['level'] = $level;
             if ($isBranch) {
                 $referenceData['branch'] = $branches[$key];
@@ -706,7 +710,7 @@ class Reference extends AbstractPlugin
             ],
             'values' => $values,
             // Output options.
-            'first_id' => false,
+            'first_id' => $output === 'withFirst',
             'initial' => $initial,
             'lang' => false,
             'include_without_meta' => $includeWithoutMeta,
