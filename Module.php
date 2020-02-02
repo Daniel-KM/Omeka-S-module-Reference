@@ -12,6 +12,7 @@ use Omeka\Stdlib\Message;
 use Reference\Form\ConfigForm;
 use Zend\EventManager\Event;
 use Zend\EventManager\SharedEventManagerInterface;
+use Zend\ModuleManager\ModuleManager;
 use Zend\Mvc\Controller\AbstractController;
 use Zend\Mvc\MvcEvent;
 use Zend\View\Renderer\PhpRenderer;
@@ -28,6 +29,11 @@ use Zend\View\Renderer\PhpRenderer;
 class Module extends AbstractModule
 {
     const NAMESPACE = __NAMESPACE__;
+
+    public function init(ModuleManager $moduleManager)
+    {
+        require_once __DIR__ . '/vendor/autoload.php';
+    }
 
     public function onBootstrap(MvcEvent $event)
     {

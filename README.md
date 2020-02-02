@@ -16,8 +16,29 @@ intends to provide the same features as the original plugin.
 Installation
 ------------
 
-Uncompress files and rename module folder `Reference`. Then install it like any
-other Omeka module and follow the config instructions.
+The module uses an external library to support new version of mysql, so use the
+release zip to install the module, or use and init the source.
+
+* From the zip
+
+Download the last release [`Reference.zip`] from the list of releases (the
+master does not contain the dependency), and uncompress it in the `modules`
+directory.
+
+* From the source and for development
+
+If the module was installed from the source, rename the name of the folder of
+the module to `Reference`, go to the root module, and run:
+
+```
+    composer install
+```
+
+The next times:
+
+```
+    composer update
+```
 
 See general end user documentation for [Installing a module].
 

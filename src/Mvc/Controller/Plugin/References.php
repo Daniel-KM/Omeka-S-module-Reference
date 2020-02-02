@@ -872,14 +872,18 @@ class References extends AbstractPlugin
             $qb
                 ->addSelect([
                     // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
-                    $expr->upper($expr->substring('value.value', 1, 1)) . 'AS initial',
+                    $this->supportAnyValue
+                        ? 'ANY_VALUE(' . $expr->upper($expr->substring('value.value', 1, 1)) . ') AS initial'
+                        : $expr->upper($expr->substring('value.value', 1, 1)) . 'AS initial',
                 ]);
         }
 
         if ($type === 'properties' && $this->options['lang']) {
             $qb
                 ->addSelect([
-                    'value.lang AS lang',
+                    $this->supportAnyValue
+                        ? 'ANY_VALUE(value.lang) AS lang'
+                        : 'value.lang AS lang',
                 ]);
         }
 
@@ -954,8 +958,8 @@ class References extends AbstractPlugin
                 break;
             case 'alphabetic':
                 $sortBy = 'val';
-                // no break.
                 // Any available column.
+                // no break
             default:
                 $qb
                     ->orderBy($sortBy, $sortOrder);
@@ -1141,7 +1145,7 @@ class References extends AbstractPlugin
         $subQb = $this->entityManager->createQueryBuilder()
             ->select($alias . '.id')
             ->from($this->options['entity_class'], $alias);
-        /** @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter */
+        /* @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter */
         $this->adapterManager
             ->get($this->options['resource_name'])
             ->buildQuery($subQb, $this->query);

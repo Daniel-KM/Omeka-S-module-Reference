@@ -2,6 +2,13 @@
 namespace Reference;
 
 return [
+    'entity_manager' => [
+        'functions' => [
+            'string' => [
+                'any_value' => \DoctrineExtensions\Query\Mysql\AnyValue::class,
+            ],
+        ],
+    ],
     'view_manager' => [
         'template_path_stack' => [
             dirname(__DIR__) . '/view',
