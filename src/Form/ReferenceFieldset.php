@@ -23,12 +23,13 @@ class ReferenceFieldset extends Form
             'type' => PropertySelect::class,
             'options' => [
                 'label' => 'Property', // @translate
-                'empty_option' => 'Select a property…', // @translate
                 'term_as_value' => true,
+                'empty_option' => '',
             ],
             'attributes' => [
                 'required' => false,
                 'class' => 'chosen-select',
+                'data-placeholder' => 'Select a property…', // @translate
             ],
         ]);
         $argsFieldset->add([
@@ -36,12 +37,13 @@ class ReferenceFieldset extends Form
             'type' => ResourceClassSelect::class,
             'options' => [
                 'label' => 'Resource class', // @translate
-                'empty_option' => 'Select a resource class…', // @translate
+                'empty_option' => '',
                 'term_as_value' => true,
             ],
             'attributes' => [
                 'required' => false,
                 'class' => 'chosen-select',
+                'data-placeholder' => 'Select a resource class…', // @translate
             ],
         ]);
         $argsFieldset->add([
@@ -61,6 +63,9 @@ class ReferenceFieldset extends Form
                     // 'media' => 'Media',  // @translate
                 ],
             ],
+            'attributes' => [
+                'class' => 'chosen-select',
+            ],
         ]);
         $argsFieldset->add([
             'name' => 'order',
@@ -73,6 +78,9 @@ class ReferenceFieldset extends Form
                     'total ASC' => 'Total ascendant',  // @translate
                     'total DESC' => 'Total descendant',  // @translate
                 ],
+            ],
+            'attributes' => [
+                'class' => 'chosen-select',
             ],
         ]);
         $argsFieldset->add([

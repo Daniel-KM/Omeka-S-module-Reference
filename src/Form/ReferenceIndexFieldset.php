@@ -23,7 +23,7 @@ class ReferenceIndexFieldset extends Form
             'type' => PropertySelect::class,
             'options' => [
                 'label' => 'Properties', // @translate
-                'empty_option' => 'Select properties…', // @translate
+                'empty_option' => '',
                 'term_as_value' => true,
             ],
             'attributes' => [
@@ -39,7 +39,7 @@ class ReferenceIndexFieldset extends Form
             'type' => ResourceClassSelect::class,
             'options' => [
                 'label' => 'Resource classes', // @translate
-                'empty_option' => 'Select resource classes…', // @translate
+                'empty_option' => '',
                 'term_as_value' => true,
             ],
             'attributes' => [
@@ -69,6 +69,7 @@ class ReferenceIndexFieldset extends Form
             ],
             'attributes' => [
                 'id' => 'resource_name',
+                'class' => 'chosen-select',
             ],
         ]);
         /* // TODO Manage order of the terms (via totals).

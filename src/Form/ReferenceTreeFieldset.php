@@ -22,12 +22,13 @@ class ReferenceTreeFieldset extends Form
             'type' => PropertySelect::class,
             'options' => [
                 'label' => 'Property', // @translate
-                'empty_option' => 'Select a property…', // @translate
                 'term_as_value' => true,
+                'empty_option' => '',
             ],
             'attributes' => [
                 'required' => true,
                 'class' => 'chosen-select',
+                'data-placeholder' => 'Select a property…', // @translate
             ],
         ]);
         $argsFieldset->add([
@@ -76,6 +77,7 @@ Asia ↵
             ],
             'attributes' => [
                 'required' => true,
+                'class' => 'chosen-select',
             ],
         ]);
         $argsFieldset->add([
@@ -116,6 +118,9 @@ Asia ↵
                     'eq' => 'Is Exactly', // @translate
                     'in' => 'Contains', // @translate
                 ],
+            ],
+            'attributes' => [
+                'class' => 'chosen-select',
             ],
         ]);
         $optionsFieldset->add([
