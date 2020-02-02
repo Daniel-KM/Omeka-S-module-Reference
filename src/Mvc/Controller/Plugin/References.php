@@ -609,6 +609,15 @@ class References extends AbstractPlugin
             ])
             // The use of resource checks visibility automatically.
             ->from(\Omeka\Entity\Resource::class, 'resource')
+            // Always an item.
+            ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id')
+            ->innerJoin(
+                'res.itemSets',
+                'item_set',
+                Join::WITH,
+                'item_set.id = :item_set'
+            )
+            ->setParameter('item_set', (int) $itemSetId)
             ->leftJoin(
                 \Omeka\Entity\Value::class,
                 'value',
@@ -617,13 +626,7 @@ class References extends AbstractPlugin
             )
             ->setParameter('property_id', $termId)
             ->groupBy('val')
-            ->andWhere($expr->eq('resource.itemSet', ':item_set'))
-            ->setParameter('item_set', (int) $itemSetId)
         ;
-
-        // Always an item.
-        $qb
-            ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id');
 
         $this->manageOptions($qb, 'item_sets');
         return $this->outputMetadata($qb, 'item_sets');
@@ -866,7 +869,9 @@ class References extends AbstractPlugin
 
     protected function manageOptions(QueryBuilder $qb, $type)
     {
-        if ($type === 'properties' && $this->options['initial']) {
+        if (in_array($type, ['properties', 'resource_classes', 'resource_templates', 'item_sets'])
+            && $this->options['initial']
+        ) {
             $expr = $qb->expr();
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
             $qb
@@ -890,9 +895,9 @@ class References extends AbstractPlugin
         if ($this->options['first_id']) {
             // Add the first resource id.
             $qb
-            ->addSelect([
-                'MIN(resource.id) AS first',
-            ]);
+                ->addSelect([
+                    'MIN(resource.id) AS first',
+                ]);
         }
 
         if ($this->options['values']) {
