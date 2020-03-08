@@ -219,6 +219,7 @@ Performance fixes were made for Article 19.
 [Reference]: https://github.com/Daniel-KM/Omeka-S-module-Reference
 [Omeka]: https://omeka.org/classic
 [Reference plugin]: https://github.com/Daniel-KM/Omeka-plugin-Reference
+[`Reference.zip`]: https://github.com/Daniel-KM/Omeka-S-module-Reference/releases
 [Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
 [ApiInfo]: https://github.com/Daniel-KM/Omeka-S-module-ApiInfo
 [module issues]: https://github.com/Daniel-KM/Omeka-S-module-Reference/issues
