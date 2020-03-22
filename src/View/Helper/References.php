@@ -82,16 +82,17 @@ class References extends AbstractHelper
      *
      * @param string $term
      * @param array $query
-     * @param array $options Same options than list(), and specific ones for the
-     * display (booleans):
-     * - raw: Show references as raw text, not links (default to false)
-     * - link_to_single: When there is one result for a term, link it directly
-     *   to the resource, and not to the list page (default to config)
-     * - custom_url: with modules such Clean Url or Ark, use the url generator
-     *   instad the standard item/id. May slow the display when there are many
-     *   single references
-     * - skiplinks: Add the list of letters at top and bottom of the page
-     * - headings: Add each letter as headers
+     * @param array $options Same options than list(), and specific ones for
+     * the display:
+     * - template (string): the template to use (default: "common/reference")
+     * - raw (bool): Show references as raw text, not links (default to false)
+     * - link_to_single (bool): When there is one result for a term, link it
+     *   directly to the resource, and not to the list page (default to config)
+     * - custom_url (bool): with modules such Clean Url or Ark, use the url
+     *   generator instad the standard item/id. May slow the display when there
+     *   are many single references
+     * - skiplinks (bool): Add the list of letters at top and bottom of the page
+     * - headings (bool): Add each letter as headers
      * @return string Html list.
      */
     public function displayListForTerm($term, array $query = null, array $options = null)
@@ -113,7 +114,10 @@ class References extends AbstractHelper
         $list = $first['o-module-reference:values'];
         unset($first['o-module-reference:values']);
 
-        return $this->getView()->partial('common/reference', [
+        $template = empty($options['template']) ? 'common/reference' : $options['template'];
+        unset($options['template']);
+
+        return $this->getView()->partial($template, [
             'term' => $term,
             'query' => $query,
             'options' => $options,
