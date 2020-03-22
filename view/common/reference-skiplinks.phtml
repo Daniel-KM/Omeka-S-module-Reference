@@ -14,18 +14,11 @@ if (count($references)):
                 $letters[preg_match('/\W|\d/u', $first_char) ? 'number' : $first_char] = true;
             endif;
         endforeach;
-    elseif (extension_loaded('mbstring')):
+    else:
         foreach ($references as $reference => $referenceData):
             $first_char = mb_strtoupper(mb_substr($reference, 0, 1));
             if (empty($letters[$first_char])):
                 $letters[preg_match('/\W|\d/u', $first_char) ? 'number' : $first_char] = true;
-            endif;
-        endforeach;
-    else:
-        foreach ($references as $reference => $referenceData):
-            $first_char = strtoupper(substr($reference, 0, 1));
-            if (empty($letters[$first_char])):
-                $letters[(strlen($first_char) == 0 || preg_match('/\W|\d/u', $first_char)) ? 'number' : $first_char] = true;
             endif;
         endforeach;
     endif;
