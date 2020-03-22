@@ -168,15 +168,19 @@ class ReferenceIndex extends AbstractBlockLayout
         $options['sort_by'] = key($args['order']) === 'alphabetic' ? 'alphabetic' : 'total';
         $options['per_page'] = 0;
 
-        return $view->partial(
-            self::PARTIAL_NAME,
-            [
-                'block' => $block,
-                'metadata' => $metadata,
-                'query' => $query,
-                'options' => $options,
-            ]
-        );
+        $template = isset($options['template']) ? $options['template'] : self::PARTIAL_NAME;
+        unset($options['template']);
+
+        $vars = [
+            'block' => $block,
+            'metadata' => $metadata,
+            'query' => $query,
+            'options' => $options,
+        ];
+
+        return $view->resolver($template)
+            ? $view->partial($template, $vars)
+            : $view->partial(self::PARTIAL_NAME, $vars);
     }
 
     protected function isResourceClass($term)

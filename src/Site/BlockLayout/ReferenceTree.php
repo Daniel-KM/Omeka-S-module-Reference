@@ -138,15 +138,19 @@ class ReferenceTree extends AbstractBlockLayout
         unset($args['tree']);
         $total = count($tree);
 
-        return $view->partial(
-            'common/block-layout/reference-tree',
-            [
-                'block' => $block,
-                'total' => $total,
-                'tree' => $tree,
-                'args' => $args,
-                'options' => $options,
-            ]
-        );
+        $template = isset($options['template']) ? $options['template'] : self::PARTIAL_NAME;
+        unset($options['template']);
+
+        $vars = [
+            'block' => $block,
+            'total' => $total,
+            'tree' => $tree,
+            'args' => $args,
+            'options' => $options,
+        ];
+
+        return $view->resolver($template)
+            ? $view->partial($template, $vars)
+            : $view->partial(self::PARTIAL_NAME, $vars);
     }
 }

@@ -146,6 +146,22 @@ class ReferenceIndexFieldset extends Form
                 ],
             ]);
 
+        if (class_exists('BlockPlus\Form\Element\TemplateSelect')) {
+            $optionsFieldset
+                ->add([
+                    'name' => 'template',
+                    'type' => \BlockPlus\Form\Element\TemplateSelect::class,
+                    'options' => [
+                        'label' => 'Template to display', // @translate
+                        'info' => 'Templates are in folder "common/block-layout" of the theme and should start with "reference-index".', // @translate
+                        'template' => 'common/block-layout/reference-index',
+                    ],
+                    'attributes' => [
+                        'class' => 'chosen-select',
+                    ],
+                ]);
+        }
+
         $inputFilter = $this->getInputFilter();
         $inputFilter
             ->add([

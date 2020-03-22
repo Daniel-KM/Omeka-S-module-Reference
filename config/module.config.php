@@ -159,6 +159,7 @@ return [
                     'skiplinks' => true,
                     'headings' => true,
                     'total' => true,
+                    'template' => '',
                 ],
             ],
             'referenceIndex' => [
@@ -173,6 +174,7 @@ return [
                 'options' => [
                     'heading' => 'Reference index', // @translate
                     'total' => true,
+                    'template' => '',
                 ],
             ],
             'referenceTree' => [
@@ -190,6 +192,7 @@ return [
                     'total' => true,
                     'branch' => false,
                     'expanded' => true,
+                    'template' => '',
                 ],
             ],
         ],
