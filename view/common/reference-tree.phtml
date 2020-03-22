@@ -17,7 +17,7 @@ if (count($references)):
     // $api = $this->api();
 
     $this->headLink()->appendStylesheet($this->assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));
-    $this->headScript()->appendFile($this->assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'));
+    $this->headScript()->appendFile($this->assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'), 'text/javascript', ['defer' => 'defer']);
 
     $this->headStyle()->appendStyle('.tree .no-resource { font-style: italic; }');
 

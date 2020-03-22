@@ -125,7 +125,7 @@ class ReferenceTree extends AbstractBlockLayout
     public function prepareRender(PhpRenderer $view)
     {
         $view->headLink()->appendStylesheet($view->assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));
-        $view->headScript()->appendFile($view->assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'));
+        $view->headScript()->appendFile($view->assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'), 'text/javascript', ['defer' => 'defer']);
     }
 
     public function render(PhpRenderer $view, SitePageBlockRepresentation $block)
