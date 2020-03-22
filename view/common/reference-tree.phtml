@@ -89,11 +89,11 @@ if (count($references)):
                         else:
                             if ($options['custom_url']):
                                 // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
-                                // $resource = $api()->read($resourceName, $referenceData['first_id'])->getContent();
+                                // $resource = $api()->read($resourceName, $referenceData['first'])->getContent();
                                 // $referenceUrl = $resource->siteUrl();
-                                $referenceUrl = $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $referenceData['first_id']], false);
+                                $referenceUrl = $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $referenceData['first']], false);
                             else:
-                                $referenceUrl = str_replace('{reference}', rawurldecode($referenceData['first_id']), $templateUrlSingle);
+                                $referenceUrl = str_replace('{reference}', rawurldecode($referenceData['first']), $templateUrlSingle);
                             endif;
                         endif;
                         $referenceText = $hyperlink($reference, $referenceUrl);

@@ -170,9 +170,9 @@ if (count($references)):
                     $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
                 else:
                     // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
-                    // $resource = $api->read($resourceName, $referenceData['first_id'])->getContent();
+                    // $resource = $api->read($resourceName, $referenceData['first'])->getContent();
                     // $referenceUrl = $resource->siteUrl();
-                    $referenceUrl = $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $referenceData['first_id']], false);
+                    $referenceUrl = $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $referenceData['first']], false);
                 endif;
 
             else:
