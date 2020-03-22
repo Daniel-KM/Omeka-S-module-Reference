@@ -159,6 +159,7 @@ return [
                     'skiplinks' => true,
                     'headings' => true,
                     'total' => true,
+                    'subject_property' => null,
                     'template' => '',
                 ],
             ],

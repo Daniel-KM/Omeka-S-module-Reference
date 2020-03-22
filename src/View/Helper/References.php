@@ -93,6 +93,7 @@ class References extends AbstractHelper
      *   are many single references
      * - skiplinks (bool): Add the list of letters at top and bottom of the page
      * - headings (bool): Add each letter as headers
+     * - subject_property (string|int): property to use for second level list
      * @return string Html list.
      */
     public function displayListForTerm($term, array $query = null, array $options = null)
@@ -105,11 +106,33 @@ class References extends AbstractHelper
         $options['first_id'] = @$options['first_id'] || @$options['link_to_single'];
         $options['output'] = 'list';
 
+        // Add first id if there is a property for subject values.
+        $firstId = $options['first_id'];
+        unset($options['subject_property_id'], $options['subject_property_term']);
+        if (!empty($options['subject_property'])) {
+            $api = $this->getView()->api();
+            $property = is_numeric($options['subject_property'])
+                ? $api->read('properties', ['id' => $options['subject_property']])->getContent()
+                : $api->searchOne('properties', ['term' => $options['subject_property']])->getContent();
+            if ($property) {
+                $options['first_id'] = true;
+                $options['subject_property'] = [
+                    'id' => $property->id(),
+                    'term' => $property->term(),
+                ];
+            } else {
+                unset($options['subject_property']);
+            }
+        }
+
         $ref = $this->references;
         $list = $ref([$term], $query, $options)->list();
 
         $first = reset($list);
         $options = $ref->getOptions() + $options;
+
+        // Keep original option for key first_id.
+        $options['first_id'] = $firstId;
 
         $list = $first['o-module-reference:values'];
         unset($first['o-module-reference:values']);

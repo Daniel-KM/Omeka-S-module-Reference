@@ -1,7 +1,5 @@
 <?php
 /**
- * @deprecated Use references instead.
- *
  * @var \Zend\View\Renderer\PhpRenderer $this
  * @var string $term
  * @var array $query
@@ -18,6 +16,7 @@ if (count($references)):
     $translate = $this->plugin('translate');
     $url = $this->plugin('url');
     $siteSlug = $this->params()->fromRoute('site-slug');
+    $api = $this->api();
     // This is the Omeka default title. May be different in the database.
     $emptyTitle = $translate('[Untitled]');
 
@@ -33,6 +32,7 @@ if (count($references)):
     $propertyTitle = 'dcterms:title';
     $termId = $field['o:id'];
     $term = @$field['o:term'];
+    $hasSubjectProperty = !empty($options['subject_property']);
 
     $queryKeys = [
         'o:ResourceClass' => 'resource_class_id',
@@ -62,18 +62,18 @@ if (count($references)):
 
     if ($options['raw']):
         if ($options['total']):
-            $template .= '<div class="reference-record">{reference_text}{reference_total}</div>' . PHP_EOL;
+            $template .= '<div class="reference-record">{reference_text}{reference_total}{recursive}</div>' . PHP_EOL;
             $replaceBase['{reference_total}'] = '';
         else:
-            $template .= '<div class="reference-record">{reference_text}</div>' . PHP_EOL;
+            $template .= '<div class="reference-record">{reference_text}{recursive}</div>' . PHP_EOL;
         endif;
     else:
         $replaceBase['{reference_url}'] = '';
         if ($options['total']):
-            $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}</a>{reference_total}</div>' . PHP_EOL;
+            $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}</a>{reference_total}{recursive}</div>' . PHP_EOL;
             $replaceBase['{reference_total}'] = '';
         else:
-            $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}</a></div>' . PHP_EOL;
+            $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}{recursive}</a></div>' . PHP_EOL;
         endif;
         if (!$options['custom_url']):
             $tempPlaceholder = '00999999990999999001';
@@ -197,7 +197,28 @@ if (count($references)):
             $replace['{reference_total}'] = $referenceTotal;
         endif;
 
-       // Process the output of one reference (and eventually the initial heading).
+        $recursive = '';
+        if ($hasSubjectProperty && !empty($referenceData['first'])):
+            /** @var \Omeka\Api\Representation\AbstractResourceEntityRepresentation $res */
+            // TODO To be improved to avoid to read from the api.
+            // TODO Make it recursive.
+            $res = $api->read('resources', $referenceData['first'])->getContent();
+            $res = $api->read($res->resourceName(), $referenceData['first'])->getContent();
+            $subjectValues = $res->subjectValues(null, null, $options['subject_property']['id']);
+            if (count($subjectValues)):
+                $recursive .= '<ul class="recursive-list list-unstyled">';
+                /** @var \Omeka\Api\Representation\ValueRepresentation $subjectValue */
+                foreach ($subjectValues[$options['subject_property']['term']] as $subjectValue):
+                    $recursive .= '<li>';
+                    $recursive .= $subjectValue->resource()->linkPretty();
+                    $recursive .= '</li>';
+                endforeach;
+                $recursive .= '</ul>';
+            endif;
+        endif;
+        $replace['{recursive}'] = $recursive;
+
+        // Process the output of one reference (and eventually the initial heading).
         echo str_replace(array_keys($replace), array_values($replace), $template);
         ?>
     <?php endforeach; ?>

@@ -157,6 +157,8 @@ TODO
   the global pages.
 - Manage advanced search reference by site and in admin board.
 - Display values other than literal.
+- Make the reference recursive (two levels currently).
+- Get the second levels via a single sql, not via api.
 
 
 Warning

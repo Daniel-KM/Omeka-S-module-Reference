@@ -160,6 +160,22 @@ class ReferenceFieldset extends Form
                 'options' => [
                     'label' => 'Add the total of resources for each reference', // @translate
                 ],
+            ])
+            ->add([
+                'name' => 'subject_property',
+                'type' => PropertySelect::class,
+                'options' => [
+                    'label' => 'Subject values', // @translate
+                    'info' => 'Allow to list related resources, for example to get a list of documents by author.', // @translate
+                    'term_as_value' => true,
+                    'empty_option' => '',
+                ],
+                'attributes' => [
+                    'id' => 'subject_property',
+                    'required' => false,
+                    'class' => 'chosen-select',
+                    'data-placeholder' => 'Select a property…', // @translate
+                ],
             ]);
 
         if (class_exists('BlockPlus\Form\Element\TemplateSelect')) {

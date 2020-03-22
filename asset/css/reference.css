@@ -61,6 +61,26 @@ ul.references li {
     margin-bottom: 12px;
 }
 
+/* Recursive list */
+.list-unstyled {
+    padding-left: 0;
+    list-style: none;
+}
+.recursive-list .resource-link {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    min-width: 0;
+}
+.recursive-list .resource-link img {
+    height: 36px;
+    margin-right: 6px;
+}
+.recursive-list .resource-link .resource-name {
+    flex: 1;
+    min-width: 0;
+}
+
 /* Advanced search */
 /* These rules should be adapted to the theme, in particular the sizes. */
 #property-queries .chosen-container-single {
@@ -84,6 +104,7 @@ ul.references li {
     margin: 0 0 0 5px;
     padding: 6px;
 }
+
 /* Adaptation for official theme Cozy */
 /*
 #property-queries .chosen-container-single .chosen-single {
