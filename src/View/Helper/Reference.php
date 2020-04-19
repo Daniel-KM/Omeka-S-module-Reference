@@ -12,7 +12,7 @@ use Zend\View\Helper\AbstractHelper;
 class Reference extends AbstractHelper
 {
     /**
-     * @param ReferencePlugin
+     * @var ReferencePlugin
      */
     protected $reference;
 

@@ -430,14 +430,14 @@ class Reference extends AbstractPlugin
             if (isset($lowerValues[$lower])) {
                 $referenceData = [
                     'total' => $lowerValues[$lower]['total'],
-                    'first_id' => $options['link_to_single']
+                    'first' => $options['link_to_single']
                         ? $lowerValues[$lower]['first']
                         : null,
                 ];
             } else {
                 $referenceData = [
                     'total' => 0,
-                    'first_id' => null,
+                    'first' => null,
                 ];
             }
             $referenceData['val'] = $reference;
