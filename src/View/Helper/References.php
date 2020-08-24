@@ -32,6 +32,11 @@ class References extends AbstractHelper
      * - filters: array Limit values to the specified data. Currently managed:
      *   - "languages": list of languages. Values without language are returned
      *     with the empty value "". This option is used only for properties.
+     *   - "datatypes": array Filter property values according to the data types.
+     *     Default datatypes are "literal", "resource", "resource:item", "resource:itemset",
+     *     "resource:media" and "uri".
+     *     Warning: "resource" is not the same than specific resources.
+     *     Use module Bulk Edit or Bulk Check to specify all resources automatically.
      * - values: array Allow to limit the answer to the specified values.
      * - first_id: false (default), or true (get first resource).
      * - initial: false (default), or true (get first letter of each result).

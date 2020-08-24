@@ -127,6 +127,11 @@ class References extends AbstractPlugin
      * - filters: array Limit values to the specified data. Currently managed:
      *   - "languages": list of languages. Values without language are returned
      *     with the empty value "". This option is used only for properties.
+     *   - "datatypes": array Filter property values according to the data types.
+     *     Default datatypes are "literal", "resource", "resource:item", "resource:itemset",
+     *     "resource:media" and "uri".
+     *     Warning: "resource" is not the same than specific resources.
+     *     Use module Bulk Edit or Bulk Check to specify all resources automatically.
      * - values: array Allow to limit the answer to the specified values.
      * - first_id: false (default), or true (get first resource).
      * - initial: false (default), or true (get first letter of each result).
@@ -210,6 +215,7 @@ class References extends AbstractPlugin
             'sort_order' => 'ASC',
             'filters' => [
                 'languages' => [],
+                'datatypes' => [],
             ],
             'values' => [],
             // Output options.
@@ -254,6 +260,10 @@ class References extends AbstractPlugin
                 $this->options['filters']['languages'] = explode('|', str_replace(',', '|', $this->options['filters']['languages']));
             }
             $this->options['filters']['languages'] = array_unique(array_map('trim', $this->options['filters']['languages']));
+            if (!is_array($this->options['filters']['datatypes'])) {
+                $this->options['filters']['datatypes'] = explode('|', str_replace(',', '|', $this->options['filters']['datatypes']));
+            }
+            $this->options['filters']['datatypes'] = array_unique(array_filter(array_map('trim', $this->options['filters']['datatypes'])));
         } else {
             $this->options = $defaults;
         }
@@ -496,11 +506,10 @@ class References extends AbstractPlugin
             ->innerJoin($this->options['entity_class'], 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
             ->andWhere($expr->eq('value.property', ':property'))
             ->setParameter('property', $termId)
-            // Only literal values.
-            ->andWhere($expr->isNotNull('value.value'))
             ->groupBy('val')
         ;
 
+        $this->filterByDatatype($qb);
         $this->filterByLanguage($qb);
         $this->manageOptions($qb, 'properties');
         return $this->outputMetadata($qb, 'properties');
@@ -862,6 +871,15 @@ class References extends AbstractPlugin
                 ->innerJoin('item_set.siteItemSets', 'ref_site_item_set')
                 ->andWhere($expr->eq('ref_site_item_set.site', ':ref_site_item_set_site'))
                 ->setParameter(':ref_site_item_set_site', $this->query['site_id']);
+        }
+    }
+
+    protected function filterByDatatype(QueryBuilder $qb)
+    {
+        if ($this->options['filters']['datatypes']) {
+            $expr = $qb->expr();
+            $qb
+                ->andWhere($expr->in('value.type', $this->options['filters']['datatypes']));
         }
     }
 
