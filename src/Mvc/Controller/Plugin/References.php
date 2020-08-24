@@ -902,7 +902,8 @@ class References extends AbstractPlugin
                     $this->supportAnyValue
                         ? 'ANY_VALUE(value.lang) AS lang'
                         : 'value.lang AS lang',
-                ]);
+                ])
+                ->addGroupBy('lang');
         }
 
         // Add the first resource id.
