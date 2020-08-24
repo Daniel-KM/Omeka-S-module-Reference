@@ -6,24 +6,24 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Reference\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-07-02 00:00+0200\n"
-"PO-Revision-Date: 2018-07-02 00:00+0200\n"
+"POT-Creation-Date: 2020-08-24 00:00+0000\n"
+"PO-Revision-Date: 2020-08-24 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.0.8\n"
+"X-Generator: Poedit 2.4.1\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: Module.php:162
+#: Module.php:159
 msgid ""
 "It is recommended to create reference with the blocks of the site pages."
 msgstr ""
 "Il est recommandé de créer des références avec les blocs des pages de site."
 
-#: Module.php:163
+#: Module.php:160
 msgid ""
 "So these options are used only to create global pages, that are not provided "
 "by Omeka yet."
@@ -31,16 +31,28 @@ msgstr ""
 "Ces options sont utilisées seulement pour créer des pages globales, qui ne "
 "sont pas encore disponibles par Omeka."
 
-#: Module.php:166
+#: Module.php:163
 msgid "This config allows to create routed pages for all sites."
 msgstr ""
 "Cette configuration permet de créer des pages communes pour tous les sites."
 
-#: Module.php:167
+#: Module.php:164
 msgid "References are limited by the pool of the site."
 msgstr "Les références sont limitées par le réservoir de contenus du site."
 
-#: src/Form/ConfigForm.php:84
+#: src/Controller/ApiController.php:28 src/Controller/ApiController.php:36
+#: src/Controller/ApiController.php:44 src/Controller/ApiController.php:52
+#: src/Controller/ApiController.php:91 src/Controller/ApiController.php:99
+#: src/Controller/ApiController.php:107 src/Controller/ApiController.php:115
+#: src/Controller/ApiController.php:123 src/Controller/ApiController.php:131
+msgid "Method Not Allowed"
+msgstr "Méthode non autorisée"
+
+#: src/Controller/ApiController.php:139
+msgid "Page not found"
+msgstr "Page non trouvée"
+
+#: src/Form/ConfigForm.php:104
 msgid ""
 "Print skip links at the top and bottom of each page, which link to the "
 "alphabetical headers."
@@ -48,48 +60,29 @@ msgstr ""
 "Afficher les raccourcis en haut et en bas de chaque page, avec des liens "
 "vers les entêtes alphabétiques."
 
-#: src/Form/ConfigForm.php:85
+#: src/Form/ConfigForm.php:105
 msgid "Note that if headers are turned off, skiplinks do not work."
 msgstr ""
 "Notez que si les entêtes sont désactivées, les raccourcis ne fonctionneront "
 "pas."
 
-#: src/Form/ConfigForm.php:112
-#, php-format
-msgid ""
-"Enable the page and display the link \"%s\" to the hierarchical view in the "
-"navigation bar."
-msgstr ""
-"Activer la page et afficher le lien \"%s\" vers la vue par arborescence dans "
-"la barre de navigation."
-
-#: src/Form/ConfigForm.php:137 src/Form/ReferenceTreeBlockForm.php:41
-#, fuzzy
-#| msgid ""
-#| "If any, write the hierarchy of all your subjects in order to display them "
-#| "in the \"Hierarchy of Subjects\" page."
+#: src/Form/ConfigForm.php:156
 msgid ""
 "If any, write the hierarchy of all your references in order to display them "
 "in the \"Tree of references\" page."
 msgstr ""
-"Si défini, permet d'indiquer l’arborescence de tous les sujets de façon à "
-"les afficher dans la page \"Arborescence des sujets\"."
+"Si défini, indiquer l’arborescence de toutes les références de façon à les "
+"afficher dans la page \"Arborescence des sujets\"."
 
-#: src/Form/ConfigForm.php:138 src/Form/ReferenceTreeBlockForm.php:42
-#, fuzzy
-#| msgid ""
-#| "Format is: one subjet by line, preceded by zero, one or more \"-\" to "
-#| "indicate the hierarchy level. Separate the \"-\" and the subject with a "
-#| "space. Empty lines are not considered."
+#: src/Form/ConfigForm.php:157
 msgid ""
 "Format is: one reference by line, preceded by zero, one or more \"-\" to "
 "indicate the hierarchy level."
 msgstr ""
-"Le format est : un sujet par ligne, précédé par zéro, un ou plusieurs \"-\" "
-"pour indiquer le niveau de hiérarchie. Séparer le \"-\" et le sujet avec une "
-"espace. Les lignes vides ne sont pas prises en compte."
+"Le format est : une référence par ligne, précédé par zéro, un ou plusieurs "
+"\"-\" pour indiquer le niveau dans la hiérarchie."
 
-#: src/Form/ConfigForm.php:139 src/Form/ReferenceTreeBlockForm.php:43
+#: src/Form/ConfigForm.php:158
 msgid ""
 "Separate the \"-\" and the reference with a space. Empty lines are not "
 "considered."
@@ -97,7 +90,7 @@ msgstr ""
 "Séparer le \"-\" et la référence avec un espace. Les lignes vides ne sont "
 "pas prises en compte."
 
-#: src/Form/ConfigForm.php:140 src/Form/ReferenceTreeBlockForm.php:44
+#: src/Form/ConfigForm.php:159
 msgid ""
 "Note: sql does case insensitive searches, so all references should be case-"
 "insensitively unique."
@@ -105,95 +98,137 @@ msgstr ""
 "Note : sql effectue des recherches sans casse ; de ce fait, toutes les "
 "références doivent être uniques indépendamment de la casse."
 
-#: view/common/block-layout/reference-tree.phtml:14
-#: view/common/block-layout/reference.phtml:14
-#, fuzzy
-#| msgid "There is no references for \"%s\"."
+#: src/Generic/AbstractModule.php:601
+#, php-format
+msgid "This module requires the module \"%s\"."
+msgstr "Ce module requiert le module « %s »."
+
+#: src/Generic/AbstractModule.php:621
+#, php-format
+msgid "This module requires modules \"%s\"."
+msgstr "Ce module requiert les modules « %s »."
+
+#: src/Generic/AbstractModule.php:689
+#, php-format
+msgid ""
+"The module \"%s\" was automatically deactivated because the dependencies are "
+"unavailable."
+msgstr ""
+"Le module « %s » a été automatiquement désactivé car ses dépendances ne sont "
+"plus disponibles."
+
+#: src/Site/BlockLayout/Reference.php:142
+msgid "Choose a property or a resource class."
+msgstr "Choisir une propriété ou une classe de ressource."
+
+#: src/Site/BlockLayout/ReferenceIndex.php:141
+msgid "Choose a list of property or resource class."
+msgstr "Choisir une liste de propriêtés ou de classes."
+
+#: src/Site/BlockLayout/ReferenceIndex.php:142
+msgid ""
+"The pages for the selected terms should be created manually with the terms "
+"as slug, with the \":\" replaced by a \"-\"."
+msgstr ""
+"Les pages pour les termes choisis doivent être créées manuellement avec le "
+"terme en tant que chemin, avec le \":\" remplacé par un \"-\"."
+
+#: view/common/block-layout/reference-index.phtml:19
+#: view/common/block-layout/reference-tree.phtml:22
+#: view/common/block-layout/reference.phtml:22
 msgid "There is no references."
-msgstr "Il n’y a aucune référence pour \"%s\"."
+msgstr "Il n’y a aucune référence."
 
-#: view/reference/site/reference/browse.phtml:11
-msgid "No references available."
-msgstr "Aucune référence disponible."
+#: view/common/reference-index.phtml:29
+#, php-format
+msgid "%s (%d)"
+msgstr "%s (%d)"
 
-#: view/reference/site/reference/browse.phtml:21
-#: view/reference/site/reference/browse.phtml:50
+#: view/common/reference-index.phtml:32 view/common/reference-index.phtml:41
+#: view/reference/site/reference/browse.phtml:38
+#: view/reference/site/reference/browse.phtml:67
 #, php-format
 msgid "Browse %s"
 msgstr "Parcourir %s"
 
-#: view/reference/site/reference/browse.phtml:42
-#, fuzzy
-#| msgid "Main Types of Items"
+#: view/reference/site/reference/browse.phtml:28
+msgid "No references available."
+msgstr "Aucune référence disponible."
+
+#: view/reference/site/reference/browse.phtml:58
 msgid "Main types"
 msgstr "Principaux types de documents"
 
-#: view/reference/site/reference/list.phtml:5
-#, fuzzy, php-format
-#| msgid "Browse Items By \"%s\" (%d Headings)"
+#: view/reference/site/reference/list.phtml:17
+#, php-format
 msgid "Browse items by \"%s\" (%d headings)"
-msgstr "Parcourir les documents par \"%s\" (%d sujets)"
+msgstr "Parcourir les documents par \"%s\" (%d index)"
 
-#: view/reference/site/reference/list.phtml:9
+#: view/reference/site/reference/list.phtml:21
 #, php-format
 msgid "There is no references for \"%s\"."
 msgstr "Il n’y a aucune référence pour \"%s\"."
 
-#: view/reference/site/reference/tree.phtml:5
-#, fuzzy, php-format
-#| msgid "Hierarchy of Subjects (%d total)"
+#: view/reference/site/reference/tree.phtml:14
+#, php-format
 msgid "Tree of references (%d total)"
-msgstr "Arborescence des sujets (total : %d)"
+msgstr "Arborescence des sujets (total : %d)"
 
-#: view/reference/site/reference/tree.phtml:9
-#, fuzzy
-#| msgid "There is no references for \"%s\"."
+#: view/reference/site/reference/tree.phtml:18
 msgid "There is no list of references."
-msgstr "Il n’y a aucune référence pour \"%s\"."
+msgstr "Il n’y a aucune liste de références."
 
-#: src/Form/ReferenceBlockForm.php:28 src/Form/ReferenceTreeBlockForm.php:27
-msgid "Property"
-msgstr "Propriété"
+#: Module.php:243
+#, php-format
+msgid "The following slugs are duplicated: \"%s\"."
+msgstr "Les chemins suivants sont en doublon : \"%s\"."
 
-#: src/Form/ReferenceBlockForm.php:29 src/Form/ConfigForm.php:123
-#: src/Form/ReferenceTreeBlockForm.php:28
+#: Module.php:246
+msgid "Changes were not saved."
+msgstr "Les modifications ont été annulées."
+
+#: src/Form/ReferenceTreeFieldset.php:33 src/Form/ConfigForm.php:142
+#: src/Form/ReferenceFieldset.php:33 src/Form/ReferenceFieldset.php:177
 msgid "Select a property…"
 msgstr "Choisir une propriété…"
 
-#: src/Form/ReferenceBlockForm.php:42
-msgid "Select a resource class…"
-msgstr "Choisir une classe de ressource…"
+#: src/Form/ReferenceTreeFieldset.php:40 src/Form/ConfigForm.php:155
+msgid "Static tree of references"
+msgstr "Arborescence statique des références"
 
-#: src/Form/ReferenceBlockForm.php:58 src/Form/ConfigForm.php:38
-#: src/Form/ReferenceTreeBlockForm.php:71
+#: src/Form/ReferenceTreeFieldset.php:41
+msgid ""
+"If any, write the hierarchy of all your references in order to display them "
+"in the \"Tree of references\" page.\n"
+"    Format is: one reference by line, preceded by zero, one or more \"-\" to "
+"indicate the hierarchy level.\n"
+"    Separate the \"-\" and the reference with a space. Empty lines are not "
+"considered.\n"
+"    Note: sql does case insensitive searches, so all references should be "
+"case-insensitively unique."
+msgstr ""
+"Indiquer l’arborescence de toutes vos références de façon à les afficher "
+"dans la page \"Arborescence des références\".\n"
+"    Le format est : une référence par ligne, précédée par zéro, un ou plus "
+"\"-\" pour indiquer le niveau hiérarchique.\n"
+"    Séparer le \"-\" et la référence avec une espace. Les lignes vides ne "
+"sont pas prises en compte.\n"
+"    Note : la base sql réalise des recherches sans tenir compte de la "
+"casse ; les références doivent donc être unique de façon insensible à la "
+"casse."
+
+#: src/Form/ReferenceTreeFieldset.php:71 src/Form/ConfigForm.php:40
+#: src/Form/ReferenceIndexFieldset.php:63 src/Form/ReferenceFieldset.php:58
 msgid "value_options"
 msgstr "value_options"
 
-#: src/Form/ReferenceBlockForm.php:72
-msgid "Select order"
-msgstr "Choisir l’ordre"
-
-#: src/Form/ReferenceBlockForm.php:74
-msgid "Alphabetic ascendant"
-msgstr "Alphabétique ascendant"
-
-#: src/Form/ReferenceBlockForm.php:75
-msgid "Alphabetic descendant"
-msgstr "Alphabétique descendant"
-
-#: src/Form/ReferenceBlockForm.php:76
-msgid "Count ascendant"
-msgstr "Par total croissant"
-
-#: src/Form/ReferenceBlockForm.php:77
-msgid "Count descendant"
-msgstr "Par total décroissant"
-
-#: src/Form/ReferenceBlockForm.php:85 src/Form/ReferenceTreeBlockForm.php:88
+#: src/Form/ReferenceTreeFieldset.php:89 src/Form/ReferenceIndexFieldset.php:96
+#: src/Form/ReferenceFieldset.php:91
 msgid "Query to limit resources"
 msgstr "Requête pour limiter les ressources"
 
-#: src/Form/ReferenceBlockForm.php:86 src/Form/ReferenceTreeBlockForm.php:89
+#: src/Form/ReferenceTreeFieldset.php:90 src/Form/ReferenceIndexFieldset.php:97
+#: src/Form/ReferenceFieldset.php:92
 msgid ""
 "Limit the reference to a particular subset of resources, for example a site, "
 "via an advanced search query."
@@ -201,183 +236,25 @@ msgstr ""
 "Limiter les références à un lot spécifique de ressources, par exemple un "
 "site, via une requête de type recherche avancée."
 
-#: src/Form/ReferenceBlockForm.php:94 src/Form/ReferenceTreeBlockForm.php:97
+#: src/Form/ReferenceTreeFieldset.php:99
+#: src/Form/ReferenceIndexFieldset.php:121 src/Form/ReferenceFieldset.php:113
 msgid "Display"
 msgstr "Affichage"
 
-#: src/Form/ReferenceBlockForm.php:103 src/Form/ReferenceTreeBlockForm.php:106
+#: src/Form/ReferenceTreeFieldset.php:109
+#: src/Form/ReferenceIndexFieldset.php:131 src/Form/ReferenceFieldset.php:123
 msgid "Heading"
 msgstr "Entête"
 
-#: src/Form/ReferenceBlockForm.php:111 src/Form/ConfigForm.php:56
-#: src/Form/ReferenceTreeBlockForm.php:128
-#, fuzzy
-#| msgid "Link to Single Records"
-msgid "Link to single records"
-msgstr "Lien vers les documents isolés"
-
-#: src/Form/ReferenceBlockForm.php:112 src/Form/ConfigForm.php:57
-#: src/Form/ReferenceTreeBlockForm.php:129
+#: src/Form/ReferenceTreeFieldset.php:110 src/Form/ReferenceFieldset.php:124
 msgid ""
-"When a reference has only one item, link to it directly instead of to the "
-"items/browse page."
+"Translatable title above references, if any. The placeholder {total} can be "
+"used."
 msgstr ""
-"Quand une référence contient un seul document, faire le lien directement "
-"vers lui plutôt que vers la page items/browse."
+"Ajouter un titre traduisible au-dessus des références. Le joker {total} peut "
+"être utilisé."
 
-#: src/Form/ReferenceBlockForm.php:119
-msgid "Add skiplinks above and below list"
-msgstr "Ajouter des raccourcis au dessus et en dessous de la liste"
-
-#: src/Form/ReferenceBlockForm.php:126
-msgid "Add first letter as headings between references"
-msgstr "Ajouter l’initiale comme entête entre les références"
-
-#: src/Form/ReferenceBlockForm.php:133 src/Form/ReferenceTreeBlockForm.php:136
-msgid "Add the total of resources for each reference"
-msgstr "Indiquer le total de ressources pour chaque référence"
-
-#: src/Form/ConfigForm.php:27
-msgid "General options"
-msgstr "Options générales"
-
-#: src/Form/ConfigForm.php:36
-msgid "Resources to link"
-msgstr "Ressources à lier"
-
-#: src/Form/ConfigForm.php:37
-msgid "Currently, only item sets and items are managed in public front-end."
-msgstr ""
-"Actuellement, seuls les contenus et les collections peuvent être gérés dans "
-"le site public."
-
-#: src/Form/ConfigForm.php:65
-msgid "Print total"
-msgstr "Afficher le total"
-
-#: src/Form/ConfigForm.php:66
-msgid "Print the total of resources for each reference."
-msgstr "Afficher le total des ressources pour chaque référence."
-
-#: src/Form/ConfigForm.php:74
-#, fuzzy
-#| msgid "References Indexes"
-msgid "Reference indexes options"
-msgstr "Index des références"
-
-#: src/Form/ConfigForm.php:83
-msgid "Print skip links"
-msgstr "Afficher les raccourcis"
-
-#: src/Form/ConfigForm.php:93
-msgid "Print headings"
-msgstr "Afficher les entêtes"
-
-#: src/Form/ConfigForm.php:94
-#, fuzzy
-#| msgid "Print headers for each section (#0-9 and symbols, A, B, etc.)"
-msgid "Print headers for each section (#0-9 and symbols, A, B, etc.)."
-msgstr ""
-"Afficher les entêtes pour chaque section (#0-9 et symboles, A, B, etc.)"
-
-#: src/Form/ConfigForm.php:102 src/Site/BlockLayout/ReferenceTree.php:58
-#, fuzzy
-#| msgid "Reference"
-msgid "Reference tree"
-msgstr "Référence"
-
-#: src/Form/ConfigForm.php:111
-msgid "Enable tree view"
-msgstr "Activer la vue par arborescence"
-
-#: src/Form/ConfigForm.php:121
-msgid "Property for the tree"
-msgstr "Propriété pour l’arborescence"
-
-#: src/Form/ConfigForm.php:122
-msgid "The references will use this property to create links."
-msgstr "Les références utiliseront cette propriété pour créer les liens."
-
-#: src/Form/ConfigForm.php:136 src/Form/ReferenceTreeBlockForm.php:40
-msgid "Static tree of references"
-msgstr "Arborescence statique des références"
-
-#: src/Form/ConfigForm.php:163 src/Form/ReferenceTreeBlockForm.php:150
-msgid "Managed as branch"
-msgstr "Gérée comme branches"
-
-#: src/Form/ConfigForm.php:164 src/Form/ReferenceTreeBlockForm.php:151
-msgid ""
-"Check this box if the tree is managed as branch (the path is saved with "
-"\" :: \" between each branch)."
-msgstr ""
-"Cocher cette case si l’arborescence doit être gérée comme des branches (le "
-"chemin est enregistré avec \" :: \" entre chaque branch)."
-
-#: src/Form/ConfigForm.php:172 src/Form/ReferenceTreeBlockForm.php:116
-#, fuzzy
-#| msgid "Query Type"
-msgid "Query type"
-msgstr "Type de requête"
-
-#: src/Form/ConfigForm.php:173
-#, fuzzy
-#| msgid ""
-#| "The type of query defines how elements are regrouped (see the advanced "
-#| "search)."
-msgid "The type of query defines how elements are searched."
-msgstr ""
-"Le type de requête définit comment les éléments sont regroupés (voir la "
-"recherche avancée)."
-
-#: src/Form/ConfigForm.php:175 src/Form/ReferenceTreeBlockForm.php:119
-msgid "Is Exactly"
-msgstr "Est exactement"
-
-#: src/Form/ConfigForm.php:176 src/Form/ReferenceTreeBlockForm.php:120
-msgid "Contains"
-msgstr "Contient"
-
-#: src/Form/ConfigForm.php:185
-msgid "Expand tree"
-msgstr "Développer l’arborescence"
-
-#: src/Form/ConfigForm.php:186
-#, fuzzy
-msgid ""
-"Check this box to display the tree expanded. This option can be overridden "
-"by the theme."
-msgstr "Cliquez cette case pour développer l’arborescence."
-
-#: src/Form/ConfigForm.php:212
-#, fuzzy
-#| msgid "References Indexes"
-msgid "Reference indexes"
-msgstr "Index des références"
-
-#: src/Form/ConfigForm.php:219
-#, fuzzy
-#| msgid "References Indexes"
-msgid "Reference indexes: Resource classes"
-msgstr "Index des références"
-
-#: src/Form/ConfigForm.php:223
-#, fuzzy
-#| msgid "References Indexes"
-msgid "Reference indexes: Properties"
-msgstr "Index des références"
-
-#: src/Form/ConfigForm.php:233 src/Form/ConfigForm.php:245
-#, fuzzy
-#| msgid "Label"
-msgid "label"
-msgstr "Label"
-
-#: src/Form/ConfigForm.php:256
-msgid "data-term"
-msgstr "data-term"
-
-#: src/Form/ReferenceTreeBlockForm.php:117
+#: src/Form/ReferenceTreeFieldset.php:120
 msgid ""
 "The type of query defines how elements are regrouped (see the advanced "
 "search)."
@@ -385,40 +262,317 @@ msgstr ""
 "Le type de requête définit comment les éléments sont regroupés (voir la "
 "recherche avancée)."
 
-#: src/Form/ReferenceTreeBlockForm.php:143
-#, fuzzy
-#| msgid "Expand tree"
+#: src/Form/ReferenceTreeFieldset.php:122 src/Form/ConfigForm.php:194
+msgid "Is Exactly"
+msgstr "Est exactement"
+
+#: src/Form/ReferenceTreeFieldset.php:123 src/Form/ConfigForm.php:195
+msgid "Contains"
+msgstr "Contient"
+
+#: src/Form/ReferenceTreeFieldset.php:134 src/Form/ConfigForm.php:58
+#: src/Form/ReferenceFieldset.php:131
+msgid "Link to single records"
+msgstr "Lien vers les documents isolés"
+
+#: src/Form/ReferenceTreeFieldset.php:135 src/Form/ConfigForm.php:59
+#: src/Form/ReferenceFieldset.php:132
+msgid ""
+"When a reference has only one item, link to it directly instead of to the "
+"items/browse page."
+msgstr ""
+"Quand une référence contient un seul document, faire le lien directement "
+"vers lui plutôt que vers la page items/browse."
+
+#: src/Form/ReferenceTreeFieldset.php:142 src/Form/ConfigForm.php:67
+#: src/Form/ReferenceFieldset.php:139
+msgid "Custom url for single"
+msgstr "Url personnalisée pour les références uniques"
+
+#: src/Form/ReferenceTreeFieldset.php:143 src/Form/ConfigForm.php:68
+#: src/Form/ReferenceFieldset.php:140
+msgid ""
+"May be set with modules such Clean Url or Ark. May slow the display when "
+"there are many single references."
+msgstr ""
+"Peut être utilisé avec les modules tels que CleanUrl et Ark. Peut ralentir "
+"l'affichage quand les références uniques sont nombreuses."
+
+#: src/Form/ReferenceTreeFieldset.php:150
+#: src/Form/ReferenceIndexFieldset.php:142 src/Form/ReferenceFieldset.php:161
+msgid "Add the total of resources for each reference"
+msgstr "Indiquer le total de ressources pour chaque référence"
+
+#: src/Form/ReferenceTreeFieldset.php:157
 msgid "Expand the tree"
 msgstr "Développer l’arborescence"
 
-#: src/Site/BlockLayout/Reference.php:58
+#: src/Form/ReferenceTreeFieldset.php:164 src/Form/ConfigForm.php:182
+msgid "Managed as branch"
+msgstr "Gérée comme branches"
+
+#: src/Form/ReferenceTreeFieldset.php:165 src/Form/ConfigForm.php:183
+msgid ""
+"Check this box if the tree is managed as branch (the path is saved with "
+"\" :: \" between each branch)."
+msgstr ""
+"Cocher cette case si l’arborescence doit être gérée comme des branches (le "
+"chemin est enregistré avec \" :: \" entre chaque branch)."
+
+#: src/Form/ReferenceTreeFieldset.php:175
+#: src/Form/ReferenceIndexFieldset.php:155 src/Form/ReferenceFieldset.php:187
+msgid "Template to display"
+msgstr "Gabarit à afficher"
+
+#: src/Form/ReferenceTreeFieldset.php:176
+msgid ""
+"Templates are in folder \"common/block-layout\" of the theme and should "
+"start with \"reference-tree\"."
+msgstr ""
+"Les gabarits sont dans le dossier \"common/block-layout\" du thème et "
+"doivent commencer avec \"reference-tree\"."
+
+#: src/Form/ConfigForm.php:29
+msgid "General options"
+msgstr "Options générales"
+
+#: src/Form/ConfigForm.php:38
+msgid "Resources to link"
+msgstr "Ressources à lier"
+
+#: src/Form/ConfigForm.php:39
+msgid "Currently, only item sets and items are managed in public front-end."
+msgstr ""
+"Actuellement, seuls les contenus et les collections peuvent être gérés dans "
+"le site public."
+
+#: src/Form/ConfigForm.php:76
+msgid "Print total"
+msgstr "Afficher le total"
+
+#: src/Form/ConfigForm.php:77
+msgid "Print the total of resources for each reference."
+msgstr "Afficher le total des ressources pour chaque référence."
+
+#: src/Form/ConfigForm.php:85
+msgid "List values in advanced search"
+msgstr "Lister les valeurs dans la recherche avancée"
+
+#: src/Form/ConfigForm.php:86
+msgid ""
+"Dynamically list all available properties in the advanced search public form."
+msgstr ""
+"Liste dynamiquement toutes les propriétés disponibles dans le formulaire "
+"public de recherche avancée."
+
+#: src/Form/ConfigForm.php:94
+msgid "Reference indexes options"
+msgstr "Options de l’index des références"
+
+#: src/Form/ConfigForm.php:103
+msgid "Print skip links"
+msgstr "Afficher les raccourcis"
+
+#: src/Form/ConfigForm.php:113
+msgid "Print headings"
+msgstr "Afficher les entêtes"
+
+#: src/Form/ConfigForm.php:114
+msgid "Print headers for each section (#0-9 and symbols, A, B, etc.)."
+msgstr ""
+"Afficher les entêtes pour chaque section (#0-9 et symboles, A, B, etc.)."
+
+#: src/Form/ConfigForm.php:122 src/Site/BlockLayout/ReferenceTree.php:45
+msgid "Reference tree"
+msgstr "Références en arborescence"
+
+#: src/Form/ConfigForm.php:131
+msgid "Enable tree view"
+msgstr "Activer la vue par arborescence"
+
+#: src/Form/ConfigForm.php:132
+msgid ""
+"Enable the page and display the link \"/subject/tree\" to the hierarchical "
+"view in the navigation bar."
+msgstr ""
+"Activer la page et afficher le lien \"/subject/tree\" vers la vue de "
+"l’arborescence dans la barre de navigation."
+
+#: src/Form/ConfigForm.php:140
+msgid "Property for the tree"
+msgstr "Propriété pour l’arborescence"
+
+#: src/Form/ConfigForm.php:141
+msgid "The references will use this property to create links."
+msgstr "Les références utiliseront cette propriété pour créer les liens."
+
+#: src/Form/ConfigForm.php:192
+msgid "The type of query defines how elements are searched."
+msgstr "Le type de requête définit la façon dont les éléments sont recherchés."
+
+#: src/Form/ConfigForm.php:204
+msgid "Expand tree"
+msgstr "Développer l’arborescence"
+
+#: src/Form/ConfigForm.php:205
+msgid ""
+"Check this box to display the tree expanded. This option can be overridden "
+"by the theme."
+msgstr ""
+"Cliquer cette case pour développer l’arborescence. Cette option peut être "
+"contournée dans le thème."
+
+#: src/Form/ConfigForm.php:213
+msgid "Reference indexes"
+msgstr "Index des références"
+
+#: src/Form/ConfigForm.php:220
+msgid "Reference indexes: Resource classes"
+msgstr "Index des références : Classes de ressource"
+
+#: src/Form/ConfigForm.php:224
+msgid "Reference indexes: Properties"
+msgstr "Index des références : Propriétés"
+
+#: src/Form/ConfigForm.php:236 src/Form/ConfigForm.php:248
+msgid "label"
+msgstr "libellé"
+
+#: src/Form/ConfigForm.php:259
+msgid "data-term"
+msgstr "data-term"
+
+#: src/Form/ReferenceIndexFieldset.php:36
+msgid "Select properties…"
+msgstr "Choisir des propriétés…"
+
+#: src/Form/ReferenceIndexFieldset.php:43
+msgid "Resource classes"
+msgstr "Classes de ressource"
+
+#: src/Form/ReferenceIndexFieldset.php:52
+msgid "Select resource classes…"
+msgstr "Sélectionner des classes de ressource…"
+
+#: src/Form/ReferenceIndexFieldset.php:74
+msgid "chosen-select"
+msgstr "chosen-select"
+
+#: src/Form/ReferenceIndexFieldset.php:107 src/Form/ReferenceFieldset.php:99
+msgid "Filter by language"
+msgstr "Filtrer par langue"
+
+#: src/Form/ReferenceIndexFieldset.php:108 src/Form/ReferenceFieldset.php:100
+msgid ""
+"Limit the results to the specified languages. Use \"|\" to separate multiple "
+"languages. Use \"||\" for values without language."
+msgstr ""
+"Limiter les résultats aux langues indiquées. Utiliser \"|\" pour séparer "
+"plusieurs langues. Utiliser \"||\" pour les valeurs sans langue."
+
+#: src/Form/ReferenceIndexFieldset.php:156
+msgid ""
+"Templates are in folder \"common/block-layout\" of the theme and should "
+"start with \"reference-index\"."
+msgstr ""
+"Les gabarits sont dans le dossier \"common/block-layout\" du thème et "
+"doivent commencer avec \"reference-index\"."
+
+#: src/Form/ReferenceFieldset.php:40
+msgid "Resource class"
+msgstr "Classe de ressource"
+
+#: src/Form/ReferenceFieldset.php:47
+msgid "Select a resource class…"
+msgstr "Choisir une classe de ressource…"
+
+#: src/Form/ReferenceFieldset.php:75
+msgid "Select order"
+msgstr "Choisir l’ordre"
+
+#: src/Form/ReferenceFieldset.php:77
+msgid "Alphabetic ascendant"
+msgstr "Alphabétique ascendant"
+
+#: src/Form/ReferenceFieldset.php:78
+msgid "Alphabetic descendant"
+msgstr "Alphabétique descendant"
+
+#: src/Form/ReferenceFieldset.php:79
+msgid "Total ascendant"
+msgstr "Par total croissant"
+
+#: src/Form/ReferenceFieldset.php:80
+msgid "Total descendant"
+msgstr "Par total décroissant"
+
+#: src/Form/ReferenceFieldset.php:147
+msgid "Add skiplinks above and below list"
+msgstr "Ajouter des raccourcis au dessus et en dessous de la liste"
+
+#: src/Form/ReferenceFieldset.php:154
+msgid "Add first letter as headings between references"
+msgstr "Ajouter l’initiale comme entête entre les références"
+
+#: src/Form/ReferenceFieldset.php:168
+msgid "Subject values"
+msgstr "Valeurs sujet"
+
+#: src/Form/ReferenceFieldset.php:169
+msgid ""
+"Allow to list related resources, for example to get a list of documents by "
+"author."
+msgstr ""
+"Permet de lister les ressources liées, par exemple pour avoir la liste des "
+"documents par auteur."
+
+#: src/Form/ReferenceFieldset.php:188
+msgid ""
+"Templates are in folder \"common/block-layout\" of the theme and should "
+"start with \"reference\"."
+msgstr ""
+"Les gabarits sont dans le dossier \"common/block-layout\" du thème et "
+"doivent commencer avec \"reference\"."
+
+#: src/Site/BlockLayout/Reference.php:36
 msgid "Reference"
 msgstr "Référence"
 
-#: src/Site/BlockLayout/Reference.php:145
-msgid ""
-"To create references, there must be a property, a resource class or a tree."
+#: src/Site/BlockLayout/Reference.php:55
+msgid "To create references, there must be a property or a resource class."
 msgstr ""
-"Pour créer des références, une propriété, une classe de ressource ou une "
-"arborescence doit être définie."
+"Pour créer des références, une propriété ou une classe de ressource doit "
+"être indiquée."
 
-#: config/module.config.php:129
-#, fuzzy
-#| msgid "Subjects Tree"
+#: src/Site/BlockLayout/ReferenceIndex.php:36 config/module.config.php:195
+msgid "Reference index"
+msgstr "Index des références"
+
+#: src/Site/BlockLayout/ReferenceIndex.php:65
+msgid ""
+"To create a list of references, there must be properties or resource classes."
+msgstr ""
+"Pour créer des références, une propriété ou une classe de ressource doit "
+"être définie."
+
+#: config/module.config.php:177
 msgid "Subjects"
-msgstr "Arborescence des sujets (total : %d)"
+msgstr "Sujets"
 
-#: config/module.config.php:145
-#, fuzzy
-#| msgid "Hierarchy of Subjects"
+#: config/module.config.php:211
 msgid "Tree of subjects"
 msgstr "Arborescence des sujets"
 
+#~ msgid "Property"
+#~ msgstr "Propriété"
+
+#, fuzzy
+#~| msgid "Query Type"
+#~ msgid "Query type"
+#~ msgstr "Type de requête"
+
 #~ msgid "Some slugs are empty."
 #~ msgstr "Certains identifiants sont vides."
-
-#~ msgid "Changes were reverted."
-#~ msgstr "Les modifications ont été annulées."
 
 #~ msgid "Some slugs are not single."
 #~ msgstr "Certains identifiants ne sont pas uniques."
