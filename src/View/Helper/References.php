@@ -40,13 +40,14 @@ class References extends AbstractHelper
      * - values: array Allow to limit the answer to the specified values.
      * - first_id: false (default), or true (get first resource).
      * - initial: false (default), or true (get first letter of each result).
+     * - distinct: false (default), or true (distinct values by type).
      * - datatype: false (default), or true (include datatype of values).
      * - lang: false (default), or true (include language of value to result).
      * TODO Check if the option include_without_meta is still needed with data types.
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
      * - output: "list" (default) or "associative" (possible only without added
-     *   options: first, initial, datatype, or lang).
+     *   options: first_id, initial, distinct, datatype, or lang).
      * Some options and some combinations are not managed for some metadata.
      * @return array Associative array with total and first record ids.
      */

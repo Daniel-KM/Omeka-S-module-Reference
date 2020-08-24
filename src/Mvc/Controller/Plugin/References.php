@@ -135,13 +135,14 @@ class References extends AbstractPlugin
      * - values: array Allow to limit the answer to the specified values.
      * - first_id: false (default), or true (get first resource).
      * - initial: false (default), or true (get first letter of each result).
+     * - distinct: false (default), or true (distinct values by type).
      * - datatype: false (default), or true (include datatype of values).
      * - lang: false (default), or true (include language of value to result).
      * TODO Check if the option include_without_meta is still needed with data types.
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
      * - output: "list" (default) or "associative" (possible only without added
-     *   options: first, initial, datatype, or lang).
+     *   options: first_id, initial, distinct, datatype, or lang).
      * - is_api: (bool) allow to manage the new key "o:references", that replaces
      *   "o-module-reference:values".
      * Some options and some combinations are not managed for some metadata.
@@ -222,6 +223,7 @@ class References extends AbstractPlugin
             // Output options.
             'first_id' => false,
             'initial' => false,
+            'distinct' => false,
             'datatype' => false,
             'lang' => false,
             'include_without_meta' => false,
@@ -235,6 +237,7 @@ class References extends AbstractPlugin
                 : $defaults['resource_name'];
             $firstId = !empty($options['first_id']);
             $initial = !empty($options['initial']);
+            $distinct = !empty($options['distinct']);
             $datatype = !empty($options['datatype']);
             $lang = !empty($options['lang']);
             $this->options = [
@@ -248,10 +251,11 @@ class References extends AbstractPlugin
                 'values' => @$options['values'] ?: [],
                 'first_id' => $firstId,
                 'initial' => $initial,
+                'distinct' => $distinct,
                 'datatype' => $datatype,
                 'lang' => $lang,
                 'include_without_meta' => (bool) @$options['include_without_meta'],
-                'output' => @$options['output'] === 'associative' && !$firstId && !$initial && !$datatype && !$lang ? 'associative' : 'list',
+                'output' => @$options['output'] === 'associative' && !$firstId && !$initial && !$distinct && !$datatype && !$lang ? 'associative' : 'list',
                 'is_api' => !empty($options['is_api']),
             ];
 
@@ -938,6 +942,17 @@ class References extends AbstractPlugin
                 ]);
         }
 
+        if ($type === 'properties' && $this->options['distinct']) {
+            $qb
+                ->addSelect([
+                    // TODO Warning with type "resource", that may be the same than "resource:item", etc.
+                    'valueResource.id AS res',
+                    'value.uri AS uri',
+                ])
+                ->addGroupBy('res')
+                ->addGroupBy('uri');
+        }
+
         if ($type === 'properties' && $this->options['datatype']) {
             $qb
                 ->addSelect([
@@ -945,7 +960,7 @@ class References extends AbstractPlugin
                         ? 'ANY_VALUE(value.type) AS type'
                         : 'value.type AS type',
                 ]);
-                // No need to group by type: it is already managed with group by "val,uri,res".
+            // No need to group by type: it is already managed with group by distinct "val,res,uri".
         }
 
         if ($type === 'properties' && $this->options['lang']) {
@@ -954,8 +969,11 @@ class References extends AbstractPlugin
                     $this->supportAnyValue
                         ? 'ANY_VALUE(value.lang) AS lang'
                         : 'value.lang AS lang',
-                ])
-                ->addGroupBy('lang');
+                ]);
+            if ($this->options['distinct']) {
+                $qb
+                    ->addGroupBy('lang');
+            }
         }
 
         // Add the first resource id.
