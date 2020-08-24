@@ -9,6 +9,10 @@ instance.
 These lists can be displayed in any page via a helper or a block. References can
 be limited by site or any other pool, and ordered alphabetically or by count.
 
+The references are available via the api too, for example `/api/references?metadata=dcterms:subject`
+to get the list of all subjects, or `/api/references?metadata=foaf:Person` to
+get the list of all resources with class "Person".
+
 This [Omeka S] module is a rewrite of the [Reference plugin] for [Omeka] and
 intends to provide the same features as the original plugin.
 
@@ -21,7 +25,7 @@ release zip to install the module, or use and init the source.
 
 * From the zip
 
-Download the last release [`Reference.zip`] from the list of releases (the
+Download the last release [Reference.zip] from the list of releases (the
 master does not contain the dependency), and uncompress it in the `modules`
 directory.
 
@@ -31,13 +35,13 @@ If the module was installed from the source, rename the name of the folder of
 the module to `Reference`, go to the root module, and run:
 
 ```
-    composer install
+composer install --no-dev
 ```
 
 The next times:
 
 ```
-    composer update
+composer update --no-dev
 ```
 
 See general end user documentation for [Installing a module].
@@ -81,7 +85,8 @@ echo $this->references()->list('dcterms:subject', $query, $options);
 echo $this->references()->count('dcterms:subject', $query, $options);
 ```
 
-The results are available via json too via the module [ApiInfo].
+The references are available via the api too in `/api/references`. Arguments are
+the same than above. This feature is available via the module [ApiInfo] too.
 
 ### Tree view
 
@@ -147,18 +152,28 @@ taken from the url of an advanced search, converted into an array with `parse_st
 The conversion is automatically done inside the user interface (page blocks).
 
 
+Note about linked resources
+---------------------------
+
+When you want to fetch all datatypes, the data types `resource`, `resource:item`,
+`resource:itemset`, etc. are returned. It is recommended to replace all types
+`resource` by the specific one in order to clarify the results. The modules [Bulk Edit]
+or [Bulk Check] allows to do it automatically.
+
+
 TODO
 ----
 
-- Manage references inside admin board.
-- Manage pagination by letter and by number of references.
-- Fix initials for some letters ([#2](https://github.com/Daniel-KM/Omeka-S-module-Reference/issues/2)) via a custom DQL function for `convert`.
-- Create automatically the pages related to the block index in order to remove
-  the global pages.
-- Manage advanced search reference by site and in admin board.
-- Display values other than literal.
-- Make the reference recursive (two levels currently).
-- Get the second levels via a single sql, not via api.
+- [ ] Normalize output with `o:references` instead of `o-module-reference:values` (Omeka version 3.0).
+- [x] Display values other than literal.
+- [ ] Manage pagination by letter and by number of references.
+- [ ] Create automatically the pages related to the block index in order to remove the global pages.
+- [ ] Fix initials for some letters ([#2](https://github.com/Daniel-KM/Omeka-S-module-Reference/issues/2)) via a custom DQL function for `convert`.
+- [ ] Manage references inside admin board.
+- [ ] Manage advanced search reference by site and in admin board.
+- [ ] Make the reference recursive (two levels currently).
+- [ ] Get the second levels via a single sql, not via api.
+- [ ] Check if the option "include_without_meta" is still needed with data types.
 
 
 Warning
@@ -221,9 +236,11 @@ Performance fixes were made for Article 19.
 [Reference]: https://github.com/Daniel-KM/Omeka-S-module-Reference
 [Omeka]: https://omeka.org/classic
 [Reference plugin]: https://github.com/Daniel-KM/Omeka-plugin-Reference
-[`Reference.zip`]: https://github.com/Daniel-KM/Omeka-S-module-Reference/releases
+[Reference.zip]: https://github.com/Daniel-KM/Omeka-S-module-Reference/releases
 [Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
 [ApiInfo]: https://github.com/Daniel-KM/Omeka-S-module-ApiInfo
+[Bulk Edit]: https://github.com/Daniel-KM/Omeka-S-module-BulkEdit
+[Bulk Check]: https://github.com/Daniel-KM/Omeka-S-module-BulkCheck
 [module issues]: https://github.com/Daniel-KM/Omeka-S-module-Reference/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
