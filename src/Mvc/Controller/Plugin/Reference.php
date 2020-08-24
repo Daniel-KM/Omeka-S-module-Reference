@@ -15,11 +15,6 @@ class Reference extends AbstractPlugin
     /**
      * @var int
      */
-    protected $DC_Title_id = 1;
-
-    /**
-     * @var int
-     */
     protected $DC_Subject_id = 3;
 
     /**
