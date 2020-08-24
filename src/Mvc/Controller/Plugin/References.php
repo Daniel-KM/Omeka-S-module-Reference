@@ -130,11 +130,12 @@ class References extends AbstractPlugin
      * - values: array Allow to limit the answer to the specified values.
      * - first_id: false (default), or true (get first resource).
      * - initial: false (default), or true (get first letter of each result).
+     * - datatype: false (default), or true (include datatype of values).
      * - lang: false (default), or true (include language of value to result).
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
      * - output: "list" (default) or "associative" (possible only without added
-     *   options: first_id, initial or lang).
+     *   options: first, initial, datatype, or lang).
      * - is_api: (bool) allow to manage the new key "o:references", that replaces
      *   "o-module-reference:values".
      * Some options and some combinations are not managed for some metadata.
@@ -214,6 +215,7 @@ class References extends AbstractPlugin
             // Output options.
             'first_id' => false,
             'initial' => false,
+            'datatype' => false,
             'lang' => false,
             'include_without_meta' => false,
             'output' => 'list',
@@ -224,9 +226,10 @@ class References extends AbstractPlugin
             $resourceName = in_array(@$options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
                 ? $options['resource_name']
                 : $defaults['resource_name'];
-            $firstId = (bool) @$options['first_id'];
-            $initial = (bool) @$options['initial'];
-            $lang = (bool) @$options['lang'];
+            $firstId = !empty($options['first_id']);
+            $initial = !empty($options['initial']);
+            $datatype = !empty($options['datatype']);
+            $lang = !empty($options['lang']);
             $this->options = [
                 'resource_name' => $resourceName,
                 'entity_class' => $this->mapResourceNameToEntity($resourceName),
@@ -238,9 +241,10 @@ class References extends AbstractPlugin
                 'values' => @$options['values'] ?: [],
                 'first_id' => $firstId,
                 'initial' => $initial,
+                'datatype' => $datatype,
                 'lang' => $lang,
                 'include_without_meta' => (bool) @$options['include_without_meta'],
-                'output' => @$options['output'] === 'associative' && !$firstId && !$initial && !$lang ? 'associative' : 'list',
+                'output' => @$options['output'] === 'associative' && !$firstId && !$initial && !$datatype && !$lang ? 'associative' : 'list',
                 'is_api' => !empty($options['is_api']),
             ];
 
@@ -896,6 +900,16 @@ class References extends AbstractPlugin
                 ]);
         }
 
+        if ($type === 'properties' && $this->options['datatype']) {
+            $qb
+                ->addSelect([
+                    $this->supportAnyValue
+                        ? 'ANY_VALUE(value.type) AS type'
+                        : 'value.type AS type',
+                ])
+                ->addGroupBy('type');
+        }
+
         if ($type === 'properties' && $this->options['lang']) {
             $qb
                 ->addSelect([
@@ -1043,9 +1057,20 @@ class References extends AbstractPlugin
             return $result;
         }
 
-        $result = array_combine(array_column($result, 'val'), $result);
-        unset($result['']);
-        return array_values($result);
+        // Remove all empty values ("val").
+        // But do not remove a uri or a resource without label.
+        $first = reset($result);
+        if (!array_key_exists('type', $first)) {
+            $result = array_combine(array_column($result, 'val'), $result);
+            unset($result['']);
+            return array_values($result);
+        }
+
+        return array_filter($result, function ($v) {
+            return $v['val'] !== ''
+                || $v['type'] === 'uri'
+                || strpos($v['type'], 'resource') === 0;
+        });
     }
 
     protected function countResourcesForProperty($termId)
