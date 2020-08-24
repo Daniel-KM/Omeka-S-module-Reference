@@ -203,7 +203,7 @@ class References extends AbstractPlugin
             // Not an option, but simpler to set it here.
             'entity_class' => \Omeka\Entity\Item::class,
             // Options sql.
-            'per_page' => 25,
+            'per_page' => 0,
             'page' => 1,
             'sort_by' => 'alphabetic',
             'sort_order' => 'ASC',
@@ -230,7 +230,7 @@ class References extends AbstractPlugin
             $this->options = [
                 'resource_name' => $resourceName,
                 'entity_class' => $this->mapResourceNameToEntity($resourceName),
-                'per_page' => isset($options['per_page']) ? $options['per_page'] : $defaults['per_page'],
+                'per_page' => isset($options['per_page']) && is_numeric($options['per_page']) ? (int) $options['per_page'] : $defaults['per_page'],
                 'page' => @$options['page'] ?: $defaults['page'],
                 'sort_by' => @$options['sort_by'] ? $options['sort_by'] : 'alphabetic',
                 'sort_order' => strtolower(@$options['sort_order']) === 'desc' ? 'DESC' : 'ASC',
