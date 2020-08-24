@@ -42,6 +42,7 @@ class References extends AbstractHelper
      * - initial: false (default), or true (get first letter of each result).
      * - datatype: false (default), or true (include datatype of values).
      * - lang: false (default), or true (include language of value to result).
+     * TODO Check if the option include_without_meta is still needed with data types.
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
      * - output: "list" (default) or "associative" (possible only without added

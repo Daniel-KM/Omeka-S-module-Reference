@@ -137,6 +137,7 @@ class References extends AbstractPlugin
      * - initial: false (default), or true (get first letter of each result).
      * - datatype: false (default), or true (include datatype of values).
      * - lang: false (default), or true (include language of value to result).
+     * TODO Check if the option include_without_meta is still needed with data types.
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
      * - output: "list" (default) or "associative" (possible only without added
@@ -494,9 +495,13 @@ class References extends AbstractPlugin
         // Note: Doctrine requires simple label, without quote or double quote:
         // "o:label" is not possible, neither "count".
 
+        // Linked resource title is not easily available, so use the id.
+        $linkedResourceTitle = $this->isOldOmeka ? 'valueResource.id' : 'valueResource.title';
         $qb
             ->select([
-                $this->supportAnyValue ? 'ANY_VALUE(value.value) AS val' : 'value.value AS val',
+                $this->supportAnyValue
+                    ? "ANY_VALUE(COALESCE(value.value, $linkedResourceTitle, value.uri)) AS val"
+                    : "COALESCE(value.value, $linkedResourceTitle, value.uri) AS val",
                 // "Distinct" avoids to count duplicate values in properties in
                 // a resource: we count resources, not properties.
                 $expr->countDistinct('resource.id') . ' AS total',
@@ -504,6 +509,8 @@ class References extends AbstractPlugin
             ->from(\Omeka\Entity\Value::class, 'value')
             // This join allow to check visibility automatically too.
             ->innerJoin($this->options['entity_class'], 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
+            // The values should be distinct for each type.
+            ->leftJoin($this->options['entity_class'], 'valueResource', Join::WITH, $expr->eq('value.valueResource', 'valueResource'))
             ->andWhere($expr->eq('value.property', ':property'))
             ->setParameter('property', $termId)
             ->groupBy('val')
@@ -904,7 +911,7 @@ class References extends AbstractPlugin
 
     protected function manageOptions(QueryBuilder $qb, $type)
     {
-        if (in_array($type, ['properties', 'resource_classes', 'resource_templates', 'item_sets'])
+        if (in_array($type, ['resource_classes', 'resource_templates', 'item_sets'])
             && $this->options['initial']
         ) {
             $expr = $qb->expr();
@@ -914,7 +921,20 @@ class References extends AbstractPlugin
                     // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
                     $this->supportAnyValue
                         ? 'ANY_VALUE(' . $expr->upper($expr->substring('value.value', 1, 1)) . ') AS initial'
-                        : $expr->upper($expr->substring('value.value', 1, 1)) . 'AS initial',
+                        : $expr->upper($expr->substring('value.value', 1, 1)) . ' AS initial',
+                ]);
+        }
+
+        if ($type === 'properties' && $this->options['initial']) {
+            $expr = $qb->expr();
+            $linkedResourceTitle = $this->isOldOmeka ? 'valueResource.id' : 'valueResource.title';
+            // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
+            $qb
+                ->addSelect([
+                    // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), 1)) USING latin1) AS initial',
+                    $this->supportAnyValue
+                        ? 'ANY_VALUE(' . $expr->upper($expr->substring("COALESCE(value.value, $linkedResourceTitle, value.uri)", 1, 1)) . ') AS initial'
+                        : $expr->upper($expr->substring("COALESCE(value.value, $linkedResourceTitle, value.uri)", 1, 1)) . ' AS initial',
                 ]);
         }
 
@@ -924,8 +944,8 @@ class References extends AbstractPlugin
                     $this->supportAnyValue
                         ? 'ANY_VALUE(value.type) AS type'
                         : 'value.type AS type',
-                ])
-                ->addGroupBy('type');
+                ]);
+                // No need to group by type: it is already managed with group by "val,uri,res".
         }
 
         if ($type === 'properties' && $this->options['lang']) {
@@ -1048,6 +1068,7 @@ class References extends AbstractPlugin
             return array_map('intval', $result);
         }
 
+        $first = reset($result);
         if (extension_loaded('intl') && $this->options['initial']) {
             $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
             $result = array_map(function ($v) use ($transliterator) {
@@ -1071,14 +1092,21 @@ class References extends AbstractPlugin
             }, $result);
         }
 
+        $hasFirst = array_key_exists('first', $first);
+        if ($hasFirst) {
+            $result = array_map(function ($v) {
+                $v['first'] = (int) $v['first'] ?: null;
+                return $v;
+            }, $result);
+        }
+
         if ($this->options['include_without_meta']) {
             return $result;
         }
 
         // Remove all empty values ("val").
         // But do not remove a uri or a resource without label.
-        $first = reset($result);
-        if (!array_key_exists('type', $first)) {
+        if (count($first) <= 2 || !array_key_exists('type', $first)) {
             $result = array_combine(array_column($result, 'val'), $result);
             unset($result['']);
             return array_values($result);
