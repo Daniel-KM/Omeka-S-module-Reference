@@ -177,7 +177,7 @@ class Reference extends AbstractBlockLayout
         $template = isset($options['template']) ? $options['template'] : self::PARTIAL_NAME;
         unset($options['template']);
 
-        $vars =             [
+        $vars = [
             'term' => $term,
             'query' => $query,
             'options' => $options,

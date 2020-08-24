@@ -451,7 +451,7 @@ class References extends AbstractPlugin
     }
 
     /**
-     * Get the list of used values for a proeprty, the total for each one and
+     * Get the list of used values for a property, the total for each one and
      * the first item.
      *
      * @param int $termId
@@ -836,9 +836,8 @@ class References extends AbstractPlugin
             // user cannot perform a query against a private site he doesn't
             // have access to.
             try {
-                $site = $this->adapterManager->get('sites')->findEntity($this->query['site_id']);
+                $this->adapterManager->get('sites')->findEntity($this->query['site_id']);
             } catch (\Omeka\Api\Exception\NotFoundException$e) {
-                $site = null;
             }
 
             $qb
@@ -892,8 +891,8 @@ class References extends AbstractPlugin
                 ]);
         }
 
+        // Add the first resource id.
         if ($this->options['first_id']) {
-            // Add the first resource id.
             $qb
                 ->addSelect([
                     'MIN(resource.id) AS first',
@@ -983,24 +982,22 @@ class References extends AbstractPlugin
     {
         if ($this->options['output'] === 'list') {
             $result = $qb->getQuery()->getScalarResult();
-            if ($this->options['initial'] && (extension_loaded('intl') || extension_loaded('iconv'))) {
-                if (extension_loaded('intl')) {
-                    $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
-                    $result = array_map(function ($v) use ($transliterator) {
-                        $v['total'] = (int) $v['total'];
-                        $v['initial'] = $transliterator->transliterate($v['initial']);
-                        return $v;
-                    }, $result);
-                } else {
-                    $result = array_map(function ($v) {
-                        $v['total'] = (int) $v['total'];
-                        $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);
-                        if ($trans) {
-                            $v['initial'] = $trans;
-                        }
-                        return $v;
-                    }, $result);
-                }
+            if (extension_loaded('intl') && $this->options['initial']) {
+                $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+                $result = array_map(function ($v) use ($transliterator) {
+                    $v['total'] = (int) $v['total'];
+                    $v['initial'] = $transliterator->transliterate($v['initial']);
+                    return $v;
+                }, $result);
+            } elseif (extension_loaded('iconv') && $this->options['initial']) {
+                $result = array_map(function ($v) {
+                    $v['total'] = (int) $v['total'];
+                    $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);
+                    if ($trans) {
+                        $v['initial'] = $trans;
+                    }
+                    return $v;
+                }, $result);
             } else {
                 $result = array_map(function ($v) {
                     $v['total'] = (int) $v['total'];
@@ -1150,7 +1147,6 @@ class References extends AbstractPlugin
         $subQb = $this->entityManager->createQueryBuilder()
             ->select($alias . '.id')
             ->from($this->options['entity_class'], $alias);
-        /* @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter */
         $this->adapterManager
             ->get($this->options['resource_name'])
             ->buildQuery($subQb, $this->query);

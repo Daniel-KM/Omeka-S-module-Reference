@@ -38,17 +38,8 @@ class Module extends AbstractModule
     public function onBootstrap(MvcEvent $event)
     {
         parent::onBootstrap($event);
-        $this->addAclRules();
-    }
 
-    /**
-     * Add ACL rules for this module.
-     */
-    protected function addAclRules()
-    {
-        $services = $this->getServiceLocator();
-        $acl = $services->get('Omeka\Acl');
-        $acl
+        $this->getServiceLocator()->get('Omeka\Acl')
             ->allow(
                 null,
                 [\Reference\Controller\Site\ReferenceController::class],

@@ -50,8 +50,8 @@ class References extends AbstractHelper
         if ($isSingle) {
             $metadata = [$metadata];
         }
-        $count = $ref($metadata, $query, $options)->list();
-        return $isSingle ? reset($count) : $count;
+        $list = $ref($metadata, $query, $options)->list();
+        return $isSingle ? reset($list) : $list;
     }
 
     /**
