@@ -44,6 +44,10 @@ class Module extends AbstractModule
                 null,
                 [\Reference\Controller\Site\ReferenceController::class],
                 ['browse', 'list', 'tree']
+            )
+            ->allow(
+                null,
+                [\Reference\Controller\ApiController::class]
             );
     }
 

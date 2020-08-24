@@ -41,6 +41,9 @@ return [
         'invokables' => [
             Controller\Site\ReferenceController::class => Controller\Site\ReferenceController::class,
         ],
+        'factories' => [
+            Controller\ApiController::class => Service\Controller\ApiControllerFactory::class,
+        ],
     ],
     'controller_plugins' => [
         'factories' => [
@@ -98,6 +101,22 @@ return [
                                 '__NAMESPACE__' => 'Reference\Controller\Site',
                                 'controller' => Controller\Site\ReferenceController::class,
                                 'action' => 'tree',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'api' => [
+                'child_routes' => [
+                    'reference' => [
+                        'type' => \Zend\Router\Http\Segment::class,
+                        'options' => [
+                            'route' => '/references[/:resource]',
+                            'constraints' => [
+                                'resource' => 'items|item_sets|media|annotations',
+                            ],
+                            'defaults' => [
+                                'controller' => Controller\ApiController::class,
                             ],
                         ],
                     ],
