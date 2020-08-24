@@ -707,11 +707,14 @@ class Reference extends AbstractPlugin
             'sort_order' => $sortOrder,
             'filters' => [
                 'languages' => [],
+                'datatypes' => [],
             ],
             'values' => $values,
             // Output options.
-            'first_id' => $output === 'withFirst',
+            'first' => $output === 'withFirst',
             'initial' => $initial,
+            'distinct' => false,
+            'type' => false,
             'lang' => false,
             'include_without_meta' => $includeWithoutMeta,
             'output' => $output === 'associative' ? 'associative' : 'list',

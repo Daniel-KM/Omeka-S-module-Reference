@@ -133,7 +133,7 @@ class References extends AbstractPlugin
      *     Warning: "resource" is not the same than specific resources.
      *     Use module Bulk Edit or Bulk Check to specify all resources automatically.
      * - values: array Allow to limit the answer to the specified values.
-     * - first_id: false (default), or true (get first resource).
+     * - first: false (default), or true (get first resource).
      * - initial: false (default), or true (get first letter of each result).
      * - distinct: false (default), or true (distinct values by type).
      * - datatype: false (default), or true (include datatype of values).
@@ -142,7 +142,7 @@ class References extends AbstractPlugin
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
      * - output: "list" (default) or "associative" (possible only without added
-     *   options: first_id, initial, distinct, datatype, or lang).
+     *   options: first, initial, distinct, datatype, or lang).
      * - is_api: (bool) allow to manage the new key "o:references", that replaces
      *   "o-module-reference:values".
      * Some options and some combinations are not managed for some metadata.
@@ -221,7 +221,7 @@ class References extends AbstractPlugin
             ],
             'values' => [],
             // Output options.
-            'first_id' => false,
+            'first' => false,
             'initial' => false,
             'distinct' => false,
             'datatype' => false,
@@ -235,7 +235,7 @@ class References extends AbstractPlugin
             $resourceName = in_array(@$options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
                 ? $options['resource_name']
                 : $defaults['resource_name'];
-            $firstId = !empty($options['first_id']);
+            $first = !empty($options['first']);
             $initial = !empty($options['initial']);
             $distinct = !empty($options['distinct']);
             $datatype = !empty($options['datatype']);
@@ -249,13 +249,13 @@ class References extends AbstractPlugin
                 'sort_order' => strtolower(@$options['sort_order']) === 'desc' ? 'DESC' : 'ASC',
                 'filters' => @$options['filters'] ? $options['filters'] + $defaults['filters'] : $defaults['filters'],
                 'values' => @$options['values'] ?: [],
-                'first_id' => $firstId,
+                'first' => $first,
                 'initial' => $initial,
                 'distinct' => $distinct,
                 'datatype' => $datatype,
                 'lang' => $lang,
                 'include_without_meta' => (bool) @$options['include_without_meta'],
-                'output' => @$options['output'] === 'associative' && !$firstId && !$initial && !$distinct && !$datatype && !$lang ? 'associative' : 'list',
+                'output' => @$options['output'] === 'associative' && !$first && !$initial && !$distinct && !$datatype && !$lang ? 'associative' : 'list',
                 'is_api' => !empty($options['is_api']),
             ];
 
@@ -977,7 +977,7 @@ class References extends AbstractPlugin
         }
 
         // Add the first resource id.
-        if ($this->options['first_id']) {
+        if ($this->options['first']) {
             $qb
                 ->addSelect([
                     'MIN(resource.id) AS first',

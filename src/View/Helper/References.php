@@ -38,7 +38,7 @@ class References extends AbstractHelper
      *     Warning: "resource" is not the same than specific resources.
      *     Use module Bulk Edit or Bulk Check to specify all resources automatically.
      * - values: array Allow to limit the answer to the specified values.
-     * - first_id: false (default), or true (get first resource).
+     * - first: false (default), or true (get first resource).
      * - initial: false (default), or true (get first letter of each result).
      * - distinct: false (default), or true (distinct values by type).
      * - datatype: false (default), or true (include datatype of values).
@@ -47,7 +47,7 @@ class References extends AbstractHelper
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
      * - output: "list" (default) or "associative" (possible only without added
-     *   options: first_id, initial, distinct, datatype, or lang).
+     *   options: first, initial, distinct, datatype, or lang).
      * Some options and some combinations are not managed for some metadata.
      * @return array Associative array with total and first record ids.
      */
@@ -111,10 +111,10 @@ class References extends AbstractHelper
             $options = [];
         }
         $options['initial'] = @$options['initial'] || @$options['skiplinks'] || @$options['headings'];
-        $options['first_id'] = @$options['first_id'] || @$options['link_to_single'];
+        $options['first'] = @$options['first'] || @$options['link_to_single'];
 
         // Add first id if there is a property for subject values.
-        $firstId = $options['first_id'];
+        $firstId = $options['first'];
         unset($options['subject_property_id'], $options['subject_property_term']);
         if (!empty($options['subject_property'])) {
             $api = $this->getView()->api();
@@ -122,7 +122,7 @@ class References extends AbstractHelper
                 ? $api->read('properties', ['id' => $options['subject_property']])->getContent()
                 : $api->searchOne('properties', ['term' => $options['subject_property']])->getContent();
             if ($property) {
-                $options['first_id'] = true;
+                $options['first'] = true;
                 $options['subject_property'] = [
                     'id' => $property->id(),
                     'term' => $property->term(),
@@ -138,8 +138,8 @@ class References extends AbstractHelper
         $first = reset($list);
         $options = $ref->getOptions() + $options;
 
-        // Keep original option for key first_id.
-        $options['first_id'] = $firstId;
+        // Keep original option for key first.
+        $options['first'] = $firstId;
 
         $list = $first['o-module-reference:values'];
         unset($first['o-module-reference:values']);
