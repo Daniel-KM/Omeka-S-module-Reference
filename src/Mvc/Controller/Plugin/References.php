@@ -247,8 +247,9 @@ class References extends AbstractPlugin
             // The check for length avoids to add a filter on values without any
             // language. It should be specified as "||" (or leading/trailing "|").
             if (is_string($this->options['filters']['languages']) && strlen($this->options['filters']['languages'])) {
-                $this->options['filters']['languages'] = array_unique(array_map('trim', explode('|', $this->options['filters']['languages'])));
+                $this->options['filters']['languages'] = explode('|', str_replace(',', '|', $this->options['filters']['languages']));
             }
+            $this->options['filters']['languages'] = array_unique(array_map('trim', $this->options['filters']['languages']));
         } else {
             $this->options = $defaults;
         }
