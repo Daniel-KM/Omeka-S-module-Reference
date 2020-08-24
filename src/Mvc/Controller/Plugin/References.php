@@ -79,6 +79,11 @@ class References extends AbstractPlugin
     protected $options;
 
     /**
+     * @var string
+     */
+    protected $keyReferences = 'o:references';
+
+    /**
      * @param EntityManager $entityManager
      * @param AdapterManager $adapterManager
      * @param Api $api
@@ -130,6 +135,8 @@ class References extends AbstractPlugin
      *   resources with no metadata).
      * - output: "associative" (default) or "list" (set automatically when some
      *   options (first_id, initial or lang) are selected.
+     * - is_api: (bool) allow to manage the new key "o:references", that replaces
+     *   "o-module-reference:values".
      * Some options and some combinations are not managed for some metadata.
      * @return self
      */
@@ -210,6 +217,8 @@ class References extends AbstractPlugin
             'lang' => false,
             'include_without_meta' => false,
             'output' => 'associative',
+            // TODO Remove this temporary option.
+            'is_api' => false,
         ];
         if ($options) {
             $resourceName = in_array(@$options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
@@ -232,6 +241,7 @@ class References extends AbstractPlugin
                 'lang' => $lang,
                 'include_without_meta' => (bool) @$options['include_without_meta'],
                 'output' => $firstId || $initial || $lang || @$options['output'] === 'list' ? 'list' : 'associative',
+                'is_api' => !empty($options['is_api']),
             ];
 
             // The check for length avoids to add a filter on values without any
@@ -265,6 +275,9 @@ class References extends AbstractPlugin
 
         $options = $this->getOptions();
         $isAssociative = $this->options['output'] === 'associative';
+        if (empty($this->options['is_api'])) {
+            $this->keyReferences = 'o-module-reference:values';
+        }
 
         $api = $this->api;
         $translate = $this->translate;
@@ -277,7 +290,7 @@ class References extends AbstractPlugin
             $field = $this->prepareField($inputField);
             $result[$field['term']] = [
                 'o:label' => $field['label'],
-                'o-module-reference:values' => [],
+                $this->keyReferences => [],
             ];
 
             switch ($field['type']) {
@@ -288,7 +301,7 @@ class References extends AbstractPlugin
                         'o:id' => $field['id'],
                         'o:term' => $field['term'],
                         'o:label' => $field['label'],
-                        'o-module-reference:values' => $values,
+                        $this->keyReferences => $values,
                     ];
                     break;
 
@@ -299,7 +312,7 @@ class References extends AbstractPlugin
                         'o:id' => $field['id'],
                         'o:term' => $field['term'],
                         'o:label' => $field['label'],
-                        'o-module-reference:values' => $values,
+                        $this->keyReferences => $values,
                     ];
                     break;
 
@@ -310,7 +323,7 @@ class References extends AbstractPlugin
                         'o:id' => $field['id'],
                         'o:term' => $field['term'],
                         'o:label' => $field['label'],
-                        'o-module-reference:values' => $values,
+                        $this->keyReferences => $values,
                     ];
                     break;
 
@@ -320,18 +333,18 @@ class References extends AbstractPlugin
                         '@type' => $field['@type'],
                         'o:id' => $field['id'],
                         'o:label' => $field['label'],
-                        'o-module-reference:values' => $values,
+                        $this->keyReferences => $values,
                     ];
                     break;
 
                 case 'o:property':
                     $values = $this->listProperties();
                     if ($isAssociative) {
-                        $result[$field['term']]['o-module-reference:values'] = $values;
+                        $result[$field['term']][$this->keyReferences] = $values;
                     } else {
                         foreach (array_filter($values) as $value => $valueData) {
                             $property = $this->properties[$valueData['val']];
-                            $result[$field['term']]['o-module-reference:values'][] = [
+                            $result[$field['term']][$this->keyReferences][] = [
                                 'o:id' => $property->id(),
                                 'o:term' => $property->term(),
                                 'o:label' => $translate($property->label()),
@@ -344,11 +357,11 @@ class References extends AbstractPlugin
                 case 'o:resource_class':
                     $values = $this->listResourceClasses();
                     if ($isAssociative) {
-                        $result[$field['term']]['o-module-reference:values'] = $values;
+                        $result[$field['term']][$this->keyReferences] = $values;
                     } else {
                         foreach (array_filter($values) as $value => $valueData) {
                             $resourceClass = $this->resourceClasses[$valueData['val']];
-                            $result[$field['term']]['o-module-reference:values'][] = [
+                            $result[$field['term']][$this->keyReferences][] = [
                                 'o:id' => $resourceClass->id(),
                                 'o:term' => $resourceClass->term(),
                                 'o:label' => $translate($resourceClass->label()),
@@ -361,11 +374,11 @@ class References extends AbstractPlugin
                 case 'o:resource_template':
                     $values = $this->listResourceTemplates();
                     if ($isAssociative) {
-                        $result[$field['term']]['o-module-reference:values'] = $values;
+                        $result[$field['term']][$this->keyReferences] = $values;
                     } else {
                         foreach (array_filter($values) as $value => $valueData) {
                             $resourceTemplate = $this->resourceTemplates[$valueData['val']];
-                            $result[$field['term']]['o-module-reference:values'][] = [
+                            $result[$field['term']][$this->keyReferences][] = [
                                 'o:id' => $resourceTemplate->id(),
                                 'o:label' => $resourceTemplate->label(),
                                 '@language' => null,
@@ -382,12 +395,12 @@ class References extends AbstractPlugin
                         $values = $this->listItemSets();
                     }
                     if ($isAssociative) {
-                        $result[$field['term']]['o-module-reference:values'] = $values;
+                        $result[$field['term']][$this->keyReferences] = $values;
                     } else {
                         foreach (array_filter($values) as $value => $valueData) {
                             // TODO Improve this process via the resource title (Omeka 2).
                             $meta = $api->read('item_sets', ['id' => $valueData['val']])->getContent();
-                            $result[$field['term']]['o-module-reference:values'][] = [
+                            $result[$field['term']][$this->keyReferences][] = [
                                 '@type' => 'o:ItemSet',
                                 'o:id' => (int) $value,
                                 'o:label' => $meta->displayTitle(),
@@ -401,7 +414,7 @@ class References extends AbstractPlugin
                 default:
                     $result[$field['term']][] = [
                         'o:label' => $field['label'],
-                        'o-module-reference:values' => [],
+                        $this->keyReferences => [],
                     ];
                     break;
             }

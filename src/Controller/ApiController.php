@@ -79,6 +79,9 @@ class ApiController extends \Omeka\Controller\ApiController
         $query = @$options['query'] ?: [];
         unset($options['query']);
 
+        // TODO Remove this option that is used to manage new output.
+        $options['is_api'] = true;
+
         $result = $this->references($fields, $query, $options)->list();
         return new ApiJsonModel($result, $this->getViewOptions());
     }
