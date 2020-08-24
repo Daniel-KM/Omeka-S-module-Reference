@@ -536,7 +536,7 @@ class Reference extends AbstractPlugin
      * @param array $values Allow to limit the answer to the specified values.
      * @param int $perPage
      * @param int $page One-based page number.
-     * @param string $output May be "associative" (default), "list" or "withFirst".
+     * @param string $output May be "list" (default), "associative" or "withFirst".
      * @param bool $initial Get initial letter (useful for non-acii references).
      * @param bool $includeWithoutMeta Get total of resources with no metadata.
      * @return array Associative list of references, with the total, the first
@@ -584,7 +584,7 @@ class Reference extends AbstractPlugin
      * @param array $values Allow to limit the answer to the specified values.
      * @param int $perPage
      * @param int $page One-based page number.
-     * @param string $output May be "associative" (default), "list" or "withFirst".
+     * @param string $output May be "list" (default), "associative" or "withFirst".
      * @param bool $initial Get initial letter (useful for non-acii references).
      * @param bool $includeWithoutMeta Get total of resources with no metadata.
      * @return array Associative list of references, with the total, the first
@@ -714,7 +714,7 @@ class Reference extends AbstractPlugin
             'initial' => $initial,
             'lang' => false,
             'include_without_meta' => $includeWithoutMeta,
-            'output' => in_array($output, ['list', 'withFirst']) ? 'list' : 'associative',
+            'output' => $output === 'associative' ? 'associative' : 'list',
         ];
 
         $references = $this->references;

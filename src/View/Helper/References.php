@@ -38,8 +38,8 @@ class References extends AbstractHelper
      * - lang: false (default), or true (include language of value to result).
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
-     * - output: "associative" (default) or "list" (set automatically when some
-     *   options (first_id, initial or lang) are selected.
+     * - output: "list" (default) or "associative" (possible only without added
+     *   options: first_id, initial or lang).
      * Some options and some combinations are not managed for some metadata.
      * @return array Associative array with total and first record ids.
      */
@@ -104,7 +104,6 @@ class References extends AbstractHelper
         }
         $options['initial'] = @$options['initial'] || @$options['skiplinks'] || @$options['headings'];
         $options['first_id'] = @$options['first_id'] || @$options['link_to_single'];
-        $options['output'] = 'list';
 
         // Add first id if there is a property for subject values.
         $firstId = $options['first_id'];

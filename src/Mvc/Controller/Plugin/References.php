@@ -133,8 +133,8 @@ class References extends AbstractPlugin
      * - lang: false (default), or true (include language of value to result).
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
-     * - output: "associative" (default) or "list" (set automatically when some
-     *   options (first_id, initial or lang) are selected.
+     * - output: "list" (default) or "associative" (possible only without added
+     *   options: first_id, initial or lang).
      * - is_api: (bool) allow to manage the new key "o:references", that replaces
      *   "o-module-reference:values".
      * Some options and some combinations are not managed for some metadata.
@@ -216,7 +216,7 @@ class References extends AbstractPlugin
             'initial' => false,
             'lang' => false,
             'include_without_meta' => false,
-            'output' => 'associative',
+            'output' => 'list',
             // TODO Remove this temporary option.
             'is_api' => false,
         ];
@@ -240,7 +240,7 @@ class References extends AbstractPlugin
                 'initial' => $initial,
                 'lang' => $lang,
                 'include_without_meta' => (bool) @$options['include_without_meta'],
-                'output' => $firstId || $initial || $lang || @$options['output'] === 'list' ? 'list' : 'associative',
+                'output' => @$options['output'] === 'associative' && !$firstId && !$initial && !$lang ? 'associative' : 'list',
                 'is_api' => !empty($options['is_api']),
             ];
 
@@ -993,55 +993,57 @@ class References extends AbstractPlugin
 
     protected function outputMetadata(QueryBuilder $qb, $type)
     {
-        if ($this->options['output'] === 'list') {
-            $result = $qb->getQuery()->getScalarResult();
-            if (extension_loaded('intl') && $this->options['initial']) {
-                $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
-                $result = array_map(function ($v) use ($transliterator) {
-                    $v['total'] = (int) $v['total'];
-                    $v['initial'] = $transliterator->transliterate($v['initial']);
-                    return $v;
-                }, $result);
-            } elseif (extension_loaded('iconv') && $this->options['initial']) {
-                $result = array_map(function ($v) {
-                    $v['total'] = (int) $v['total'];
-                    $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);
-                    if ($trans) {
-                        $v['initial'] = $trans;
-                    }
-                    return $v;
-                }, $result);
-            } else {
-                $result = array_map(function ($v) {
-                    $v['total'] = (int) $v['total'];
-                    return $v;
-                }, $result);
-            }
-
-            if (!$this->options['include_without_meta']) {
-                $result = array_combine(array_column($result, 'val'), $result);
-                unset($result['']);
-                $result = array_values($result);
-            }
-
+        $result = $qb->getQuery()->getScalarResult();
+        if (!count($result)) {
             return $result;
         }
 
-        $result = $qb->getQuery()->getScalarResult();
+        if ($this->options['output'] === 'associative') {
+            // Array column cannot be used in one step, because the null value
+            // (no title) should be converted to "", not to "0".
+            // $result = array_column($result, 'total', 'val');
+            $result = array_combine(
+                array_column($result, 'val'),
+                array_column($result, 'total')
+            );
 
-        // Array column cannot be used in one step, because the null
-        // value (no title) should be converted to "", not to "0".
-        // $result = array_column($result, 'total', 'val');
-        $result = array_combine(
-            array_column($result, 'val'),
-            array_column($result, 'total')
-        );
+            if (!$this->options['include_without_meta']) {
+                unset($result['']);
+            }
 
-        if (!$this->options['include_without_meta']) {
-            unset($result['']);
+            return array_map('intval', $result);
         }
 
-        return array_map('intval', $result);
+        if (extension_loaded('intl') && $this->options['initial']) {
+            $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+            $result = array_map(function ($v) use ($transliterator) {
+                $v['total'] = (int) $v['total'];
+                $v['initial'] = $transliterator->transliterate($v['initial']);
+                return $v;
+            }, $result);
+        } elseif (extension_loaded('iconv') && $this->options['initial']) {
+            $result = array_map(function ($v) {
+                $v['total'] = (int) $v['total'];
+                $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);
+                if ($trans) {
+                    $v['initial'] = $trans;
+                }
+                return $v;
+            }, $result);
+        } else {
+            $result = array_map(function ($v) {
+                $v['total'] = (int) $v['total'];
+                return $v;
+            }, $result);
+        }
+
+        if ($this->options['include_without_meta']) {
+            return $result;
+        }
+
+        $result = array_combine(array_column($result, 'val'), $result);
+        unset($result['']);
+        return array_values($result);
     }
 
     protected function countResourcesForProperty($termId)
