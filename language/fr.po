@@ -171,7 +171,7 @@ msgstr "value_options"
 
 #: src/Form/ReferenceBlockForm.php:72
 msgid "Select order"
-msgstr "Choisir l‘ordre"
+msgstr "Choisir l’ordre"
 
 #: src/Form/ReferenceBlockForm.php:74
 msgid "Alphabetic ascendant"
@@ -231,7 +231,7 @@ msgstr "Ajouter des raccourcis au dessus et en dessous de la liste"
 
 #: src/Form/ReferenceBlockForm.php:126
 msgid "Add first letter as headings between references"
-msgstr "Ajouter l‘initiale comme entête entre les références"
+msgstr "Ajouter l’initiale comme entête entre les références"
 
 #: src/Form/ReferenceBlockForm.php:133 src/Form/ReferenceTreeBlockForm.php:136
 msgid "Add the total of resources for each reference"
@@ -292,7 +292,7 @@ msgstr "Activer la vue par arborescence"
 
 #: src/Form/ConfigForm.php:121
 msgid "Property for the tree"
-msgstr "Propriété pour l‘arborescence"
+msgstr "Propriété pour l’arborescence"
 
 #: src/Form/ConfigForm.php:122
 msgid "The references will use this property to create links."
@@ -311,7 +311,7 @@ msgid ""
 "Check this box if the tree is managed as branch (the path is saved with "
 "\" :: \" between each branch)."
 msgstr ""
-"Cocher cette case si l‘arborescence doit être gérée comme des branches (le "
+"Cocher cette case si l’arborescence doit être gérée comme des branches (le "
 "chemin est enregistré avec \" :: \" entre chaque branch)."
 
 #: src/Form/ConfigForm.php:172 src/Form/ReferenceTreeBlockForm.php:116

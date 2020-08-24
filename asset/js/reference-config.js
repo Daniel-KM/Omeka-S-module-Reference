@@ -1,7 +1,7 @@
 $(document).ready(function() {
 
 // The form may have more than 1000 fields, so they are jsonified before submit.
-$('#content form').append('<input name="fieldsets" id="fieldsets" value="[]" type="hidden">');
+$('#content form').append('<input name="fieldsets" id="fieldsets" value="[]" type="hidden"/>');
 $('#content form').submit(function(event) {
     event.preventDefault();
     var data = $('#content form').serializeArray();
