@@ -242,7 +242,7 @@ Asia ↵
             $list = $this->prepareList($type);
             foreach ($list as $vocabulary => $vocabularyData) {
                 $typeFieldset[$type]->add([
-                    'name' => $type . '[' . $vocabulary .']',
+                    'name' => $type . '[' . $vocabulary . ']',
                     'type' => Fieldset::class,
                     'options' => [
                         'label' => $vocabularyData['label'], // @translate
