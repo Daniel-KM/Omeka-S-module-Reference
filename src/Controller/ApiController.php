@@ -65,7 +65,7 @@ class ApiController extends \Omeka\Controller\ApiController
 
         // Field may be an array.
         // Empty string field means meta results.
-        $field = @$query['metadata'] ?: [];
+        $field = $query['metadata'] ?? [];
         $fields = is_array($field) ? $field : [$field];
         $fields = array_unique($fields);
 
@@ -76,7 +76,7 @@ class ApiController extends \Omeka\Controller\ApiController
         unset($query['metadata']);
 
         $options = $query;
-        $query = @$options['query'] ?: [];
+        $query = $options['query'] ?? [];
         unset($options['query']);
 
         // TODO Remove this option that is used to manage new output.

@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Reference\Mvc\Controller\Plugin;
 
 use Doctrine\ORM\EntityManager;
@@ -11,12 +12,6 @@ use Omeka\Mvc\Controller\Plugin\Translate;
 
 class References extends AbstractPlugin
 {
-    /**
-     * @deprecated Useless in Omeka 2.0.
-     * @var int
-     */
-    protected $DC_Title_id = 1;
-
     /**
      * @param EntityManager
      */
@@ -56,11 +51,6 @@ class References extends AbstractPlugin
      * @param bool
      */
     protected $supportAnyValue;
-
-    /**
-     * @param bool
-     */
-    protected $isOldOmeka;
 
     /**
      * @var array
@@ -110,7 +100,6 @@ class References extends AbstractPlugin
         $this->resourceClasses = $resourceClasses;
         $this->resourceTemplates = $resourceTemplates;
         $this->supportAnyValue = $supportAnyValue;
-        $this->isOldOmeka = \Omeka\Module::VERSION < 2;
     }
 
     /**
@@ -498,13 +487,11 @@ class References extends AbstractPlugin
         // Note: Doctrine requires simple label, without quote or double quote:
         // "o:label" is not possible, neither "count".
 
-        // Linked resource title is not easily available, so use the id.
-        $linkedResourceTitle = $this->isOldOmeka ? 'valueResource.id' : 'valueResource.title';
         $qb
             ->select([
                 $this->supportAnyValue
-                    ? "ANY_VALUE(COALESCE(value.value, $linkedResourceTitle, value.uri)) AS val"
-                    : "COALESCE(value.value, $linkedResourceTitle, value.uri) AS val",
+                    ? "ANY_VALUE(COALESCE(value.value, 'valueResource.title', value.uri)) AS val"
+                    : "COALESCE(value.value, 'valueResource.title', value.uri) AS val",
                 // "Distinct" avoids to count duplicate values in properties in
                 // a resource: we count resources, not properties.
                 $expr->countDistinct('resource.id') . ' AS total',
@@ -538,35 +525,13 @@ class References extends AbstractPlugin
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
 
-        if ($this->isOldOmeka) {
-            $qb
-                ->select([
-                    'DISTINCT value.value AS val',
-                    // "Distinct" avoids to count duplicate values in properties in
-                    // a resource: we count resources, not properties.
-                    $expr->countDistinct('resource.id') . ' AS total',
-                ])
-                // The use of resource checks visibility automatically.
-                ->from(\Omeka\Entity\Resource::class, 'resource')
-                ->leftJoin(
-                    \Omeka\Entity\Value::class,
-                    'value',
-                    Join::WITH,
-                    'value.resource = resource AND value.property = :property_id'
-                )
-                ->setParameter('property_id', $this->DC_Title_id)
-            ;
-        } else {
-            $qb
-                ->select([
-                    'DISTINCT resource.title AS val',
-                    $expr->count('resource.id') . ' AS total',
-                ])
-                // The use of resource checks visibility automatically.
-                ->from(\Omeka\Entity\Resource::class, 'resource')
-            ;
-        }
         $qb
+            ->select([
+                'DISTINCT resource.title AS val',
+                $expr->count('resource.id') . ' AS total',
+            ])
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
             ->where($expr->eq('resource.resourceClass', ':resource_class'))
             ->setParameter('resource_class', (int) $resourceClassId)
             ->groupBy('val');
@@ -593,35 +558,13 @@ class References extends AbstractPlugin
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
 
-        if ($this->isOldOmeka) {
-            $qb
-                ->select([
-                    'DISTINCT value.value AS val',
-                    // "Distinct" avoids to count duplicate values in properties in
-                    // a resource: we count resources, not properties.
-                    $expr->countDistinct('resource.id') . ' AS total',
-                ])
-                // The use of resource checks visibility automatically.
-                ->from(\Omeka\Entity\Resource::class, 'resource')
-                ->leftJoin(
-                    \Omeka\Entity\Value::class,
-                    'value',
-                    Join::WITH,
-                    'value.resource = resource AND value.property = :property_id'
-                )
-                ->setParameter('property_id', $this->DC_Title_id)
-            ;
-        } else {
-            $qb
-                ->select([
-                    'DISTINCT resource.title AS val',
-                    $expr->count('resource.id') . ' AS total',
-                ])
-                // The use of resource checks visibility automatically.
-                ->from(\Omeka\Entity\Resource::class, 'resource')
-            ;
-        }
         $qb
+            ->select([
+                'DISTINCT resource.title AS val',
+                $expr->count('resource.id') . ' AS total',
+            ])
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
             ->where($expr->eq('resource.resourceTemplate', ':resource_template'))
             ->setParameter('resource_template', (int) $resourceTemplateId)
             ->groupBy('val');
@@ -652,49 +595,19 @@ class References extends AbstractPlugin
             return [];
         }
 
-        if ($this->isOldOmeka) {
-            $qb
-                ->select([
-                    'DISTINCT value.value AS val',
-                    // "Distinct" avoids to count duplicate values in properties in
-                    // a resource: we count resources, not properties.
-                    $expr->countDistinct('resource.id') . ' AS total',
-                ])
-                // The use of resource checks visibility automatically.
-                ->from(\Omeka\Entity\Resource::class, 'resource')
-                // Always an item.
-                ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id')
-                ->innerJoin(
-                    'res.itemSets',
-                    'item_set',
-                    Join::WITH,
-                    'item_set.id = :item_set'
-                )
-                ->setParameter('item_set', (int) $itemSetId)
-                ->leftJoin(
-                    \Omeka\Entity\Value::class,
-                    'value',
-                    Join::WITH,
-                    'value.resource = resource AND value.property = :property_id'
-                )
-                ->setParameter('property_id', $this->DC_Title_id)
-                ->groupBy('val')
-            ;
-        } else {
-            $qb
-                ->select([
-                    'DISTINCT resource.title AS val',
-                    $expr->count('resource.id') . ' AS total',
-                ])
-                // The use of resource checks visibility automatically.
-                ->from(\Omeka\Entity\Resource::class, 'resource')
-                // Always an item.
-                ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id')
-                ->innerJoin('res.itemSets', 'item_set', Join::WITH, 'item_set.id = :item_set')
-                ->setParameter('item_set', (int) $itemSetId)
-                ->groupBy('val')
-            ;
-        }
+        $qb
+            ->select([
+                'DISTINCT resource.title AS val',
+                $expr->count('resource.id') . ' AS total',
+            ])
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            // Always an item.
+            ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id')
+            ->innerJoin('res.itemSets', 'item_set', Join::WITH, 'item_set.id = :item_set')
+            ->setParameter('item_set', (int) $itemSetId)
+            ->groupBy('val')
+        ;
 
         $this->manageOptions($qb, 'item_sets');
         return $this->outputMetadata($qb, 'item_sets');
@@ -949,37 +862,25 @@ class References extends AbstractPlugin
             && $this->options['initial']
         ) {
             $expr = $qb->expr();
-            if ($this->isOldOmeka) {
-                // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
-                $qb
-                    ->addSelect([
-                        // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
-                        $this->supportAnyValue
-                            ? 'ANY_VALUE(' . $expr->upper($expr->substring('value.value', 1, 1)) . ') AS initial'
-                            : $expr->upper($expr->substring('value.value', 1, 1)) . ' AS initial',
-                    ]);
-            } else {
-                // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
-                $qb
-                    ->addSelect([
-                        // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
-                        $this->supportAnyValue
-                            ? 'ANY_VALUE(' . $expr->upper($expr->substring('resource.title', 1, 1)) . ') AS initial'
-                            : $expr->upper($expr->substring('resource.title', 1, 1)) . ' AS initial',
-                    ]);
-            }
+            // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
+            $qb
+                ->addSelect([
+                    // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
+                    $this->supportAnyValue
+                        ? 'ANY_VALUE(' . $expr->upper($expr->substring('resource.title', 1, 1)) . ') AS initial'
+                        : $expr->upper($expr->substring('resource.title', 1, 1)) . ' AS initial',
+                ]);
         }
 
         if ($type === 'properties' && $this->options['initial']) {
             $expr = $qb->expr();
-            $linkedResourceTitle = $this->isOldOmeka ? 'valueResource.id' : 'valueResource.title';
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
             $qb
                 ->addSelect([
                     // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? 'ANY_VALUE(' . $expr->upper($expr->substring("COALESCE(value.value, $linkedResourceTitle, value.uri)", 1, 1)) . ') AS initial'
-                        : $expr->upper($expr->substring("COALESCE(value.value, $linkedResourceTitle, value.uri)", 1, 1)) . ' AS initial',
+                        ? 'ANY_VALUE(' . $expr->upper($expr->substring("COALESCE(value.value, 'valueResource.title', value.uri)", 1, 1)) . ') AS initial'
+                        : $expr->upper($expr->substring("COALESCE(value.value, 'valueResource.title', value.uri)", 1, 1)) . ' AS initial',
                 ]);
         }
 
@@ -1290,10 +1191,9 @@ class References extends AbstractPlugin
             return;
         }
 
-        $alias = $this->isOldOmeka ? $this->options['entity_class'] : 'omeka_root';
         $subQb = $this->entityManager->createQueryBuilder()
-            ->select($alias . '.id')
-            ->from($this->options['entity_class'], $alias);
+            ->select('omeka_root.id')
+            ->from($this->options['entity_class'], 'omeka_root');
         $this->adapterManager
             ->get($this->options['resource_name'])
             ->buildQuery($subQb, $this->query);
