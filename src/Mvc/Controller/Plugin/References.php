@@ -7,7 +7,7 @@ use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Adapter\Manager as AdapterManager;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Mvc\Controller\Plugin\Translate;
-use Zend\Mvc\Controller\Plugin\AbstractPlugin;
+use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 
 class References extends AbstractPlugin
 {

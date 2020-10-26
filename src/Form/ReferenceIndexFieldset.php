@@ -3,9 +3,9 @@ namespace Reference\Form;
 
 use Omeka\Form\Element\PropertySelect;
 use Omeka\Form\Element\ResourceClassSelect;
-use Zend\Form\Element;
-use Zend\Form\Fieldset;
-use Zend\Form\Form;
+use Laminas\Form\Element;
+use Laminas\Form\Fieldset;
+use Laminas\Form\Form;
 
 // FIXME Use a fieldset, not a form.
 class ReferenceIndexFieldset extends Form

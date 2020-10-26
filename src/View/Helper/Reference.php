@@ -4,7 +4,7 @@ namespace Reference\View\Helper;
 use Omeka\Api\Representation\PropertyRepresentation;
 use Omeka\Api\Representation\ResourceClassRepresentation;
 use Reference\Mvc\Controller\Plugin\Reference as ReferencePlugin;
-use Zend\View\Helper\AbstractHelper;
+use Laminas\View\Helper\AbstractHelper;
 
 /**
  * @deprecated Use \Reference\View\Helper\References instead.

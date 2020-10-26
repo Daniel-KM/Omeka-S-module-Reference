@@ -9,7 +9,7 @@ use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
 use Omeka\Stdlib\ErrorStore;
 use Reference\Mvc\Controller\Plugin\Reference as ReferencePlugin;
-use Zend\View\Renderer\PhpRenderer;
+use Laminas\View\Renderer\PhpRenderer;
 
 class ReferenceTree extends AbstractBlockLayout
 {

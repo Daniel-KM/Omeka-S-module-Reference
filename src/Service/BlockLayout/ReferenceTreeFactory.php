@@ -3,7 +3,7 @@ namespace Reference\Service\BlockLayout;
 
 use Interop\Container\ContainerInterface;
 use Reference\Site\BlockLayout\ReferenceTree;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class ReferenceTreeFactory implements FactoryInterface
 {

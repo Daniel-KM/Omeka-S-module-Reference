@@ -3,11 +3,11 @@ namespace Reference\Form;
 
 use Omeka\Api\Manager as ApiManager;
 use Omeka\Form\Element\PropertySelect;
-use Zend\Form\Element;
-use Zend\Form\Fieldset;
-use Zend\Form\Form;
-use Zend\I18n\Translator\TranslatorAwareInterface;
-use Zend\I18n\Translator\TranslatorAwareTrait;
+use Laminas\Form\Element;
+use Laminas\Form\Fieldset;
+use Laminas\Form\Form;
+use Laminas\I18n\Translator\TranslatorAwareInterface;
+use Laminas\I18n\Translator\TranslatorAwareTrait;
 
 class ConfigForm extends Form implements TranslatorAwareInterface
 {

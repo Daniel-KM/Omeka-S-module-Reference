@@ -2,7 +2,7 @@
 namespace Reference\View\Helper;
 
 use Reference\Mvc\Controller\Plugin\References as ReferencesPlugin;
-use Zend\View\Helper\AbstractHelper;
+use Laminas\View\Helper\AbstractHelper;
 
 class References extends AbstractHelper
 {

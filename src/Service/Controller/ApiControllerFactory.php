@@ -3,7 +3,7 @@ namespace Reference\Service\Controller;
 
 use Interop\Container\ContainerInterface;
 use Reference\Controller\ApiController;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class ApiControllerFactory implements FactoryInterface
 {

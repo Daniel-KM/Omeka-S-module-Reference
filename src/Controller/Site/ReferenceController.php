@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 namespace Reference\Controller\Site;
 
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\ViewModel;
 
 class ReferenceController extends AbstractActionController
 {

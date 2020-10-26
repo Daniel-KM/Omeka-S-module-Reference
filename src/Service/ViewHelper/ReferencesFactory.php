@@ -3,7 +3,7 @@ namespace Reference\Service\ViewHelper;
 
 use Interop\Container\ContainerInterface;
 use Reference\View\Helper\References;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class ReferencesFactory implements FactoryInterface
 {

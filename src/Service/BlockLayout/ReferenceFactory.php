@@ -3,7 +3,7 @@ namespace Reference\Service\BlockLayout;
 
 use Interop\Container\ContainerInterface;
 use Reference\Site\BlockLayout\Reference;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class ReferenceFactory implements FactoryInterface
 {

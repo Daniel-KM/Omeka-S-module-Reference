@@ -3,7 +3,7 @@ namespace Reference\Service\Form;
 
 use Interop\Container\ContainerInterface;
 use Reference\Form\ConfigForm;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class ConfigFormFactory implements FactoryInterface
 {

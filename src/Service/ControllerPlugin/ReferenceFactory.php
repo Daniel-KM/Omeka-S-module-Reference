@@ -3,7 +3,7 @@ namespace Reference\Service\ControllerPlugin;
 
 use Interop\Container\ContainerInterface;
 use Reference\Mvc\Controller\Plugin\Reference;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 /**
  * @deprecated Use References instead.

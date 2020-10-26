@@ -2,7 +2,7 @@
 namespace Reference\Controller;
 
 use Omeka\View\Model\ApiJsonModel;
-use Zend\Http\Response;
+use Laminas\Http\Response;
 
 /**
  * This controller extends the Omeka Api controller in order to manage rights
