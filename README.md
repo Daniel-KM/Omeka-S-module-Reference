@@ -1,6 +1,9 @@
 Reference (module for Omeka S)
 ==============================
 
+> __New versions of this module and support for Omeka S version 3.0 and above
+> are available on [GitLab], which seems to respect users and privacy better.__
+
 [Reference] is a module for [Omeka S] that allows to serve a glossary (an
 alphabetized index) of links to records or to searches for all resources classes
 (item types) and properties (metadata fields) of all resources of an Omeka S
@@ -256,4 +259,5 @@ Performance fixes were made for Article 19.
 [Metadata Browser (2.x)]: https://github.com/Daniel-KM/Omeka-plugin-MetadataBrowser
 [Category Browse (2.x)]: https://github.com/Daniel-KM/Omeka-plugin-CategoryBrowse
 [Jane Addams Digital Edition]: http://digital.janeaddams.ramapo.edu
+[GitLab]: https://gitlab.com/Daniel-KM
 [Daniel-KM]: https://github.com/Daniel-KM "Daniel Berthereau"
