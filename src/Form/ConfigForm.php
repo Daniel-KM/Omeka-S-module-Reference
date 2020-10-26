@@ -3,270 +3,86 @@
 namespace Reference\Form;
 
 use Laminas\Form\Element;
-use Laminas\Form\Fieldset;
 use Laminas\Form\Form;
-use Laminas\I18n\Translator\TranslatorAwareInterface;
-use Laminas\I18n\Translator\TranslatorAwareTrait;
-use Omeka\Api\Manager as ApiManager;
+use Reference\Form\Element\DoubleArrayTextarea;
+use Reference\Form\Element\OptionalMultiCheckbox;
 
-class ConfigForm extends Form implements TranslatorAwareInterface
+class ConfigForm extends Form
 {
-    use TranslatorAwareTrait;
-
-    /**
-     * @var ApiManager
-     */
-    protected $api;
-
     public function init(): void
     {
         // TODO Move most of these options to site level (and admin settings).
 
-        $this->add([
-            'type' => Fieldset::class,
-            'name' => 'fieldset_reference_general',
-            'options' => [
-                'label' => 'General options', // @translate
-            ],
-        ]);
-        $generalFieldset = $this->get('fieldset_reference_general');
-
-        $generalFieldset->add([
-            'name' => 'reference_resource_name',
-            'type' => Element\Radio::class,
-            'options' => [
-                'label' => 'Resources to link', // @translate
-                'info' => 'Currently, only item sets and items are managed in public front-end.', // @translate
-                'value_options' => [
-                    // TODO Manage the list of reference separately.
-                    // '' => 'All resources (separately)', // @translate
-                    // 'resources' => 'All resources (together)',  // @translate
-                    'item_sets' => 'Item sets',  // @translate
-                    'items' => 'Items',  // @translate
-                    // 'media' => 'Media',  // @translate
-                ],
-            ],
-            'attributes' => [
-                'required' => true,
-            ],
-        ]);
-
-        $generalFieldset->add([
-            'name' => 'reference_link_to_single',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Link to single records', // @translate
-                'info' => 'When a reference has only one item, link to it directly instead of to the items/browse page.', // @translate
-            ],
-        ]);
-
-        $generalFieldset->add([
-            'name' => 'reference_custom_url',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Custom url for single', // @translate
-                'info' => 'May be set with modules such Clean Url or Ark. May slow the display when there are many single references.', // @translate
-            ],
-        ]);
-
-        $generalFieldset->add([
-            'name' => 'reference_total',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Print total', // @translate
-                'info' => 'Print the total of resources for each reference.', // @translate
-            ],
-        ]);
-
-        $generalFieldset->add([
-            'name' => 'reference_search_list_values',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'List values in advanced search', // @translate
-                'info' => 'Dynamically list all available properties in the advanced search public form.', // @translate
-            ],
-        ]);
-
-        $this->add([
-            'name' => 'fieldset_reference_list_params',
-            'type' => Fieldset::class,
-            'options' => [
-                'label' => 'Reference indexes options', // @translate
-            ],
-        ]);
-        $referenceParamsFieldset = $this->get('fieldset_reference_list_params');
-
-        $referenceParamsFieldset->add([
-            'name' => 'reference_list_skiplinks',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Print skip links', // @translate
-                'info' => $this->translate('Print skip links at the top and bottom of each page, which link to the alphabetical headers.') // @translate
-                    . ' ' . $this->translate('Note that if headers are turned off, skiplinks do not work.'), // @translate
-            ],
-        ]);
-
-        $referenceParamsFieldset->add([
-            'name' => 'reference_list_headings',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Print headings', // @translate
-                'info' => 'Print headers for each section (#0-9 and symbols, A, B, etc.).', // @translate
-            ],
-        ]);
-
-        $this->add([
-            'name' => 'fieldset_reference_list_indexes',
-            'type' => Fieldset::class,
-            'options' => [
-                'label' => 'Reference indexes', // @translate
-            ],
-        ]);
-        $referenceIndexesFieldset = $this->get('fieldset_reference_list_indexes');
-
-        $types = [
-            'resource_classes' => [
-                'label' => 'Reference indexes: Resource classes', // @translate
-                'dataId' => 'data-resource-class-id',
-            ],
-            'properties' => [
-                'label' => 'Reference indexes: Properties', // @translate
-                'dataId' => 'data-property-id',
-            ],
-        ];
-        $typeFieldset = [];
-        $typeVocabularyFieldset = [];
-        $typeVocabularyMemberFieldset = [];
-        foreach ($types as $type => $typeData) {
-            $referenceIndexesFieldset->add([
-                'name' => $type,
-                'type' => Fieldset::class,
+        $this
+            ->add([
+                'name' => 'reference_resource_name',
+                'type' => Element\Radio::class,
                 'options' => [
-                    'label' => $typeData['label'], // @translate
-                ],
-            ]);
-            $typeFieldset[$type] = $referenceIndexesFieldset->get($type);
-
-            $dataId = $typeData['dataId'];
-            $list = $this->prepareList($type);
-            foreach ($list as $vocabulary => $vocabularyData) {
-                $typeFieldset[$type]->add([
-                    'name' => $type . '[' . $vocabulary . ']',
-                    'type' => Fieldset::class,
-                    'options' => [
-                        'label' => $vocabularyData['label'], // @translate
+                    'label' => 'Resources to link', // @translate
+                    'value_options' => [
+                        // TODO Manage the list of reference separately.
+                        // '' => 'All resources (separately)', // @translate
+                        // 'resources' => 'All resources (together)',  // @translate
+                        'items' => 'Items',  // @translate
+                        'item_sets' => 'Item sets',  // @translate
+                        // 'media' => 'Media',  // @translate
                     ],
-                ]);
-                $typeVocabularyFieldset[$type][$vocabulary] = $typeFieldset[$type]->get($type . '[' . $vocabulary . ']');
-
-                foreach ($vocabularyData['options'] as $member) {
-                    $id = $member['attributes'][$dataId];
-                    $typeVocabularyFieldset[$type][$vocabulary]->add([
-                        'name' => $type . '[' . $id . ']',
-                        'type' => Fieldset::class,
-                        'options' => [
-                            'label' => $member['attributes']['data-term'], // @translate
-                        ],
-                    ]);
-                    $typeVocabularyMemberFieldset[$type][$vocabulary][$id] = $typeVocabularyFieldset[$type][$vocabulary]->get($type . '[' . $id . ']');
-                    $typeVocabularyMemberFieldset[$type][$vocabulary][$id]->add([
-                        'name' => $type . '[' . $id . '][active]',
-                        'type' => Element\Checkbox::class,
-                        'options' => [
-                            'label' => 'Active', // @translate
-                        ],
-                    ]);
-                    $typeVocabularyMemberFieldset[$type][$vocabulary][$id]->add([
-                        'name' => $type . '[' . $id . '][slug]',
-                        'type' => Element\Text::class,
-                        'options' => [
-                            'label' => 'Slug', // @translate
-                        ],
-                    ]);
-                    $typeVocabularyMemberFieldset[$type][$vocabulary][$id]->add([
-                        'name' => $type . '[' . $id . '][label]',
-                        'type' => Element\Text::class,
-                        'options' => [
-                            'label' => 'Label', // @translate
-                        ],
-                    ]);
-                }
-            }
-        }
-
-        // Nothing is required.
-        $inputFilter = $this->getInputFilter();
-        foreach ($this as $element) {
-            $inputFilter->add([
-                'name' => $element->getName(),
-                'required' => false,
-            ]);
-        }
-    }
-
-    /**
-     * Prepare a list of entities.
-     *
-     * @see \Omeka\Form\Element\AbstractVocabularyMemberSelect::getValueOptions()
-     *
-     * @param string $resourceName
-     */
-    protected function prepareList($resourceName)
-    {
-        $termAsValue = true;
-
-        $query = [];
-        $query['sort_by'] = 'label';
-
-        $valueOptions = [];
-        $response = $this->getApiManager()->search($resourceName, $query);
-        foreach ($response->getContent() as $member) {
-            $attributes = ['data-term' => $member->term()];
-            if ('properties' === $resourceName) {
-                $attributes['data-property-id'] = $member->id();
-            } elseif ('resource_classes' === $resourceName) {
-                $attributes['data-resource-class-id'] = $member->id();
-            }
-            $option = [
-                'label' => $member->label(),
-                'value' => $termAsValue ? $member->term() : $member->id(),
-                'attributes' => $attributes,
-            ];
-            $vocabulary = $member->vocabulary();
-            if (!isset($valueOptions[$vocabulary->prefix()])) {
-                $valueOptions[$vocabulary->prefix()] = [
-                    'label' => $vocabulary->label(),
-                    'options' => [],
-                ];
-            }
-            $valueOptions[$vocabulary->prefix()]['options'][] = $option;
-        }
-
-        // Move Dublin Core vocabularies (dcterms & dctype) to the beginning.
-        if (isset($valueOptions['dcterms'])) {
-            $valueOptions = ['dcterms' => $valueOptions['dcterms']] + $valueOptions;
-        }
-        if (isset($valueOptions['dctype'])) {
-            $valueOptions = ['dctype' => $valueOptions['dctype']] + $valueOptions;
-        }
-
-        return $valueOptions;
-    }
-
-    protected function translate($args)
-    {
-        $translator = $this->getTranslator();
-        return $translator->translate($args);
-    }
-
-    public function setApiManager(ApiManager $api)
-    {
-        $this->api = $api;
-        return $this;
-    }
-
-    public function getApiManager()
-    {
-        return $this->api;
+                ],
+                'attributes' => [
+                    'id' => 'reference_resource_name',
+                    'value' => 'items',
+                ],
+            ])
+            ->add([
+                'name' => 'reference_options',
+                'type' => OptionalMultiCheckbox::class,
+                'options' => [
+                    'label' => 'Display', // @translate
+                    'value_options' => [
+                        'headings' => 'Headings', // @translate
+                        'skiplinks' => 'Skip links', // @translate
+                        'total' => 'Individual total', // @translate
+                        'link_to_single' => 'Link to single records', // @translate
+                        'custom_url' => 'Custom url for single records', // @translate
+                    ],
+                    'documentation' => 'https://gitlab.com/Daniel-KM/Omeka-S-module-Reference#automatic-site-pages',
+                ],
+                'attributes' => [
+                    'id' => 'reference_options',
+                    'required' => false,
+                ],
+            ])
+            ->add([
+                'name' => 'reference_slugs',
+                'type' => DoubleArrayTextarea::class,
+                'options' => [
+                    'label' => 'Reference pages for selected classes and properties', // @translate
+                    'as_key_value' => true,
+                    'second_level_keys' => [
+                        'term',
+                        'label',
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'reference_slugs',
+                    'rows' => 12,
+                    'placeholder' => 'slug = term = label
+dctype:Image = dctype:Image = Image
+dcterms:subject = dcterms:subject = Subjects
+',
+                ],
+            ])
+            ->add([
+                'name' => 'reference_search_list_values',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'List values in advanced search', // @translate
+                    'info' => 'Dynamically list all available properties in the advanced search public form.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'reference_search_list_values',
+                ],
+            ])
+        ;
     }
 }

@@ -11,19 +11,18 @@ class ReferenceController extends AbstractActionController
     {
         $settings = $this->settings();
         $slugs = $settings->get('reference_slugs') ?: [];
-        $types = [];
-
-        // Remove disabled slugs and prepare types.
-        foreach ($slugs as $slug => $slugData) {
-            if (empty($slugData['active'])) {
-                unset($slugs[$slug]);
-            } else {
-                $types[$slugData['type']] = true;
-            }
-        }
-
         if (empty($slugs)) {
             return $this->notFoundAction();
+        }
+
+        // Get used types (resource classes or properties) to simplify display.
+        $types = [];
+        foreach ($slugs as &$slugData) {
+            list(, $local) = explode(':', $slugData['term']);
+            $first = mb_substr($local, 0, 1);
+            $type = ucfirst($first) === $first ? 'resource_classes' : 'properties';
+            $slugData['type'] = $type;
+            $types[$type] = true;
         }
 
         $resourceName = $settings->get('reference_resource_name', 'items');
@@ -48,7 +47,7 @@ class ReferenceController extends AbstractActionController
         }
 
         $slug = $this->params('slug');
-        if (!isset($slugs[$slug]) || empty($slugs[$slug]['active'])) {
+        if (empty($slugs[$slug])) {
             return $this->notFoundAction();
         }
         $slugData = $slugs[$slug];
@@ -61,6 +60,20 @@ class ReferenceController extends AbstractActionController
         $total = $this->references([$term], $query, ['resource_name' => $resourceName])->count();
         $total = reset($total);
 
+        $options = $settings->get('reference_options') ?: [];
+        $options = array_fill_keys($options, true) + [
+            'headings' => false,
+            'skiplinks' => false,
+            'total' => false,
+            'link_to_single' => false,
+            'custom_url' => false,
+            'resource_name' => $resourceName,
+            'per_page' => 0,
+            'page' => 1,
+            'sort_by' => 'alphabetic',
+            'sort_order' => 'ASC',
+        ];
+
         return new ViewModel([
             'site' => $this->currentSite(),
             'slug' => $slug,
@@ -68,17 +81,7 @@ class ReferenceController extends AbstractActionController
             'label' => $slugData['label'],
             'term' => $term,
             'query' => $query,
-            'options' => [
-                'resource_name' => $resourceName,
-                'per_page' => 0,
-                'page' => 1,
-                'sort_by' => 'alphabetic',
-                'sort_order' => 'ASC',
-                'link_to_single' => (bool) $settings->get('reference_link_to_single', true),
-                'total' => (bool) $settings->get('reference_total', true),
-                'skiplinks' => (bool) $settings->get('reference_list_skiplinks', true),
-                'headings' => (bool) $settings->get('reference_list_headings', true),
-            ],
+            'options' => $options,
         ]);
     }
 

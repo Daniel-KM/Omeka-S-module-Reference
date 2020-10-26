@@ -33,12 +33,16 @@ return [
     ],
     'form_elements' => [
         'invokables' => [
+            Form\Element\DoubleArrayTextarea::class => Form\Element\DoubleArrayTextarea::class,
+            Form\Element\OptionalMultiCheckbox::class=> Form\Element\OptionalMultiCheckbox::class,
+            Form\ConfigForm::class => Form\ConfigForm::class,
             Form\ReferenceFieldset::class => Form\ReferenceFieldset::class,
             Form\ReferenceIndexFieldset::class => Form\ReferenceIndexFieldset::class,
             Form\ReferenceTreeFieldset::class => Form\ReferenceTreeFieldset::class,
         ],
-        'factories' => [
-            Form\ConfigForm::class => Service\Form\ConfigFormFactory::class,
+        'aliases' => [
+            'DoubleArrayTextarea' => Form\Element\DoubleArrayTextarea::class,
+            'OptionalMultiCheckbox' => Form\Element\OptionalMultiCheckbox::class,
         ],
     ],
     'controllers' => [
@@ -130,22 +134,21 @@ return [
     'reference' => [
         'config' => [
             'reference_resource_name' => 'items',
-            'reference_link_to_single' => true,
-            'reference_custom_url' => false,
-            'reference_total' => true,
-            'reference_search_list_values' => false,
+            'reference_options' => [
+                'headings',
+                'skiplinks',
+                'total',
+                'link_to_single',
+                // 'custom_url',
+            ],
             // Pages ("properties" or "resource_classes") to provide, by slug.
             'reference_slugs' => [
-                // 3 is the property id of Dublin Core Terms Subject, forced during install.
-                'dcterms:subject' => [
-                    'type' => 'properties',
-                    'term' => 3,
+                'dcterms-subject' => [
+                    'term' => 'dcterms:subject',
                     'label' => 'Subject',
-                    'active' => true,
                 ],
             ],
-            'reference_list_skiplinks' => true,
-            'reference_list_headings' => true,
+            'reference_search_list_values' => false,
         ],
         // Default for blocks.
         'block_settings' => [

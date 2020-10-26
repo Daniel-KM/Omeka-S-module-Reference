@@ -39,6 +39,7 @@ if (version_compare($oldVersion, '3.4.5', '<')) {
         $slugData['term'] = $slugData['id'];
         unset($slugData['id']);
     }
+    unset($slugData);
     $settings->set('reference_slugs', $referenceSlugs);
 
     $tree = $settings->get('reference_tree_hierarchy', '');
@@ -148,6 +149,7 @@ if (version_compare($oldVersion, '3.4.16', '<')) {
             unset($referenceSlugs[$slug]);
         }
     }
+    unset($slugData);
     $settings->set('reference_slugs', $referenceSlugs);
 }
 
@@ -211,6 +213,7 @@ if (version_compare($oldVersion, '3.4.22.3.1', '<')) {
         $settings->delete($removed);
     }
 
+    // Update the args of the site page block for referenceTree.
     $repository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
     /** @var \Omeka\Entity\SitePageBlock[] $blocks */
     $blocks = $repository->findBy(['layout' => 'referenceTree']);
@@ -221,5 +224,78 @@ if (version_compare($oldVersion, '3.4.22.3.1', '<')) {
         $block->setData($data);
         $entityManager->persist($block);
     }
+
+    /**
+    * List properties and resource classes by term.
+    *
+    * @return array
+    */
+    $listTerms = function (): array
+    {
+        /** @var \Doctrine\DBAL\Connection $connection */
+        $connection = $this->getServiceLocator()->get('Omeka\Connection');
+
+        $terms = [];
+
+        $qb = $connection->createQueryBuilder();
+        $qb
+            ->select([
+                'DISTINCT property.id AS id',
+                'CONCAT(vocabulary.prefix, ":", property.local_name) AS term',
+            ])
+            ->from('property', 'property')
+            ->innerJoin('property', 'vocabulary', 'vocabulary', 'property.vocabulary_id = vocabulary.id');
+        // Fetch by key pair is not supported by doctrine 2.0.
+        $result = $connection->executeQuery($qb)->fetchAll(\PDO::FETCH_ASSOC);
+        $terms['properties'] = array_column($result, 'id', 'term');
+
+        $qb = $connection->createQueryBuilder();
+        $qb
+            ->select([
+                'DISTINCT resource_class.id AS id',
+                'CONCAT(vocabulary.prefix, ":", resource_class.local_name) AS term',
+            ])
+            ->from('resource_class', 'resource_class')
+            ->innerJoin('resource_class', 'vocabulary', 'vocabulary', 'resource_class.vocabulary_id = vocabulary.id');
+        // Fetch by key pair is not supported by doctrine 2.0.
+        $result = $connection->executeQuery($qb)->fetchAll(\PDO::FETCH_ASSOC);
+        $terms['resource_classes'] = array_column($result, 'id', 'term');
+
+        return $terms;
+    };
+
+    // Update main config.
+    $terms = $listTerms();
+
+    $newSlugs = [];
+    $slugs = $settings->get('reference_slugs') ?: [];
+    // Remove disabled slugs and use terms.
+    foreach ($slugs as $slug => $slugData) {
+        if (!empty($slugData['active'])
+            && isset($terms[$slugData['type']][$slugData['term']])
+        ) {
+            unset($slugData['active']);
+            unset($slugData['type']);
+            $newSlugs[$slug] = $slugData;
+        }
+    }
+    $settings->set('reference_slugs', $newSlugs);
+
+    $newOptions = [];
+    $removeds = [
+        'reference_list_headings' => 'headings',
+        'reference_list_skiplinks' => 'skiplinks',
+        'reference_total' => 'total',
+        'reference_link_to_single' => 'link_to_single',
+        'reference_custom_url' => 'custom_url',
+    ];
+    foreach ($removeds as $removed => $newOption) {
+        if ($settings->get($removed)) {
+            $newOptions[] = $newOption;
+        }
+        $settings->delete($removed);
+    }
+    $settings->set('reference_options', $newOptions);
+
     $entityManager->flush();
 }

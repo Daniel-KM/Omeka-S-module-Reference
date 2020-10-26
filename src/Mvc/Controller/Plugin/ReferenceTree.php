@@ -88,9 +88,9 @@ class ReferenceTree extends AbstractPlugin
     }
 
     /**
-     * Convert a tree from flat array format to string format.
+     * Convert a tree from array format to string format.
      *
-     * @param array $levels A flat array with text as key and level as value.
+     * @param array $levels Array of arrays with text as key and level as value.
      * @return string
      */
     public function convertLevelsToTree(array $levels): string
