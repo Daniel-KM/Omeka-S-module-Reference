@@ -37,14 +37,8 @@ directory.
 If the module was installed from the source, rename the name of the folder of
 the module to `Reference`, go to the root module, and run:
 
-```
+```sh
 composer install --no-dev
-```
-
-The next times:
-
-```
-composer update --no-dev
 ```
 
 See general end user documentation for [Installing a module].
