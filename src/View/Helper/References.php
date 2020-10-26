@@ -27,7 +27,7 @@ class References extends AbstractHelper
      *
      * @return self
      */
-    public function __invoke()
+    public function __invoke(): self
     {
         return $this;
     }
@@ -78,7 +78,7 @@ class References extends AbstractHelper
      * Some options and some combinations are not managed for some metadata.
      * @return array Associative array with total and first record ids.
      */
-    public function list($metadata = null, array $query = null, array $options = null)
+    public function list($metadata = null, array $query = null, array $options = null): array
     {
         $ref = $this->references;
         $isSingle = is_string($metadata);
@@ -116,7 +116,7 @@ class References extends AbstractHelper
      * @uses \Reference\Mvc\Controller\Plugin\References::list()
      *
      * @param string $term
-     * @param array $query
+     * @param array $query An Omeka search query to limit results.
      * @param array $options Same options than list(), and specific ones for
      * the display:
      * - template (string): the template to use (default: "common/reference")
@@ -131,7 +131,7 @@ class References extends AbstractHelper
      * - subject_property (string|int): property to use for second level list
      * @return string Html list.
      */
-    public function displayListForTerm($term, array $query = null, array $options = null)
+    public function displayListForTerm($term, array $query = null, array $options = null): string
     {
         // Skip option output.
         if (!$options) {
@@ -180,6 +180,112 @@ class References extends AbstractHelper
             'options' => $options,
             'field' => $first,
             'references' => $list,
+        ]);
+    }
+
+    /**
+     * Get the prepared tree of values from an array or a dash tree.
+     *
+     * @uses \Reference\Mvc\Controller\Plugin\ReferenceTree::getTree()
+     *
+     * @param array|string $referenceLevels
+     * @param array $query
+     * @param array $options
+     * @return array
+     */
+    public function tree($referenceLevels, array $query = null, array $options = null): array
+    {
+        return $this->references->getController()->referenceTree()->getTree($referenceLevels, $query, $options);
+    }
+
+    /**
+     * Display the tree of subjects via a partial view.
+     *
+     * @link http://www.jqueryscript.net/other/jQuery-Flat-Folder-Tree-Plugin-simplefolders.html
+     * @uses \Reference\Mvc\Controller\Plugin\ReferenceTree::getTree()
+     *
+     * Note: Sql searches are case insensitive, so the all the values must be
+     * case-insisitively unique.
+     *
+     * Output via the default partial:
+     *
+     * ```html
+     * <ul class="tree">
+     *     <li>Europe
+     *         <div class="expander"></div>
+     *         <ul>
+     *             <li>France
+     *                 <div class="expander"></div>
+     *                 <ul>
+     *                     <li>Paris</li>
+     *                 </ul>
+     *             </li>
+     *             <li>United Kingdom
+     *                 <div class="expander"></div>
+     *                 <ul>
+     *                     <li>England
+     *                         <div class="expander"></div>
+     *                         <ul>
+     *                             <li>London</li>
+     *                         </ul>
+     *                     </li>
+     *                     <li>Scotland</li>
+     *                 </ul>
+     *             </li>
+     *         </ul>
+     *     </li>
+     *     <li>Asia
+     *         <div class="expander"></div>
+     *         <ul>
+     *             <li>Japan</li>
+     *         </ul>
+     *     </li>
+     * </ul>
+     * ```
+     *
+     * @param array|string $referenceLevels References and levels to show as
+     * array or dash tree.
+     * @param array $query An Omeka search query to limit results.
+     * @param array $options Options to display the references.
+     * - template (string): the template to use (default: "common/reference")
+     * - term (string): Term or id to search (dcterms:subject by default).
+     * - type (string): "properties" (default), "resource_classes", "item_sets"
+     *   "resource_templates".
+     * - resource_name: items (default), "item_sets", "media", "resources".
+     * - branch: Managed terms are branches (path separated with " :: ")
+     * - raw (bool): Show references as raw text, not links (default to false)
+     * - link_to_single (bool): When there is one result for a term, link it
+     *   directly to the resource, and not to the list page (default to config)
+     * - custom_url (bool): with modules such Clean Url or Ark, use the url
+     *   generator instad the standard item/id. May slow the display when there
+     *   are many single references
+     * - expanded (bool) : Show tree as expanded (default to config)
+     * @return string Html list.
+     */
+    public function displayTree($referenceLevels, array $query = null, array $options = null): string
+    {
+        $default = [
+            'term' => 'dcterms:subject',
+            'type' => 'properties',
+            'resource_name' => 'items',
+            'branch' => null,
+            'raw' => false,
+            'link_to_single' => null,
+            'custom_url' => false,
+            'expanded' => null,
+        ];
+        $options = $options ? $options + $default : $default;
+        $options['first'] = $options['link_to_single'] || $options['custom_url'];
+        $options['initial'] = false;
+
+        $result = $this->tree($referenceLevels, $query, $options);
+
+        $template = empty($options['template']) ? 'common/reference-tree' : $options['template'];
+        unset($options['template']);
+
+        return $this->getView()->partial($template, [
+            'references' => $result,
+            'options' => $options,
         ]);
     }
 }

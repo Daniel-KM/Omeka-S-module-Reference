@@ -20,12 +20,12 @@ $config = require dirname(__DIR__, 2) . '/config/module.config.php';
 
 // The reference plugin is not available during upgrade.
 include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/References.php';
-include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/Reference.php';
+include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/ReferenceTree.php';
 $entityManager = $services->get('Omeka\EntityManager');
 $controllerPluginManager = $services->get('ControllerPluginManager');
 $api = $controllerPluginManager->get('api');
 $referencesPlugin = new Mvc\Controller\Plugin\References($entityManager, $services->get('Omeka\ApiAdapterManager'), $api, $controllerPluginManager->get('translate'), [], [], [], false);
-$referencePlugin = new Mvc\Controller\Plugin\Reference($api, $referencesPlugin);
+$referenceTreePlugin = new Mvc\Controller\Plugin\ReferenceTree($api, $referencesPlugin);
 
 if (version_compare($oldVersion, '3.4.5', '<')) {
     $referenceSlugs = $settings->get('reference_slugs');
@@ -38,7 +38,7 @@ if (version_compare($oldVersion, '3.4.5', '<')) {
     $tree = $settings->get('reference_tree_hierarchy', '');
     $settings->set(
         'reference_tree_hierarchy',
-        $referencePlugin->convertTreeToLevels($tree)
+        $referenceTreePlugin->convertTreeToLevels($tree)
     );
 
     $defaultConfig = $config[strtolower(__NAMESPACE__)]['config'];
@@ -54,10 +54,10 @@ if (version_compare($oldVersion, '3.4.5', '<')) {
 
 if (version_compare($oldVersion, '3.4.7', '<')) {
     $tree = $settings->get('reference_tree_hierarchy', '');
-    $treeString = $referencePlugin->convertFlatLevelsToTree($tree);
+    $treeString = $referenceTreePlugin->convertFlatLevelsToTree($tree);
     $settings->set(
         'reference_tree_hierarchy',
-        $referencePlugin->convertTreeToLevels($treeString)
+        $referenceTreePlugin->convertTreeToLevels($treeString)
     );
 
     $repository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
@@ -67,8 +67,8 @@ if (version_compare($oldVersion, '3.4.7', '<')) {
         if (empty($data['reference']['tree']) || $data['reference']['mode'] !== 'tree') {
             continue;
         }
-        $treeString = $referencePlugin->convertFlatLevelsToTree($data['reference']['tree']);
-        $data['reference']['tree'] = $referencePlugin->convertTreeToLevels($treeString);
+        $treeString = $referenceTreePlugin->convertFlatLevelsToTree($data['reference']['tree']);
+        $data['reference']['tree'] = $referenceTreePlugin->convertTreeToLevels($treeString);
         $block->setData($data);
         $entityManager->persist($block);
     }

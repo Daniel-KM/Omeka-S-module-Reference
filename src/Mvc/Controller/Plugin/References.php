@@ -274,9 +274,6 @@ class References extends AbstractPlugin
         $options = $this->getOptions();
         $isAssociative = $this->options['output'] === 'associative';
 
-        $api = $this->api;
-        $translate = $this->translate;
-
         // TODO Convert all queries into a single or two sql queries (at least for properties and classes).
         // TODO Return all needed columns.
 
@@ -342,7 +339,7 @@ class References extends AbstractPlugin
                             $result[$field['term']]['o:references'][] = [
                                 'o:id' => $property->id(),
                                 'o:term' => $property->term(),
-                                'o:label' => $translate($property->label()),
+                                'o:label' => $this->translate->__invoke($property->label()),
                                 '@language' => null,
                             ] + $valueData;
                         }
@@ -359,7 +356,7 @@ class References extends AbstractPlugin
                             $result[$field['term']]['o:references'][] = [
                                 'o:id' => $resourceClass->id(),
                                 'o:term' => $resourceClass->term(),
-                                'o:label' => $translate($resourceClass->label()),
+                                'o:label' => $this->translate->__invoke($resourceClass->label()),
                                 '@language' => null,
                             ] + $valueData;
                         }
@@ -394,7 +391,7 @@ class References extends AbstractPlugin
                     } else {
                         foreach (array_filter($values) as $value => $valueData) {
                             // TODO Improve this process via the resource title (Omeka 2).
-                            $meta = $api->read('item_sets', ['id' => $valueData['val']])->getContent();
+                            $meta = $this->api->read('item_sets', ['id' => $valueData['val']])->getContent();
                             $result[$field['term']]['o:references'][] = [
                                 '@type' => 'o:ItemSet',
                                 'o:id' => (int) $value,

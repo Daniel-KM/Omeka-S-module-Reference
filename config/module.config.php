@@ -49,6 +49,7 @@ return [
         'factories' => [
             'reference' => Service\ControllerPlugin\ReferenceFactory::class,
             'references' => Service\ControllerPlugin\ReferencesFactory::class,
+            'referenceTree' => Service\ControllerPlugin\ReferenceTreeFactory::class,
         ],
     ],
     'router' => [
