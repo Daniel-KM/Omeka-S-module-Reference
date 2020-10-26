@@ -88,6 +88,7 @@ class ReferenceTreeFieldset extends Form
                 'options' => [
                     'label' => 'Query to limit resources', // @translate
                     'info' => 'Limit the reference to a particular subset of resources, for example a site, via an advanced search query.', // @translate
+                    'documentation' => 'https://omeka.org/s/docs/user-manual/sites/site_pages/#browse-preview',
                 ],
             ]);
 
