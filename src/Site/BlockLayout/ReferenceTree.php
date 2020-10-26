@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Reference\Site\BlockLayout;
 
 use Laminas\View\Renderer\PhpRenderer;
@@ -9,7 +10,7 @@ use Omeka\Entity\SitePageBlock;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
 use Omeka\Stdlib\ErrorStore;
-use Reference\Mvc\Controller\Plugin\Reference as ReferencePlugin;
+use Reference\Mvc\Controller\Plugin\ReferenceTree as ReferenceTreePlugin;
 
 class ReferenceTree extends AbstractBlockLayout
 {
@@ -24,20 +25,20 @@ class ReferenceTree extends AbstractBlockLayout
     protected $api;
 
     /**
-     * @var ReferencePlugin
+     * @var ReferenceTreePlugin
      */
-    protected $referencePlugin;
+    protected $referenceTreePlugin;
 
     /**
      * @param Api $api
-     * @param ReferencePlugin $referencePlugin
+     * @param ReferenceTreePlugin $ReferenceTreePlugin
      */
     public function __construct(
         Api $api,
-        ReferencePlugin $referencePlugin
+        ReferenceTreePlugin $ReferenceTreePlugin
     ) {
         $this->api = $api;
-        $this->referencePlugin = $referencePlugin;
+        $this->referenceTreePlugin = $ReferenceTreePlugin;
     }
 
     public function getLabel()
@@ -50,32 +51,26 @@ class ReferenceTree extends AbstractBlockLayout
         $data = $block->getData();
 
         // Check if data are already formatted, checking the main value.
-        if (is_array($data['args']['tree'])) {
+        if (is_array($data['tree'])) {
             return;
         }
 
-        $data['args']['tree'] = $this->referencePlugin->convertTreeToLevels($data['args']['tree']);
-        if (empty($data['args']['resource_name'])) {
-            $data['args']['resource_name'] = 'items';
+        $data['tree'] = $this->referenceTreePlugin->convertTreeToLevels($data['tree']);
+        if (empty($data['resource_name'])) {
+            $data['resource_name'] = 'items';
         }
         $query = [];
-        parse_str($data['args']['query'], $query);
-        $data['args']['query'] = $query;
-
-        // Make the search simpler and quicker later on display.
-        // TODO To be removed in Omeka 1.2.
-        $data['args']['termId'] = $this->api->searchOne('properties', [
-            'term' => $data['args']['term'],
-        ])->getContent()->id();
+        parse_str($data['query'], $query);
+        $data['query'] = $query;
 
         // Normalize options.
-        $data['options']['link_to_single'] = (bool) $data['options']['link_to_single'];
-        $data['options']['custom_url'] = (bool) $data['options']['custom_url'];
-        $data['options']['total'] = (bool) $data['options']['total'];
-        $data['options']['branch'] = (bool) $data['options']['branch'];
-        $data['options']['expanded'] = (bool) $data['options']['expanded'];
-        if (empty($data['options']['query_type'])) {
-            $data['options']['query_type'] = 'eq';
+        $data['link_to_single'] = (bool) $data['link_to_single'];
+        $data['custom_url'] = (bool) $data['custom_url'];
+        $data['total'] = (bool) $data['total'];
+        $data['branch'] = (bool) $data['branch'];
+        $data['expanded'] = (bool) $data['expanded'];
+        if (empty($data['query_type'])) {
+            $data['query_type'] = 'eq';
         }
 
         $block->setData($data);
@@ -93,33 +88,29 @@ class ReferenceTree extends AbstractBlockLayout
         $defaultSettings = $services->get('Config')['reference']['block_settings']['referenceTree'];
         $blockFieldset = \Reference\Form\ReferenceTreeFieldset::class;
 
-        // TODO Fill the fieldset like other blocks (cf. blockplus).
-
         if ($block) {
             $data = $block->data() + $defaultSettings;
-            if (is_array($data['args']['query'])) {
-                $data['args']['query'] = urldecode(
-                    http_build_query($data['args']['query'], "\n", '&', PHP_QUERY_RFC3986)
+            if (is_array($data['query'])) {
+                $data['query'] = urldecode(
+                    http_build_query($data['query'], "\n", '&', PHP_QUERY_RFC3986)
                 );
             }
         } else {
             $data = $defaultSettings;
-            $data['args']['query'] = 'site_id=' . $site->id();
+            $data['query'] = 'site_id=' . $site->id();
         }
 
-        $data['args']['tree'] = $this->referencePlugin->convertLevelsToTree($data['args']['tree']);
+        $data['tree'] = $this->referenceTreePlugin->convertLevelsToTree($data['tree']);
+
+        $dataForm = [];
+        foreach ($data as $key => $value) {
+            $dataForm['o:block[__blockIndex__][o:data][' . $key . ']'] = $value;
+        }
 
         $fieldset = $formElementManager->get($blockFieldset);
-        // TODO Fix set data for radio buttons.
-        $fieldset->setData([
-            'o:block[__blockIndex__][o:data][args]' => $data['args'],
-            'o:block[__blockIndex__][o:data][options]' => $data['options'],
-        ]);
+        $fieldset->populateValues($dataForm);
 
-        $fieldset->prepare();
-
-        $html = $view->formCollection($fieldset);
-        return $html;
+        return $view->formCollection($fieldset);
     }
 
     public function prepareRender(PhpRenderer $view): void
@@ -130,22 +121,22 @@ class ReferenceTree extends AbstractBlockLayout
 
     public function render(PhpRenderer $view, SitePageBlockRepresentation $block)
     {
-        $data = $block->data();
-        $args = $data['args'];
-        $options = $data['options'];
+        $options = $block->data();
 
-        $tree = $args['tree'];
-        unset($args['tree']);
-        $total = count($tree);
+        $heading = $options['heading'];
+        $tree = $options['tree'];
+        $query = $options['query'];
+        unset($options['heading'], $options['tree'], $options['query']);
 
         $template = $options['template'] ?? self::PARTIAL_NAME;
         unset($options['template']);
 
         $vars = [
             'block' => $block,
-            'total' => $total,
+            'heading' => $heading,
+            'total' => count($tree),
             'tree' => $tree,
-            'args' => $args,
+            'query' => $query,
             'options' => $options,
         ];
 

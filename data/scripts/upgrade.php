@@ -1,5 +1,9 @@
 <?php declare(strict_types=1);
+
 namespace Reference;
+
+use Omeka\Mvc\Controller\Plugin\Messenger;
+use Omeka\Stdlib\Message;
 
 /**
  * @var Module $this
@@ -143,4 +147,18 @@ if (version_compare($oldVersion, '3.4.16', '<')) {
         }
     }
     $settings->set('reference_slugs', $referenceSlugs);
+}
+
+if (version_compare($oldVersion, '3.4.22.3.1', '<')) {
+    $repository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
+    /** @var \Omeka\Entity\SitePageBlock[] $blocks */
+    $blocks = $repository->findBy(['layout' => 'referenceTree']);
+    foreach ($blocks as $block) {
+        $data = $block->getData();
+        $data = ($data['args'] ?? []) + ($data['options'] ?? []);
+        unset($data['termId']);
+        $block->setData($data);
+        $entityManager->persist($block);
+    }
+    $entityManager->flush();
 }

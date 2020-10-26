@@ -1,22 +1,24 @@
 <?php
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
- * @var array $tree
- * @var array $args
- * @var array $options
+ * @var \Omeka\Api\Representation\SitePageBlockRepresentation $block
+ * @var string $heading
  * @var int $total
+ * @var array $tree
+ * @var string $query
+ * @var array $options
  */
 
 $translate = $this->plugin('translate');
 ?>
 
 <div class="reference-block">
-    <?php if ($options['heading']): ?>
-    <h3><?= str_replace('{total}', $total, $translate($options['heading'])) ?></h3>
+    <?php if (!empty($heading)): ?>
+    <h3><?= str_replace('{total}', $total, $heading) ?></h3>
     <?php endif; ?>
     <?php
     if ($total):
-        echo $this->reference()->displayTree($tree, $args, $options);
+        echo $this->references()->displayTree($tree, $query, $options);
     else:
     ?>
     <p><?= $translate('There is no references.') ?></p>
