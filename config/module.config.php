@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Reference;
 
 return [
@@ -16,8 +17,11 @@ return [
     ],
     'view_helpers' => [
         'factories' => [
-            'reference' => Service\ViewHelper\ReferenceFactory::class,
             'references' => Service\ViewHelper\ReferencesFactory::class,
+        ],
+        'aliases' => [
+            /** @deprecated Since release for Omeka 3. */
+            'reference' => 'references',
         ],
     ],
     'block_layouts' => [
@@ -47,7 +51,6 @@ return [
     ],
     'controller_plugins' => [
         'factories' => [
-            'reference' => Service\ControllerPlugin\ReferenceFactory::class,
             'references' => Service\ControllerPlugin\ReferencesFactory::class,
             'referenceTree' => Service\ControllerPlugin\ReferenceTreeFactory::class,
         ],
