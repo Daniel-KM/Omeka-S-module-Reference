@@ -79,10 +79,10 @@ if (count($references)):
         else:
             $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}{recursive}</a></div>' . PHP_EOL;
         endif;
+        $tempPlaceholder = '00999999990999999001';
+        $templateUrlSingle = str_replace($tempPlaceholder, '{reference}',
+            $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $tempPlaceholder], false));
         if (!$options['custom_url']):
-            $tempPlaceholder = '00999999990999999001';
-            $templateUrlSingle = str_replace($tempPlaceholder, '{reference}',
-                $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $tempPlaceholder], false));
             $query = [];
             if ($queryKey):
                 // The default url helper doesn't encode "&" as "&amp;".

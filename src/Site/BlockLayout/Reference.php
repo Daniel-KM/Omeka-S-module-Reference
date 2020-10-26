@@ -153,7 +153,7 @@ class Reference extends AbstractBlockLayout
     public function render(PhpRenderer $view, SitePageBlockRepresentation $block)
     {
         $data = $block->data();
-        $args = $data['args'];
+        $args = $data['args'] + ['order' => ['alphabetic' => 'ASC']];
         $options = $data['options'];
 
         // TODO Update forms and saved params.
