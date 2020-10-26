@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Reference\View\Helper;
 
 use Laminas\View\Helper\AbstractHelper;
@@ -21,6 +22,32 @@ class References extends AbstractHelper
 
     /**
      * Get the references.
+     *
+     * @uses \Reference\Mvc\Controller\Plugin\References
+     *
+     * @return self
+     */
+    public function __invoke()
+    {
+        return $this;
+    }
+
+    /**
+     * Stringify to an empty string.
+     *
+     *  The default result force to specify another methods.
+     *
+     * @return string
+     */
+    public function __toString(): string
+    {
+        return '';
+    }
+
+    /**
+     * Get the references.
+     *
+     * @uses \Reference\Mvc\Controller\Plugin\References::list()
      *
      * @param array $metadata Classes, properties terms, template names, or
      * other Omeka metadata names.
@@ -65,7 +92,7 @@ class References extends AbstractHelper
     /**
      * Count the total of distinct element texts for terms.
      *
-     * @see \Reference\View\Helper\Reference::list()
+     * @uses \Reference\Mvc\Controller\Plugin\References::count()
      *
      * @param string|array $metadata
      * @param array $query
@@ -86,7 +113,7 @@ class References extends AbstractHelper
     /**
      * Display the list of the references of a term or a template via a partial view.
      *
-     * @see \Reference\View\Helper\Reference::list()
+     * @uses \Reference\Mvc\Controller\Plugin\References::list()
      *
      * @param string $term
      * @param array $query
