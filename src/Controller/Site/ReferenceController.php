@@ -62,6 +62,8 @@ class ReferenceController extends AbstractActionController
         $total = reset($total);
 
         return new ViewModel([
+            'site' => $this->currentSite(),
+            'slug' => $slug,
             'total' => $total,
             'label' => $slugData['label'],
             'term' => $term,
@@ -77,7 +79,6 @@ class ReferenceController extends AbstractActionController
                 'skiplinks' => (bool) $settings->get('reference_list_skiplinks', true),
                 'headings' => (bool) $settings->get('reference_list_headings', true),
             ],
-            'slug' => $slug,
         ]);
     }
 
