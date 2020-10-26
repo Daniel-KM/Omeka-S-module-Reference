@@ -153,7 +153,7 @@ if (version_compare($oldVersion, '3.4.16', '<')) {
     $settings->set('reference_slugs', $referenceSlugs);
 }
 
-if (version_compare($oldVersion, '3.4.22.3.1', '<')) {
+if (version_compare($oldVersion, '3.4.23.3', '<')) {
     $messenger = new Messenger();
     $message = new Message(
         'This release changed some features, so check your theme: the config has been moved to each site; the key "o-module-reference:values" is replaced by "o:references"; the helper $this->reference() is deprecated and is now an alias of $this->references().'
