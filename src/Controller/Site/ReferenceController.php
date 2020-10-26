@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Reference\Controller\Site;
 
 use Laminas\Mvc\Controller\AbstractActionController;
@@ -29,14 +30,13 @@ class ReferenceController extends AbstractActionController
 
         $query = ['site_id' => $this->currentSite()->id()];
 
-        $view = new ViewModel();
-        return $view
-            ->setVariable('site', $this->currentSite())
-            ->setVariable('slugs', $slugs)
-            ->setVariable('types', array_keys($types))
-            ->setVariable('resourceName', $resourceName)
-            ->setVariable('query', $query)
-        ;
+        return new ViewModel([
+            'site' => $this->currentSite(),
+            'slugs' => $slugs,
+            'types' => array_keys($types),
+            'resourceName' => $resourceName,
+            'query' => $query,
+        ]);
     }
 
     public function listAction()
@@ -61,13 +61,12 @@ class ReferenceController extends AbstractActionController
         $total = $this->references([$term], $query, ['resource_name' => $resourceName])->count();
         $total = reset($total);
 
-        $view = new ViewModel();
-        return $view
-            ->setVariable('total', $total)
-            ->setVariable('label', $slugData['label'])
-            ->setVariable('term', $term)
-            ->setVariable('query', $query)
-            ->setVariable('options', [
+        return new ViewModel([
+            'total' => $total,
+            'label' => $slugData['label'],
+            'term' => $term,
+            'query' => $query,
+            'options' => [
                 'resource_name' => $resourceName,
                 'per_page' => 0,
                 'page' => 1,
@@ -77,41 +76,9 @@ class ReferenceController extends AbstractActionController
                 'total' => (bool) $settings->get('reference_total', true),
                 'skiplinks' => (bool) $settings->get('reference_list_skiplinks', true),
                 'headings' => (bool) $settings->get('reference_list_headings', true),
-            ])
-            ->setVariable('slug', $slug);
-    }
-
-    public function treeAction()
-    {
-        $settings = $this->settings();
-        if (!$settings->get('reference_tree_enabled')) {
-            $this->notFoundAction();
-            return;
-        }
-
-        $term = $settings->get('reference_tree_term', 'dcterms:subject');
-        $type = 'properties';
-        $resourceName = $settings->get('reference_resource_name', 'resources');
-        $query = ['site_id' => $this->currentSite()->id()];
-
-        $references = $settings->get('reference_tree_hierarchy', []);
-
-        $view = new ViewModel();
-        return $view
-            ->setVariable('references', $references)
-            ->setVariable('args', [
-                'term' => $term,
-                'type' => $type,
-                'resource_name' => $resourceName,
-                'query' => $query,
-            ])
-            ->setVariable('options', [
-                'query_type' => $settings->get('reference_tree_query_type', 'eq'),
-                'link_to_single' => $settings->get('reference_link_to_single', true),
-                'branch' => $settings->get('reference_tree_branch', false),
-                'total' => $settings->get('reference_total', true),
-                'expanded' => $settings->get('reference_tree_expanded', true),
-            ]);
+            ],
+            'slug' => $slug,
+        ]);
     }
 
     protected function forwardToItemBrowse()

@@ -15,7 +15,9 @@ $services = $serviceLocator;
 
 /**
  * @var \Omeka\Settings\Settings $settings
+ * @var \Doctrine\ORM\EntityManager $entityManager
  * @var \Doctrine\DBAL\Connection $connection
+ * @var \Omeka\Mvc\Controller\Plugin\Api $api
  * @var array $config
  */
 $settings = $services->get('Omeka\Settings');
@@ -150,6 +152,65 @@ if (version_compare($oldVersion, '3.4.16', '<')) {
 }
 
 if (version_compare($oldVersion, '3.4.22.3.1', '<')) {
+    // Convert the main tree if any into a standard page with block Reference Tree.
+    if ($settings->get('reference_tree_enabled')) {
+        $term = $settings->get('reference_tree_term');
+        $hierarchy = $settings->get('reference_tree_hierarchy');
+        if ($term && $hierarchy) {
+            $branch = $settings->get('reference_tree_branch');
+            $queryType = $settings->get('reference_tree_query_type');
+            $expanded = $settings->get('reference_tree_expanded');
+            $sites = $entityManager->getRepository(\Omeka\Entity\Site::class)->findAll();
+            foreach ($sites as $site) {
+                // Check if the site page slug exists.
+                $sitePageSlug = $api->searchOne('site_pages', ['site_id' => $site->getId(), 'slug' => 'reference-tree'])->getContent();
+                $sitePageSlug = $sitePageSlug ? 'reference-tree-' . random_int(10000, 99999): 'reference-tree';
+
+                $page = new \Omeka\Entity\SitePage();
+                $page->setSite($site);
+                $page->setTitle('Tree of references');
+                $page->setSlug($sitePageSlug);
+                $page->setIsPublic(true);
+                $page->setCreated(new \DateTime('now'));
+
+                $block = new \Omeka\Entity\SitePageBlock();
+                $block->setLayout('referenceTree');
+                $block->setPage($page);
+                $block->setPosition(1);
+                $block->setData([
+                    'heading' => 'Tree of references ({total} total)',
+                    'term' => $term,
+                    'tree' => $hierarchy,
+                    'resource_name' => 'items',
+                    'query' => [],
+                    'query_type' => $queryType,
+                    'link_to_single' => true,
+                    'custom_url' => false,
+                    'total' => true,
+                    'branch' => $branch,
+                    'expanded' => $expanded,
+                    'template' => '',
+                ]);
+
+                $entityManager->persist($page);
+                $entityManager->persist($block);
+                // Flush below.
+            }
+        }
+    }
+
+    $removeds = [
+        'reference_tree_enabled',
+        'reference_tree_term',
+        'reference_tree_hierarchy',
+        'reference_tree_branch',
+        'reference_tree_query_type',
+        'reference_tree_expanded',
+    ];
+    foreach ($removeds as $removed) {
+        $settings->delete($removed);
+    }
+
     $repository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
     /** @var \Omeka\Entity\SitePageBlock[] $blocks */
     $blocks = $repository->findBy(['layout' => 'referenceTree']);

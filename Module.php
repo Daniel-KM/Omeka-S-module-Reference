@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Reference;
 
 if (!class_exists(\Generic\AbstractModule::class)) {
@@ -43,7 +44,7 @@ class Module extends AbstractModule
             ->allow(
                 null,
                 [\Reference\Controller\Site\ReferenceController::class],
-                ['browse', 'list', 'tree']
+                ['browse', 'list']
             )
             ->allow(
                 null,
@@ -66,9 +67,7 @@ class Module extends AbstractModule
         $config = $services->get('Config');
         $settings = $services->get('Omeka\Settings');
         $form = $services->get('FormElementManager')->get(ConfigForm::class);
-        $controllerPluginManager = $services->get('ControllerPluginManager');
         $api = $services->get('Omeka\ApiManager');
-        $referencePlugin = $controllerPluginManager->get('reference');
 
         // Because there may be more than 1000 input values, that is the default
         // "max_input_vars" limit in php.ini, a js merges all resource classes
@@ -139,13 +138,6 @@ class Module extends AbstractModule
                 case strpos($name, 'reference_list_') === 0:
                     $data['fieldset_reference_list_params'][$name] = $currentValue;
                     break;
-                case 'reference_tree_hierarchy':
-                    $currentValue = $referencePlugin
-                        ->convertLevelsToTree($currentValue);
-                    // no break.
-                case strpos($name, 'reference_tree_') === 0:
-                    $data['fieldset_reference_tree'][$name] = $currentValue;
-                    break;
                 default:
                     $data['fieldset_reference_general'][$name] = $currentValue;
                     break;
@@ -157,11 +149,11 @@ class Module extends AbstractModule
         $form->setData($data);
         $html = '<p>';
         $html .= $renderer->translate('It is recommended to create reference with the blocks of the site pages.'); // @translate
-        $html .= ' ' . $renderer->translate('So these options are used only to create global pages, that are not provided by Omeka yet.'); // @translate
+        $html .= ' ' . $renderer->translate('So these options are used only to create global pages.'); // @translate
         $html .= '</p>';
         $html .= '<p>';
         $html .= $renderer->translate('This config allows to create routed pages for all sites.'); // @translate
-        $html .= ' ' . $renderer->translate('References are limited by the pool of the site.'); // @translate
+        $html .= ' ' . $renderer->translate('References are limited by the pool of each site.'); // @translate
         $html .= '</p>';
         $html .= $renderer->formCollection($form);
         return $html;
@@ -173,8 +165,6 @@ class Module extends AbstractModule
         $config = $services->get('Config');
         $settings = $services->get('Omeka\Settings');
         $form = $services->get('FormElementManager')->get(ConfigForm::class);
-        $controllerPluginManager = $services->get('ControllerPluginManager');
-        $referencePlugin = $controllerPluginManager->get('reference');
 
         $params = $controller->getRequest()->getPost();
 
@@ -246,10 +236,6 @@ class Module extends AbstractModule
             $controller->messenger()->addWarning('Changes were not saved.'); // @translate
             return false;
         }
-
-        // Normalize the tree.
-        $params['reference_tree_hierarchy'] = $referencePlugin
-            ->convertTreeToLevels($params['reference_tree_hierarchy']);
 
         $defaultSettings = $config['reference']['config'];
         $params = array_intersect_key($params, $defaultSettings);

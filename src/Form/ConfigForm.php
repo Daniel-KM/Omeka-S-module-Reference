@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Reference\Form;
 
 use Laminas\Form\Element;
@@ -7,7 +8,6 @@ use Laminas\Form\Form;
 use Laminas\I18n\Translator\TranslatorAwareInterface;
 use Laminas\I18n\Translator\TranslatorAwareTrait;
 use Omeka\Api\Manager as ApiManager;
-use Omeka\Form\Element\PropertySelect;
 
 class ConfigForm extends Form implements TranslatorAwareInterface
 {
@@ -112,97 +112,6 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             'options' => [
                 'label' => 'Print headings', // @translate
                 'info' => 'Print headers for each section (#0-9 and symbols, A, B, etc.).', // @translate
-            ],
-        ]);
-
-        $this->add([
-            'type' => Fieldset::class,
-            'name' => 'fieldset_reference_tree',
-            'options' => [
-                'label' => 'Reference tree', // @translate
-            ],
-        ]);
-        $referenceTreeFieldset = $this->get('fieldset_reference_tree');
-
-        $referenceTreeFieldset->add([
-            'name' => 'reference_tree_enabled',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Enable tree view', // @translate
-                'info' => 'Enable the page and display the link "/subject/tree" to the hierarchical view in the navigation bar.', // @translate
-            ],
-        ]);
-
-        $referenceTreeFieldset->add([
-            'name' => 'reference_tree_term',
-            'type' => PropertySelect::class,
-            'options' => [
-                'label' => 'Property for the tree', // @translate
-                'info' => 'The references will use this property to create links.', // @translate
-                'empty_option' => 'Select a property…', // @translate
-                'term_as_value' => true,
-            ],
-            'attributes' => [
-                'required' => false,
-                'class' => 'chosen-select',
-            ],
-        ]);
-
-        $referenceTreeFieldset->add([
-            'name' => 'reference_tree_hierarchy',
-            'type' => Element\Textarea::class,
-            'options' => [
-                'label' => 'Static tree of references', // @translate
-                'info' => $this->translate('If any, write the hierarchy of all your references in order to display them in the "Tree of references" page.') // @translate
-                    . ' ' . $this->translate('Format is: one reference by line, preceded by zero, one or more "-" to indicate the hierarchy level.') // @translate
-                    . ' ' . $this->translate('Separate the "-" and the reference with a space. Empty lines are not considered.') // @translate
-                    . ' ' . $this->translate('Note: sql does case insensitive searches, so all references should be case-insensitively unique.'), // @translate
-            ],
-            'attributes' => [
-                'rows' => 20,
-                'cols' => 60,
-                // The place holder may not use end of line on some browsers, so
-                // a symbol is used for it.
-                'placeholder' => 'Europe ↵
-- France ↵
--- Paris ↵
-- United Kingdom ↵
--- England ↵
---- London ↵
-Asia ↵
-- Japan ↵
-',
-            ],
-        ]);
-
-        $referenceTreeFieldset->add([
-            'name' => 'reference_tree_branch',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Managed as branch', // @translate
-                'info' => 'Check this box if the tree is managed as branch (the path is saved with " :: " between each branch).', // @translate
-            ],
-        ]);
-
-        $referenceTreeFieldset->add([
-            'name' => 'reference_tree_query_type',
-            'type' => Element\Radio::class,
-            'options' => [
-                'label' => 'Query type', // @translate
-                'info' => 'The type of query defines how elements are searched.', // @translate
-                'value_options' => [
-                    'eq' => 'Is Exactly', // @translate
-                    'in' => 'Contains', // @translate
-                ],
-            ],
-        ]);
-
-        $referenceTreeFieldset->add([
-            'name' => 'reference_tree_expanded',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Expand tree', // @translate
-                'info' => 'Check this box to display the tree expanded. This option can be overridden by the theme.', // @translate
             ],
         ]);
 
@@ -350,9 +259,10 @@ Asia ↵
         return $translator->translate($args);
     }
 
-    public function setApiManager(ApiManager $api): void
+    public function setApiManager(ApiManager $api)
     {
         $this->api = $api;
+        return $this;
     }
 
     public function getApiManager()

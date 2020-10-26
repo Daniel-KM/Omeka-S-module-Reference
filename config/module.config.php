@@ -97,17 +97,6 @@ return [
                             ],
                         ],
                     ],
-                    'reference_tree' => [
-                        'type' => \Laminas\Router\Http\Literal::class,
-                        'options' => [
-                            'route' => '/reference-tree',
-                            'defaults' => [
-                                '__NAMESPACE__' => 'Reference\Controller\Site',
-                                'controller' => Controller\Site\ReferenceController::class,
-                                'action' => 'tree',
-                            ],
-                        ],
-                    ],
                 ],
             ],
             'api' => [
@@ -157,12 +146,6 @@ return [
             ],
             'reference_list_skiplinks' => true,
             'reference_list_headings' => true,
-            'reference_tree_enabled' => false,
-            'reference_tree_term' => 'dcterms:subject',
-            'reference_tree_hierarchy' => [],
-            'reference_tree_branch' => false,
-            'reference_tree_query_type' => 'eq',
-            'reference_tree_expanded' => true,
         ],
         // Default for blocks.
         'block_settings' => [
