@@ -35,7 +35,7 @@ return [
         'invokables' => [
             Form\Element\DoubleArrayTextarea::class => Form\Element\DoubleArrayTextarea::class,
             Form\Element\OptionalMultiCheckbox::class=> Form\Element\OptionalMultiCheckbox::class,
-            Form\ConfigForm::class => Form\ConfigForm::class,
+            Form\SiteSettingsFieldset::class => Form\SiteSettingsFieldset::class,
             Form\ReferenceFieldset::class => Form\ReferenceFieldset::class,
             Form\ReferenceIndexFieldset::class => Form\ReferenceIndexFieldset::class,
             Form\ReferenceTreeFieldset::class => Form\ReferenceTreeFieldset::class,
@@ -132,7 +132,7 @@ return [
         ],
     ],
     'reference' => [
-        'config' => [
+        'site_settings' => [
             'reference_resource_name' => 'items',
             'reference_options' => [
                 'headings',

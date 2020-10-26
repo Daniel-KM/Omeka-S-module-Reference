@@ -9,8 +9,9 @@ if (!class_exists(\Generic\AbstractModule::class)) {
 }
 
 use Generic\AbstractModule;
+use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\Mvc\MvcEvent;
-use Laminas\View\Renderer\PhpRenderer;
+use Omeka\Settings\SettingsInterface;
 
 /**
  * Reference
@@ -41,17 +42,27 @@ class Module extends AbstractModule
             );
     }
 
-    public function getConfigForm(PhpRenderer $renderer)
+    public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
-        $html = '<p>';
-        $html .= $renderer->translate('It is recommended to create reference with the blocks of the site pages.'); // @translate
-        $html .= ' ' . $renderer->translate('So these options are used only to create global pages.'); // @translate
-        $html .= '</p>';
-        $html .= '<p>';
-        $html .= $renderer->translate('This config allows to create routed pages for all sites.'); // @translate
-        $html .= ' ' . $renderer->translate('References are limited by the pool of each site.'); // @translate
-        $html .= '</p>';
-        return $html
-            . parent::getConfigForm($renderer);
+        $sharedEventManager->attach(
+            \Omeka\Form\SiteSettingsForm::class,
+            'form.add_elements',
+            [$this, 'handleSiteSettings']
+        );
+    }
+
+    protected function initDataToPopulate(SettingsInterface $settings, string $settingsType, $id = null, iterable $values = []): bool
+    {
+        // Check site settinbs , because array options cannot be set by default
+        // automatically.
+        if ($settingsType === 'site_settings') {
+            $exist = $settings->get('reference_resource_name');
+            if (is_null($exist)) {
+                $config = $this->getConfig();
+                $settings->set('reference_options', $config['reference']['site_settings']['reference_options']);
+                $settings->set('reference_slugs', $config['reference']['site_settings']['reference_slugs']);
+            }
+        }
+        return parent::initDataToPopulate($settings, $settingsType, $id, $values);
     }
 }

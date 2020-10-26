@@ -3,16 +3,19 @@
 namespace Reference\Form;
 
 use Laminas\Form\Element;
-use Laminas\Form\Form;
+use Laminas\Form\Fieldset;
 use Reference\Form\Element\DoubleArrayTextarea;
 use Reference\Form\Element\OptionalMultiCheckbox;
 
-class ConfigForm extends Form
+class SiteSettingsFieldset extends Fieldset
 {
+    /**
+     * @var string
+     */
+    protected $label = 'Reference'; // @translate
+
     public function init(): void
     {
-        // TODO Move most of these options to site level (and admin settings).
-
         $this
             ->add([
                 'name' => 'reference_resource_name',

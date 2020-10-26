@@ -9,7 +9,7 @@ class ReferenceController extends AbstractActionController
 {
     public function browseAction()
     {
-        $settings = $this->settings();
+        $settings = $this->siteSettings();
         $slugs = $settings->get('reference_slugs') ?: [];
         if (empty($slugs)) {
             return $this->notFoundAction();
@@ -40,7 +40,7 @@ class ReferenceController extends AbstractActionController
 
     public function listAction()
     {
-        $settings = $this->settings();
+        $settings = $this->siteSettings();
         $slugs = $settings->get('reference_slugs') ?: [];
         if (empty($slugs)) {
             return $this->forwardToItemBrowse();

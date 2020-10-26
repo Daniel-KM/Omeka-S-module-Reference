@@ -300,5 +300,23 @@ if (version_compare($oldVersion, '3.4.22.3.1', '<')) {
     // Move advanced site search improvements to module Advanced Search Plus.
     $settings->delete('reference_search_list_values');
 
+    // Move main config to each site.
+    $resourceName = $settings->get('reference_resource_name', 'items') ?: 'items';
+
+    $siteIds = $api->search('sites', [], ['initialize' => false, 'returnScalar' => 'id'])->getContent();
+    /** @var \Omeka\Settings\SiteSettings $siteSettings */
+    $siteSettings = $services->get('Omeka\Settings\Site');
+    foreach ($siteIds as $siteId) {
+        $siteSettings->setTargetId($siteId);
+        $siteSettings->set('reference_resource_name', $resourceName);
+        $siteSettings->set('reference_options', $newOptions);
+        $siteSettings->set('reference_slugs', $newSlugs);
+    }
+
+    $settings->delete('reference_resource_name');
+    $settings->delete('reference_options');
+    $settings->delete('reference_slugs');
+
+    // Final flush.
     $entityManager->flush();
 }
