@@ -154,6 +154,16 @@ if (version_compare($oldVersion, '3.4.16', '<')) {
 }
 
 if (version_compare($oldVersion, '3.4.22.3.1', '<')) {
+    $messenger = new Messenger();
+    $message = new Message(
+        'This release changed some features, so check your theme: the config has been moved to each site; the key "o-module-reference:values" is replaced by "o:references"; the helper $this->reference() is deprecated and is now an alias of $this->references().'
+    );
+    $messenger->addWarning($message);
+    $message = new Message(
+        'If you want to keep old features, use release 3.4.22.3.'
+    );
+    $messenger->addWarning($message);
+
     // Convert the main tree if any into a standard page with block Reference Tree.
     if ($settings->get('reference_tree_enabled')) {
         $term = $settings->get('reference_tree_term');
@@ -197,6 +207,18 @@ if (version_compare($oldVersion, '3.4.22.3.1', '<')) {
                 $entityManager->persist($page);
                 $entityManager->persist($block);
                 // Flush below.
+            }
+
+            $message = new Message(
+                'The main tree of references (/reference-tree) is now available only as a page block, not as a special page.'
+            );
+            $messenger->addWarning($message);
+            if (count($sites)) {
+                $message = new Message(
+                    'A new page with the tree of references (/page/reference-tree) has been added to %d sites with the existing config.',
+                    count($sites)
+                );
+                $messenger->addSuccess($message);
             }
         }
     }

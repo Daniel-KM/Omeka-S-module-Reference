@@ -16,38 +16,31 @@ The references are available via the api too, for example `/api/references?metad
 to get the list of all subjects, or `/api/references?metadata=foaf:Person` to
 get the list of all resources with class "Person".
 
-This [Omeka S] module is a rewrite of the [Reference plugin] for [Omeka] and
-intends to provide the same features as the original plugin.
+This [Omeka S] module is a rewrite and an improvement of the [Reference plugin]
+for [Omeka].
 
 
 Installation
 ------------
 
-The module uses an external library to support new version of mysql, so use the
-release zip to install the module, or use and init the source.
+See general end user documentation for [installing a module].
 
 * From the zip
 
-Download the last release [Reference.zip] from the list of releases (the
-master does not contain the dependency), and uncompress it in the `modules`
-directory.
+Download the last release [Reference.zip] from the list of releases, and
+uncompress it in the `modules` directory.
 
 * From the source and for development
 
 If the module was installed from the source, rename the name of the folder of
-the module to `Reference`, go to the root module, and run:
-
-```sh
-composer install --no-dev
-```
-
-See general end user documentation for [Installing a module].
+the module to `Reference`.
 
 ### Note for an upgrade from Omeka Classic
 
 The default slugs use the full term, with the vocabulary prefix, so the default
 route for subjects is now `reference/dcterms:subject` instead of `references/subject`.
-It can be changed in the main config form or pages can be created with any slug.
+It can be changed in the site settings form and pages can be created with any
+slug.
 
 Furthermore, the base route has been changed to singular `reference` instead of
 `references`. To keep or to create an alias for old plural routes, simply
@@ -62,14 +55,28 @@ necessary to modify the config.
 Usage
 -----
 
-The config form allows to select the terms to display.
+The site settigns allows to select the terms to display. The config is the same
+for the main site pages or in the block form for pages. It is recommended to use
+site pages when possible.
 
-The config is the same in the main config form or in the block form for pages.
+### Automatic site pages
+
+The module adds pages for selected resource classes and properties at https://www.example.com/s/my-site/reference.
+Available pages and options can be set in the site settings. Options are:
+
+- Print headings: Print headers for each section (#0-9 and symbols, A, B, etc.).
+- Print skip links: Print skip links at the top and bottom of each page, which
+  link to the alphabetical headers. Note that if headers are turned off,
+  skiplinks do not work.
+- Print individual total: Print the total of resources for each reference.
+- Link to single: When a reference has only one item, link to it directly
+  instead of to the items/browse page.
+- Custom url for single: May be set with modules such Clean Url or Ark. May slow
+  the display when there are many single references.
 
 ### Lists
 
-A block allows to display the lists in any page. Furthermore, the module adds
-pages in all sites, that can be added to the navigation at https://www.example.com/s/my-site/reference).
+A block allows to display the lists in any page. Furthermore,
 
 These contents can be displayed anywere via the view helper `references()`:
 
@@ -82,16 +89,12 @@ echo $this->references()->list('dcterms:subject', $query, $options);
 echo $this->references()->count('dcterms:subject', $query, $options);
 ```
 
-The references are available via the api too in `/api/references`. Arguments are
+The references are available via the api in `/api/references` too. Arguments are
 the same than above. This feature is available via the module [ApiInfo] too.
 
 ### Tree view
 
-Note: The tree of references will move in another module in a future version.
-
-The tree of references is available at http://www.example.com/s/my-site/reference-tree,
-but it's recommenced to use a block in a page.
-
+The tree of references can be build with the block page "Reference tree".
 The references should be formatted like:
 
 ```
@@ -105,8 +108,7 @@ Asia
 - Japan
 ```
 
-So, the format is the config page for the tree view is:
-
+So:
 - One reference by line.
 - Each reference is preceded by zero, one or more "-" to indicate the hierarchy
 level.
@@ -117,16 +119,14 @@ level.
 Via the helper:
 
 ```php
-// With custom values.
-$references = $this->reference()->getTree();
-echo $this->reference()->displayTree($references,
+echo $this->references()->displayTree(
+    // A dash list as a text or as an array of value/level.
+    $referenceLevels,
+    ['site_id' => 1],
     [
         'term' => $term,
         'type' => 'properties',
         'resource_name' => 'items',
-        'query' => ['site_id' => 1],
-    ],
-    [
         'query_type' => 'eq',
         'link_to_single' => true,
         'custom_url' => false,
@@ -161,7 +161,7 @@ or [Bulk Check] allows to do it automatically.
 TODO
 ----
 
-- [ ] Normalize output with `o:references` instead of `o-module-reference:values` (Omeka version 3.0).
+- [x] Normalize output with `o:references` instead of `o-module-reference:values` (Omeka version 3.0).
 - [x] Display values other than literal.
 - [ ] Manage pagination by letter and by number of references.
 - [ ] Create automatically the pages related to the block index in order to remove the global pages.
