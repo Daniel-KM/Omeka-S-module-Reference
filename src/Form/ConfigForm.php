@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace Reference\Form;
 
 use Omeka\Api\Manager as ApiManager;
@@ -18,7 +18,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
      */
     protected $api;
 
-    public function init()
+    public function init(): void
     {
         // TODO Move most of these options to site level (and admin settings).
 
@@ -153,7 +153,7 @@ class ConfigForm extends Form implements TranslatorAwareInterface
             'type' => Element\Textarea::class,
             'options' => [
                 'label' => 'Static tree of references', // @translate
-                'info' => $this->translate('If any, write the hierarchy of all your references in order to display them in the "Tree of references" page.') // @translate
+                'info' => $this->translate('If any, write the hierarchy of all your references in order to display them in the "Tree of references" page.') // @translate
                     . ' ' . $this->translate('Format is: one reference by line, preceded by zero, one or more "-" to indicate the hierarchy level.') // @translate
                     . ' ' . $this->translate('Separate the "-" and the reference with a space. Empty lines are not considered.') // @translate
                     . ' ' . $this->translate('Note: sql does case insensitive searches, so all references should be case-insensitively unique.'), // @translate
@@ -350,7 +350,7 @@ Asia ↵
         return $translator->translate($args);
     }
 
-    public function setApiManager(ApiManager $api)
+    public function setApiManager(ApiManager $api): void
     {
         $this->api = $api;
     }

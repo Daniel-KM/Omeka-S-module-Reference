@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace Reference;
 
 /**
@@ -16,11 +16,11 @@ $services = $serviceLocator;
  */
 $settings = $services->get('Omeka\Settings');
 $connection = $services->get('Omeka\Connection');
-$config = require dirname(dirname(__DIR__)) . '/config/module.config.php';
+$config = require dirname(__DIR__, 2) . '/config/module.config.php';
 
 // The reference plugin is not available during upgrade.
-include_once dirname(dirname(__DIR__)) . '/src/Mvc/Controller/Plugin/References.php';
-include_once dirname(dirname(__DIR__)) . '/src/Mvc/Controller/Plugin/Reference.php';
+include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/References.php';
+include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/Reference.php';
 $entityManager = $services->get('Omeka\EntityManager');
 $controllerPluginManager = $services->get('ControllerPluginManager');
 $api = $controllerPluginManager->get('api');

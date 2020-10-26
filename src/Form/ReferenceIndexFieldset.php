@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace Reference\Form;
 
 use Omeka\Form\Element\PropertySelect;
@@ -10,7 +10,7 @@ use Zend\Form\Form;
 // FIXME Use a fieldset, not a form.
 class ReferenceIndexFieldset extends Form
 {
-    public function init()
+    public function init(): void
     {
         $this
             ->add([

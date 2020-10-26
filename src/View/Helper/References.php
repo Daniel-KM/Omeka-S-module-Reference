@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace Reference\View\Helper;
 
 use Reference\Mvc\Controller\Plugin\References as ReferencesPlugin;

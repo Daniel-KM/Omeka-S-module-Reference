@@ -1,8 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 namespace Reference\Site\BlockLayout;
 
-use Omeka\Api\Representation\SitePageRepresentation;
 use Omeka\Api\Representation\SitePageBlockRepresentation;
+use Omeka\Api\Representation\SitePageRepresentation;
 use Omeka\Api\Representation\SiteRepresentation;
 use Omeka\Entity\SitePageBlock;
 use Omeka\Mvc\Controller\Plugin\Api;
@@ -36,7 +36,7 @@ class Reference extends AbstractBlockLayout
         return 'Reference'; // @translate
     }
 
-    public function onHydrate(SitePageBlock $block, ErrorStore $errorStore)
+    public function onHydrate(SitePageBlock $block, ErrorStore $errorStore): void
     {
         $data = $block->getData();
 
@@ -144,7 +144,7 @@ class Reference extends AbstractBlockLayout
         return $html;
     }
 
-    public function prepareRender(PhpRenderer $view)
+    public function prepareRender(PhpRenderer $view): void
     {
         $view->headLink()
             ->appendStylesheet($view->assetUrl('css/reference.css', 'Reference'));
@@ -174,7 +174,7 @@ class Reference extends AbstractBlockLayout
         $options['sort_by'] = key($args['order']) === 'alphabetic' ? 'alphabetic' : 'total';
         $options['per_page'] = 0;
 
-        $template = isset($options['template']) ? $options['template'] : self::PARTIAL_NAME;
+        $template = $options['template'] ?? self::PARTIAL_NAME;
         unset($options['template']);
 
         $vars = [

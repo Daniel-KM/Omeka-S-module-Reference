@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace Reference\Controller;
 
 use Omeka\View\Model\ApiJsonModel;

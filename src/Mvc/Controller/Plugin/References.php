@@ -1,9 +1,9 @@
-<?php
+<?php declare(strict_types=1);
 namespace Reference\Mvc\Controller\Plugin;
 
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Query\Expr\Join;
+use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Adapter\Manager as AdapterManager;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Mvc\Controller\Plugin\Translate;
@@ -893,7 +893,7 @@ class References extends AbstractPlugin
         return $this->outputMetadata($qb, 'o:item_set');
     }
 
-    protected function limitItemSetsToSite(QueryBuilder $qb)
+    protected function limitItemSetsToSite(QueryBuilder $qb): void
     {
         // @see \Omeka\Api\Adapter\ItemSetAdapter::buildQuery()
         if (isset($this->query['site_id']) && is_numeric($this->query['site_id'])) {
@@ -915,7 +915,7 @@ class References extends AbstractPlugin
         }
     }
 
-    protected function filterByDatatype(QueryBuilder $qb)
+    protected function filterByDatatype(QueryBuilder $qb): void
     {
         if ($this->options['filters']['datatypes']) {
             $expr = $qb->expr();
@@ -924,7 +924,7 @@ class References extends AbstractPlugin
         }
     }
 
-    protected function filterByLanguage(QueryBuilder $qb)
+    protected function filterByLanguage(QueryBuilder $qb): void
     {
         if ($this->options['filters']['languages']) {
             $expr = $qb->expr();
@@ -943,7 +943,7 @@ class References extends AbstractPlugin
         }
     }
 
-    protected function manageOptions(QueryBuilder $qb, $type)
+    protected function manageOptions(QueryBuilder $qb, $type): void
     {
         if (in_array($type, ['resource_classes', 'resource_templates', 'item_sets'])
             && $this->options['initial']
@@ -1284,7 +1284,7 @@ class References extends AbstractPlugin
      *
      * @param QueryBuilder $qb
      */
-    protected function limitQuery(QueryBuilder $qb)
+    protected function limitQuery(QueryBuilder $qb): void
     {
         if (empty($this->query)) {
             return;
@@ -1463,8 +1463,7 @@ class References extends AbstractPlugin
             'media' => \Omeka\Entity\Media::class,
             'resources' => \Omeka\Entity\Resource::class,
         ];
-        return isset($resourceEntityMap[$resourceName])
-            ? $resourceEntityMap[$resourceName]
-            : \Omeka\Entity\Resource::class;
+        return $resourceEntityMap[$resourceName]
+            ?? \Omeka\Entity\Resource::class;
     }
 }

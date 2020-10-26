@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace Reference\Mvc\Controller\Plugin;
 
 use Omeka\Api\Representation\PropertyRepresentation;
@@ -471,43 +471,35 @@ class Reference extends AbstractPlugin
             'raw' => isset($options['raw']) && $options['raw'],
         ];
 
-        $cleanedOptions['link_to_single'] = (bool) (isset($options['link_to_single'])
-            ? $options['link_to_single']
-            : $settings->get('reference_link_to_single'));
-        $cleanedOptions['custom_url'] = (bool) (isset($options['custom_url'])
-            ? $options['custom_url']
-            : $settings->get('custom_url'));
-        $cleanedOptions['total'] = (bool) (isset($options['total'])
-            ? $options['total']
-            : $settings->get('reference_total', true));
+        $cleanedOptions['link_to_single'] = (bool) ($options['link_to_single']
+            ?? $settings->get('reference_link_to_single'));
+        $cleanedOptions['custom_url'] = (bool) ($options['custom_url']
+            ?? $settings->get('custom_url'));
+        $cleanedOptions['total'] = (bool) ($options['total']
+            ?? $settings->get('reference_total', true));
 
         switch ($mode) {
             default:
             case 'list':
-                $cleanedOptions['headings'] = (bool) (isset($options['headings'])
-                    ? $options['headings']
-                    : $settings->get('reference_list_headings'));
-                $cleanedOptions['skiplinks'] = (bool) (isset($options['skiplinks'])
-                    ? $options['skiplinks']
-                    : $settings->get('reference_list_skiplinks'));
+                $cleanedOptions['headings'] = (bool) ($options['headings']
+                    ?? $settings->get('reference_list_headings'));
+                $cleanedOptions['skiplinks'] = (bool) ($options['skiplinks']
+                    ?? $settings->get('reference_list_skiplinks'));
                 $cleanedOptions['slug'] = empty($options['slug'])
                     ? $this->DC_Subject_id
                     : $options['slug'];
-                $cleanedOptions['include_without_meta'] = (bool) (isset($options['include_without_meta'])
-                    ? $options['include_without_meta']
-                    : $settings->get('reference_include_without_meta'));
+                $cleanedOptions['include_without_meta'] = (bool) ($options['include_without_meta']
+                    ?? $settings->get('reference_include_without_meta'));
                 break;
 
             case 'tree':
                 $cleanedOptions['query_type'] = isset($options['query_type'])
                     ? ($options['query_type'] == 'in' ? 'in' : 'eq')
                     : $settings->get('reference_tree_query_type', 'eq');
-                $cleanedOptions['branch'] = (bool) (isset($options['branch'])
-                    ? $options['branch']
-                    : $settings->get('reference_tree_branch', false));
-                $cleanedOptions['expanded'] = (bool) (isset($options['expanded'])
-                    ? $options['expanded']
-                    : $settings->get('reference_tree_expanded', false));
+                $cleanedOptions['branch'] = (bool) ($options['branch']
+                    ?? $settings->get('reference_tree_branch', false));
+                $cleanedOptions['expanded'] = (bool) ($options['expanded']
+                    ?? $settings->get('reference_tree_expanded', false));
                 break;
         }
 
@@ -603,7 +595,7 @@ class Reference extends AbstractPlugin
             'resource_templates' => 'o:resource_template',
             'item_sets' => 'o:item_set',
         ];
-        $term = isset($types[$type]) ? $types[$type] : 'o:property';
+        $term = $types[$type] ?? 'o:property';
 
         return $this->returnReferences($term, $entityClass, $order, $query, $values, $perPage, $page, $output, $initial, $includeWithoutMeta);
     }
@@ -803,9 +795,8 @@ class Reference extends AbstractPlugin
             \Omeka\Api\Representation\ItemRepresentation::class => \Omeka\Entity\Item::class,
             \Omeka\Api\Representation\MediaRepresentation::class => \Omeka\Entity\Media::class,
         ];
-        return isset($resourceEntityMap[$resourceName])
-            ? $resourceEntityMap[$resourceName]
-            : null;
+        return $resourceEntityMap[$resourceName]
+            ?? null;
     }
 
     /**
@@ -822,8 +813,7 @@ class Reference extends AbstractPlugin
             \Omeka\Entity\Item::class => 'items',
             \Omeka\Entity\Media::class => 'media',
         ];
-        return isset($entityResourceMap[$entityClass])
-            ? $entityResourceMap[$entityClass]
-            : null;
+        return $entityResourceMap[$entityClass]
+            ?? null;
     }
 }

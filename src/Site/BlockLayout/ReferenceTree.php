@@ -1,8 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 namespace Reference\Site\BlockLayout;
 
-use Omeka\Api\Representation\SitePageRepresentation;
 use Omeka\Api\Representation\SitePageBlockRepresentation;
+use Omeka\Api\Representation\SitePageRepresentation;
 use Omeka\Api\Representation\SiteRepresentation;
 use Omeka\Entity\SitePageBlock;
 use Omeka\Mvc\Controller\Plugin\Api;
@@ -45,7 +45,7 @@ class ReferenceTree extends AbstractBlockLayout
         return 'Reference tree'; // @translate
     }
 
-    public function onHydrate(SitePageBlock $block, ErrorStore $errorStore)
+    public function onHydrate(SitePageBlock $block, ErrorStore $errorStore): void
     {
         $data = $block->getData();
 
@@ -122,7 +122,7 @@ class ReferenceTree extends AbstractBlockLayout
         return $html;
     }
 
-    public function prepareRender(PhpRenderer $view)
+    public function prepareRender(PhpRenderer $view): void
     {
         $view->headLink()->appendStylesheet($view->assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));
         $view->headScript()->appendFile($view->assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'), 'text/javascript', ['defer' => 'defer']);
@@ -138,7 +138,7 @@ class ReferenceTree extends AbstractBlockLayout
         unset($args['tree']);
         $total = count($tree);
 
-        $template = isset($options['template']) ? $options['template'] : self::PARTIAL_NAME;
+        $template = $options['template'] ?? self::PARTIAL_NAME;
         unset($options['template']);
 
         $vars = [

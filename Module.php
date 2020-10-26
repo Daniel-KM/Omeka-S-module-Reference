@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace Reference;
 
 if (!class_exists(\Generic\AbstractModule::class)) {
@@ -30,12 +30,12 @@ class Module extends AbstractModule
 {
     const NAMESPACE = __NAMESPACE__;
 
-    public function init(ModuleManager $moduleManager)
+    public function init(ModuleManager $moduleManager): void
     {
         require_once __DIR__ . '/vendor/autoload.php';
     }
 
-    public function onBootstrap(MvcEvent $event)
+    public function onBootstrap(MvcEvent $event): void
     {
         parent::onBootstrap($event);
 
@@ -51,7 +51,7 @@ class Module extends AbstractModule
             );
     }
 
-    public function attachListeners(SharedEventManagerInterface $sharedEventManager)
+    public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
         $sharedEventManager->attach(
             'Omeka\Controller\Site\Item',
@@ -258,7 +258,7 @@ class Module extends AbstractModule
         }
     }
 
-    public function handleViewAdvancedSearch(Event $event)
+    public function handleViewAdvancedSearch(Event $event): void
     {
         $services = $this->getServiceLocator();
         $settings = $services->get('Omeka\Settings');
