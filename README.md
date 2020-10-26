@@ -171,7 +171,7 @@ TODO
 - [x] Display values other than literal.
 - [ ] Manage pagination by letter and by number of references.
 - [ ] Create automatically the pages related to the block index in order to remove the global pages.
-- [ ] Fix initials for some letters ([#2](https://github.com/Daniel-KM/Omeka-S-module-Reference/issues/2)) via a custom DQL function for `convert`.
+- [ ] Fix initials for some letters ([#2](https://gitlab.com/Daniel-KM/Omeka-S-module-Reference/-/issues/2)) via a custom DQL function for `convert`.
 - [ ] Manage references inside admin board.
 - [ ] Manage advanced search reference by site and in admin board.
 - [ ] Make the reference recursive (two levels currently).
@@ -191,7 +191,7 @@ your archives regularly so you can roll back if needed.
 Troubleshooting
 ---------------
 
-See online issues on the [module issues] page on GitHub.
+See online issues on the [module issues] page on GitLab.
 
 
 License
@@ -225,10 +225,10 @@ Copyright
 
 * Copyright William Mayo, 2011
 * Copyright Philip Collins, 2013 ([jQuery tree view])
-* Copyright Daniel Berthereau, 2014-2020 (see [Daniel-KM] on GitHub)
+* Copyright Daniel Berthereau, 2014-2020 (see [Daniel-KM] on GitLab)
 
 This module is inspired from earlier work done by William Mayo (see [pobocks] on
-GitHub) in [Subject Browse], with some ideas from [Metadata Browser] and
+GitLab) in [Subject Browse], with some ideas from [Metadata Browser] and
 [Category Browse], that have been upgraded for Omeka 2.x too ([Subject Browse (2.x)],
 [Metadata Browser (2.x)], and [Category Browse (2.x)]). They are no longer
 maintained. Upgrade and improvements were made for [Jane Addams Digital Edition].
@@ -236,15 +236,15 @@ Performance fixes were made for Article 19.
 
 
 [Omeka S]: https://omeka.org/s
-[Reference]: https://github.com/Daniel-KM/Omeka-S-module-Reference
+[Reference]: https://gitlab.com/Daniel-KM/Omeka-S-module-Reference
 [Omeka]: https://omeka.org/classic
-[Reference plugin]: https://github.com/Daniel-KM/Omeka-plugin-Reference
-[Reference.zip]: https://github.com/Daniel-KM/Omeka-S-module-Reference/releases
+[Reference plugin]: https://gitlab.com/Daniel-KM/Omeka-plugin-Reference
+[Reference.zip]: https://gitlab.com/Daniel-KM/Omeka-S-module-Reference/-/releases
 [Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
-[ApiInfo]: https://github.com/Daniel-KM/Omeka-S-module-ApiInfo
-[Bulk Edit]: https://github.com/Daniel-KM/Omeka-S-module-BulkEdit
-[Bulk Check]: https://github.com/Daniel-KM/Omeka-S-module-BulkCheck
-[module issues]: https://github.com/Daniel-KM/Omeka-S-module-Reference/issues
+[ApiInfo]: https://gitlab.com/Daniel-KM/Omeka-S-module-ApiInfo
+[Bulk Edit]: https://gitlab.com/Daniel-KM/Omeka-S-module-BulkEdit
+[Bulk Check]: https://gitlab.com/Daniel-KM/Omeka-S-module-BulkCheck
+[module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-Reference/-/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
 [FSF]: https://www.fsf.org
@@ -255,9 +255,9 @@ Performance fixes were made for Article 19.
 [Subject Browse]: https://github.com/pobocks/SubjectBrowse
 [Metadata Browser]: https://github.com/kevinreiss/Omeka-MetadataBrowser
 [Category Browse]: https://github.com/kevinreiss/Omeka-CategoryBrowse
-[Subject Browse (2.x)]: https://github.com/Daniel-KM/Omeka-plugin-Reference/tree/subject_browse
-[Metadata Browser (2.x)]: https://github.com/Daniel-KM/Omeka-plugin-MetadataBrowser
-[Category Browse (2.x)]: https://github.com/Daniel-KM/Omeka-plugin-CategoryBrowse
+[Subject Browse (2.x)]: https://gitlab.com/Daniel-KM/Omeka-plugin-Reference/-/tree/subject_browse
+[Metadata Browser (2.x)]: https://gitlab.com/Daniel-KM/Omeka-plugin-MetadataBrowser
+[Category Browse (2.x)]: https://gitlab.com/Daniel-KM/Omeka-plugin-CategoryBrowse
 [Jane Addams Digital Edition]: http://digital.janeaddams.ramapo.edu
 [GitLab]: https://gitlab.com/Daniel-KM
-[Daniel-KM]: https://github.com/Daniel-KM "Daniel Berthereau"
+[Daniel-KM]: https://gitlab.com/Daniel-KM "Daniel Berthereau"
