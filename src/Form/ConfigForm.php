@@ -72,17 +72,6 @@ dcterms:subject = dcterms:subject = Subjects
 ',
                 ],
             ])
-            ->add([
-                'name' => 'reference_search_list_values',
-                'type' => Element\Checkbox::class,
-                'options' => [
-                    'label' => 'List values in advanced search', // @translate
-                    'info' => 'Dynamically list all available properties in the advanced search public form.', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'reference_search_list_values',
-                ],
-            ])
         ;
     }
 }

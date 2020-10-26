@@ -297,5 +297,8 @@ if (version_compare($oldVersion, '3.4.22.3.1', '<')) {
     }
     $settings->set('reference_options', $newOptions);
 
+    // Move advanced site search improvements to module Advanced Search Plus.
+    $settings->delete('reference_search_list_values');
+
     $entityManager->flush();
 }

@@ -80,37 +80,3 @@ ul.references li {
     flex: 1;
     min-width: 0;
 }
-
-/* Advanced search */
-/* These rules should be adapted to the theme, in particular the sizes. */
-#property-queries .chosen-container-single {
-    min-width: 40%;
-    max-width: 80%;
-}
-#property-queries .chosen-container-single .chosen-single {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background: inherit;
-    border: inherit;
-    border-radius: inherit;
-    color: inherit;
-    height: inherit;
-    font-family: inherit;
-    vertical-align: inherit;
-    height: inherit;
-    font-size: 16px;
-    line-height: 32px;
-    margin: 0 0 0 5px;
-    padding: 6px;
-}
-
-/* Adaptation for official theme Cozy */
-/*
-#property-queries .chosen-container-single .chosen-single {
-    border: 1px solid #000;
-    height: 36px;
-    line-height: inherit;
-    padding: 5px;
-}
-*/

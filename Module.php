@@ -9,8 +9,6 @@ if (!class_exists(\Generic\AbstractModule::class)) {
 }
 
 use Generic\AbstractModule;
-use Laminas\EventManager\Event;
-use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\Mvc\MvcEvent;
 use Laminas\View\Renderer\PhpRenderer;
 
@@ -26,11 +24,6 @@ use Laminas\View\Renderer\PhpRenderer;
 class Module extends AbstractModule
 {
     const NAMESPACE = __NAMESPACE__;
-
-    public function init(ModuleManager $moduleManager): void
-    {
-        require_once __DIR__ . '/vendor/autoload.php';
-    }
 
     public function onBootstrap(MvcEvent $event): void
     {
@@ -48,15 +41,6 @@ class Module extends AbstractModule
             );
     }
 
-    public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
-    {
-        $sharedEventManager->attach(
-            'Omeka\Controller\Site\Item',
-            'view.advanced_search',
-            [$this, 'handleViewAdvancedSearch']
-        );
-    }
-
     public function getConfigForm(PhpRenderer $renderer)
     {
         $html = '<p>';
@@ -69,25 +53,5 @@ class Module extends AbstractModule
         $html .= '</p>';
         return $html
             . parent::getConfigForm($renderer);
-    }
-
-    public function handleViewAdvancedSearch(Event $event): void
-    {
-        $services = $this->getServiceLocator();
-        $settings = $services->get('Omeka\Settings');
-        if (!$settings->get('reference_search_list_values', false)) {
-            return;
-        }
-
-        $view = $event->getTarget();
-        $assetUrl = $view->plugin('assetUrl');
-        $view->headLink()
-            ->appendStylesheet($assetUrl('vendor/chosen-js/chosen.css', 'Omeka'))
-            ->appendStylesheet($assetUrl('css/reference.css', 'Reference'));
-        $view->headScript()
-            ->appendFile($assetUrl('vendor/chosen-js/chosen.jquery.js', 'Omeka'), 'text/javascript', ['defer' => 'defer'])
-            ->appendFile($assetUrl('js/reference-advanced-search.js', 'Reference'), 'text/javascript', ['defer' => 'defer'])
-            ->appendScript('var basePath = ' . json_encode($view->basePath()) . ';' . PHP_EOL
-                . 'var siteSlug = ' . json_encode($view->params()->fromRoute('site-slug')));
     }
 }

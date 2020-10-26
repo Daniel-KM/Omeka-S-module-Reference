@@ -148,7 +148,6 @@ return [
                     'label' => 'Subject',
                 ],
             ],
-            'reference_search_list_values' => false,
         ],
         // Default for blocks.
         'block_settings' => [
