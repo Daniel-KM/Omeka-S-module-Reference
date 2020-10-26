@@ -714,7 +714,7 @@ class Reference extends AbstractPlugin
         }
 
         $result = reset($result);
-        return $result['o-module-reference:values'];
+        return $result['o:references'];
     }
 
     /**

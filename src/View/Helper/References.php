@@ -168,8 +168,8 @@ class References extends AbstractHelper
         // Keep original option for key first.
         $options['first'] = $firstId;
 
-        $list = $first['o-module-reference:values'];
-        unset($first['o-module-reference:values']);
+        $list = $first['o:references'];
+        unset($first['o:references']);
 
         $template = empty($options['template']) ? 'common/reference' : $options['template'];
         unset($options['template']);
