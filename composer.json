@@ -22,39 +22,9 @@
         "tree view",
         "lexicon"
     ],
-    "replace": {
-        "psr/container": "self.version",
-        "symfony/service-contracts": "self.version",
-        "symfony/polyfill-php73": "self.version",
-        "symfony/polyfill-mbstring": "self.version",
-        "symfony/console": "self.version",
-        "doctrine/lexer": "self.version",
-        "doctrine/annotations": "self.version",
-        "doctrine/reflection": "self.version",
-        "doctrine/event-manager": "self.version",
-        "doctrine/collections": "self.version",
-        "doctrine/cache": "self.version",
-        "doctrine/persistence": "self.version",
-        "doctrine/instantiator": "self.version",
-        "doctrine/dbal": "self.version",
-        "doctrine/inflector": "self.version",
-        "doctrine/common": "self.version",
-        "doctrine/orm": "self.version"
-    },
-    "require": {
-        "beberlei/doctrineextensions": "^1.2"
-    },
-    "require-dev" : {
-        "biblibre/omeka-s-test-helper" : "dev-master"
-    },
     "autoload" : {
         "psr-4" : {
             "Reference\\" : "src/"
-        }
-    },
-    "autoload-dev" : {
-        "psr-4" : {
-            "ReferenceTest\\" : "test/ReferenceTest/"
         }
     }
 }
