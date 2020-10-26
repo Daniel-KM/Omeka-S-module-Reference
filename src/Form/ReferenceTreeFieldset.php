@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 namespace Reference\Form;
 
-use Omeka\Form\Element\PropertySelect;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 use Laminas\Form\Form;
+use Omeka\Form\Element\PropertySelect;
 
 // FIXME Use a fieldset, not a form.
 class ReferenceTreeFieldset extends Form

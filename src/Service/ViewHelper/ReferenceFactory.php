@@ -2,8 +2,8 @@
 namespace Reference\Service\ViewHelper;
 
 use Interop\Container\ContainerInterface;
-use Reference\View\Helper\Reference;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Reference\View\Helper\Reference;
 
 class ReferenceFactory implements FactoryInterface
 {

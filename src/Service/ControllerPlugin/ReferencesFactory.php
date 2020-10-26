@@ -2,8 +2,8 @@
 namespace Reference\Service\ControllerPlugin;
 
 use Interop\Container\ContainerInterface;
-use Reference\Mvc\Controller\Plugin\References;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Reference\Mvc\Controller\Plugin\References;
 
 class ReferencesFactory implements FactoryInterface
 {

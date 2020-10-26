@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 namespace Reference\Form;
 
-use Omeka\Form\Element\PropertySelect;
-use Omeka\Form\Element\ResourceClassSelect;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 use Laminas\Form\Form;
+use Omeka\Form\Element\PropertySelect;
+use Omeka\Form\Element\ResourceClassSelect;
 
 // FIXME Use a fieldset, not a form.
 class ReferenceIndexFieldset extends Form

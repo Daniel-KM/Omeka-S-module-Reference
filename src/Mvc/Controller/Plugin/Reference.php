@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 namespace Reference\Mvc\Controller\Plugin;
 
+use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Api\Representation\PropertyRepresentation;
 use Omeka\Api\Representation\ResourceClassRepresentation;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Reference\Mvc\Controller\Plugin\References as ReferencesPlugin;
-use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 
 /**
  * @deprecated Use \Reference\Mvc\Controller\Plugin\References and \Reference\View\Helper\References instead.

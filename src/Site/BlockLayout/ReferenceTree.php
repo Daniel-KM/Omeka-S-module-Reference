@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Reference\Site\BlockLayout;
 
+use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Api\Representation\SitePageBlockRepresentation;
 use Omeka\Api\Representation\SitePageRepresentation;
 use Omeka\Api\Representation\SiteRepresentation;
@@ -9,7 +10,6 @@ use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
 use Omeka\Stdlib\ErrorStore;
 use Reference\Mvc\Controller\Plugin\Reference as ReferencePlugin;
-use Laminas\View\Renderer\PhpRenderer;
 
 class ReferenceTree extends AbstractBlockLayout
 {

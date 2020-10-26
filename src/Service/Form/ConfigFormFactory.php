@@ -2,8 +2,8 @@
 namespace Reference\Service\Form;
 
 use Interop\Container\ContainerInterface;
-use Reference\Form\ConfigForm;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Reference\Form\ConfigForm;
 
 class ConfigFormFactory implements FactoryInterface
 {

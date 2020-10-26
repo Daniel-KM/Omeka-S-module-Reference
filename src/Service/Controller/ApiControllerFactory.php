@@ -2,8 +2,8 @@
 namespace Reference\Service\Controller;
 
 use Interop\Container\ContainerInterface;
-use Reference\Controller\ApiController;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Reference\Controller\ApiController;
 
 class ApiControllerFactory implements FactoryInterface
 {

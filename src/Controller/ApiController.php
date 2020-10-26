@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 namespace Reference\Controller;
 
-use Omeka\View\Model\ApiJsonModel;
 use Laminas\Http\Response;
+use Omeka\View\Model\ApiJsonModel;
 
 /**
  * This controller extends the Omeka Api controller in order to manage rights

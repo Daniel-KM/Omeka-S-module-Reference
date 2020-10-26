@@ -4,10 +4,10 @@ namespace Reference\Mvc\Controller\Plugin;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
+use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Api\Adapter\Manager as AdapterManager;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Mvc\Controller\Plugin\Translate;
-use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 
 class References extends AbstractPlugin
 {
@@ -1463,7 +1463,6 @@ class References extends AbstractPlugin
             'media' => \Omeka\Entity\Media::class,
             'resources' => \Omeka\Entity\Resource::class,
         ];
-        return $resourceEntityMap[$resourceName]
-            ?? \Omeka\Entity\Resource::class;
+        return $resourceEntityMap[$resourceName] ?? \Omeka\Entity\Resource::class;
     }
 }

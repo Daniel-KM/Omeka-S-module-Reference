@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 namespace Reference\Form;
 
-use Omeka\Api\Manager as ApiManager;
-use Omeka\Form\Element\PropertySelect;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 use Laminas\Form\Form;
 use Laminas\I18n\Translator\TranslatorAwareInterface;
 use Laminas\I18n\Translator\TranslatorAwareTrait;
+use Omeka\Api\Manager as ApiManager;
+use Omeka\Form\Element\PropertySelect;
 
 class ConfigForm extends Form implements TranslatorAwareInterface
 {

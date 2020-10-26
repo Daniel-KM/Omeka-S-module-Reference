@@ -2,8 +2,8 @@
 namespace Reference\Service\BlockLayout;
 
 use Interop\Container\ContainerInterface;
-use Reference\Site\BlockLayout\ReferenceTree;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Reference\Site\BlockLayout\ReferenceTree;
 
 class ReferenceTreeFactory implements FactoryInterface
 {
