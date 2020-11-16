@@ -71,7 +71,7 @@ class ReferenceIndex extends AbstractBlockLayout
         }
 
         $query = [];
-        parse_str($data['args']['query'], $query);
+        parse_str((string) $data['args']['query'], $query);
         $data['args']['query'] = $query;
 
         $data['args']['order'] = empty($data['args']['order'])

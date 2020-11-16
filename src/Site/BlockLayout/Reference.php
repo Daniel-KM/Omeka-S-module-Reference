@@ -59,7 +59,7 @@ class Reference extends AbstractBlockLayout
             $data['args']['resource_name'] = 'items';
         }
         $query = [];
-        parse_str($data['args']['query'], $query);
+        parse_str((string) $data['args']['query'], $query);
         $data['args']['query'] = $query;
 
         $data['args']['order'] = empty($data['args']['order'])
