@@ -225,7 +225,7 @@ class References extends AbstractPlugin
                 'per_page' => isset($options['per_page']) && is_numeric($options['per_page']) ? (int) $options['per_page'] : $defaults['per_page'],
                 'page' => $options['page'] ?? $defaults['page'],
                 'sort_by' => $options['sort_by'] ?? 'alphabetic',
-                'sort_order' => isset($options['sort_order']) && strtolower($options['sort_order']) === 'desc' ? 'DESC' : 'ASC',
+                'sort_order' => isset($options['sort_order']) && strtolower((string) $options['sort_order']) === 'desc' ? 'DESC' : 'ASC',
                 'filters' => @$options['filters'] ? $options['filters'] + $defaults['filters'] : $defaults['filters'],
                 'values' => $options['values'] ?? [],
                 'first' => $first,
@@ -1017,16 +1017,21 @@ class References extends AbstractPlugin
             $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
             $result = array_map(function ($v) use ($transliterator) {
                 $v['total'] = (int) $v['total'];
-                $v['initial'] = $transliterator->transliterate($v['initial']);
+                $v['initial'] = $transliterator->transliterate((string) $v['initial']);
                 return $v;
             }, $result);
         } elseif (extension_loaded('iconv') && $this->options['initial']) {
             $result = array_map(function ($v) {
                 $v['total'] = (int) $v['total'];
-                $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $v['initial']);
-                if ($trans) {
-                    $v['initial'] = $trans;
-                }
+                $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', (string) $v['initial']);
+                $v['initial'] = $trans === false ? (string) $v['initial'] : $trans;
+                return $v;
+            }, $result);
+        } elseif ($this->options['initial']) {
+            // Convert null into empty string.
+            $result = array_map(function ($v) {
+                $v['total'] = (int) $v['total'];
+                $v['initial'] = (string) $v['initial'];
                 return $v;
             }, $result);
         } else {
