@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-10-26 00:00+0000\n"
+"POT-Creation-Date: 2020-12-07 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,11 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/Controller/ApiController.php:29 src/Controller/ApiController.php:37
-#: src/Controller/ApiController.php:45 src/Controller/ApiController.php:53
-#: src/Controller/ApiController.php:89 src/Controller/ApiController.php:97
-#: src/Controller/ApiController.php:105 src/Controller/ApiController.php:113
-#: src/Controller/ApiController.php:121 src/Controller/ApiController.php:129
+#: src/Controller/ApiController.php:111
 msgid "Method Not Allowed"
 msgstr ""
 
@@ -39,14 +35,14 @@ msgstr ""
 msgid "This module has resources that connot be installed."
 msgstr ""
 
-#: src/Generic/AbstractModule.php:709
+#: src/Generic/AbstractModule.php:710
 #, php-format
 msgid ""
 "The module \"%s\" was automatically deactivated because the dependencies are "
 "unavailable."
 msgstr ""
 
-#: src/Site/BlockLayout/Reference.php:142
+#: src/Site/BlockLayout/Reference.php:143
 msgid "Choose a property or a resource class."
 msgstr ""
 
@@ -78,6 +74,15 @@ msgstr ""
 msgid "Browse %s"
 msgstr ""
 
+#: view/common/reference.phtml:43
+msgid "See all…"
+msgstr ""
+
+#: view/common/reference.phtml:44
+#, php-format
+msgid "And %d more."
+msgstr ""
+
 #: view/reference/site/reference/browse.phtml:28
 msgid "No references available."
 msgstr ""
@@ -96,6 +101,18 @@ msgstr ""
 msgid "There is no references for \"%s\"."
 msgstr ""
 
+#: data/scripts/upgrade.php:348
+msgid ""
+"It is possible now to limit the list of references, for example only the of "
+"subjects starting with \"a\" with argument \"filters[begin]=a\"."
+msgstr ""
+
+#: data/scripts/upgrade.php:353
+msgid ""
+"It is possible now to list not only references, but resources by reference, "
+"for example all documents of an author or all items with each subject."
+msgstr ""
+
 #: src/Form/ReferenceTreeFieldset.php:18
 msgid "Block title"
 msgstr ""
@@ -105,7 +122,7 @@ msgid "Heading for the block, if any. The placeholder {total} can be used."
 msgstr ""
 
 #: src/Form/ReferenceTreeFieldset.php:37 src/Form/ReferenceFieldset.php:33
-#: src/Form/ReferenceFieldset.php:178
+#: src/Form/ReferenceFieldset.php:192
 msgid "Select a property…"
 msgstr ""
 
@@ -207,7 +224,7 @@ msgid ""
 msgstr ""
 
 #: src/Form/ReferenceTreeFieldset.php:179
-#: src/Form/ReferenceIndexFieldset.php:156 src/Form/ReferenceFieldset.php:188
+#: src/Form/ReferenceIndexFieldset.php:156 src/Form/ReferenceFieldset.php:202
 msgid "Template to display"
 msgstr ""
 
@@ -329,16 +346,29 @@ msgid "Add first letter as headings between references"
 msgstr ""
 
 #: src/Form/ReferenceFieldset.php:169
-msgid "Subject values"
+msgid "Maximum resources to display by reference"
 msgstr ""
 
 #: src/Form/ReferenceFieldset.php:170
 msgid ""
-"Allow to list related resources, for example to get a list of documents by "
-"author."
+"For example, display the items by subject. Let 0 to display a simple list. "
+"Maximum is 1024."
 msgstr ""
 
-#: src/Form/ReferenceFieldset.php:189
+#: src/Form/ReferenceFieldset.php:183
+msgid "Subject values"
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:184
+msgid ""
+"Allow to list related resources. For example, in a library where there are "
+"items of types \"Authors\" and \"Documents\", and if the creator of the "
+"documents are linked resources, then select \"Creator\" to see the list of "
+"documents by author. This option is skipped when option \"max by reference\" "
+"is used."
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:203
 msgid ""
 "Templates are in folder \"common/block-layout\" of the theme and should "
 "start with \"reference\"."
@@ -352,7 +382,7 @@ msgstr ""
 msgid "Reference tree"
 msgstr ""
 
-#: src/Site/BlockLayout/ReferenceIndex.php:36 config/module.config.php:184
+#: src/Site/BlockLayout/ReferenceIndex.php:36 config/module.config.php:185
 msgid "Reference index"
 msgstr ""
 
@@ -365,6 +395,6 @@ msgstr ""
 msgid "Subjects"
 msgstr ""
 
-#: config/module.config.php:190
+#: config/module.config.php:191
 msgid "Tree of subjects"
 msgstr ""
