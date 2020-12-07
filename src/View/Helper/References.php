@@ -66,6 +66,8 @@ class References extends AbstractHelper
      *     Use module Bulk Edit or Bulk Check to specify all resources automatically.
      * - values: array Allow to limit the answer to the specified values.
      * - first: false (default), or true (get first resource).
+     * - list_by_max: 0 (default), or the max number of resources for each reference)
+     *   The max number should be below 1024 (mysql limit for group_concat).
      * - initial: false (default), or true (get first letter of each result).
      * - distinct: false (default), or true (distinct values by type).
      * - datatype: false (default), or true (include datatype of values).
@@ -159,8 +161,8 @@ class References extends AbstractHelper
             }
         }
 
-        $ref = $this->references;
-        $list = $ref([$term], $query, $options)->list();
+        $ref = $this->references->__invoke([$term], $query, $options);
+        $list = $ref->list();
 
         $first = reset($list);
         $options = $ref->getOptions() + $options;

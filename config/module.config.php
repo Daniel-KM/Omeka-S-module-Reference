@@ -167,7 +167,7 @@ return [
                     'skiplinks' => true,
                     'headings' => true,
                     'total' => true,
-                    'list_by' => 0,
+                    'list_by_max' => 0,
                     'subject_property' => null,
                     'template' => '',
                 ],

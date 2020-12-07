@@ -82,6 +82,7 @@ class Reference extends AbstractBlockLayout
         $data['options']['skiplinks'] = (bool) $data['options']['skiplinks'];
         $data['options']['headings'] = (bool) $data['options']['headings'];
         $data['options']['total'] = (bool) $data['options']['total'];
+        $data['options']['list_by_max'] = (int) $data['options']['list_by_max'];
 
         unset($data['args']['property']);
         unset($data['args']['resource_class']);

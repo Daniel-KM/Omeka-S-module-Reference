@@ -12,12 +12,15 @@
 // The templates are prepared for each case, in particular to avoid to call url(),
 // then the references are looped to replace placeholders.
 
+// The sub-level (list by) is limited to 1024 resources by mysql (group_concat).
+
 // It is recommended to skip "link_to_single" when there are more than 5000
 // references on a page and there are custom_url (clean url, ark...) with many
 // single values.
 
 if (count($references)):
     $translate = $this->plugin('translate');
+    $escape = $this->plugin('escapeHtml');
     $url = $this->plugin('url');
     $siteSlug = $this->params()->fromRoute('site-slug');
     $api = $this->api();
@@ -36,9 +39,11 @@ if (count($references)):
     $propertyTitle = 'dcterms:title';
     $termId = $field['o:id'];
     $term = @$field['o:term'];
-    $listBy = empty($options['list_by']) ? false : (int) $options['list_by'];
+    $listByMax = empty($options['list_by_max']) ? false : (int) $options['list_by_max'];
+    $seeAll = $escape($translate('See all…')); // @translate
+    $andMore = $escape($translate('And %d more.')); // @translate
     $hasSubjectProperty = !empty($options['subject_property']);
-    $seeAll = $this->escapeHtml($translate('See all…')); // @translate
+    $options['link_to_single'] = $options['link_to_single'] && !$listByMax;
 
     $queryKeys = [
         'o:ResourceClass' => 'resource_class_id',
@@ -209,25 +214,39 @@ if (count($references)):
         $recursive = '';
         // TODO To be improved to avoid to read from the api (resources by reference or linked resources).
         // TODO Make it recursive.
-        if ($listBy):
-            $response = $api->search('items', $querier($reference, $emptyReferenceValue, $listBy));
-            // By construction, there are always at least one result, but a check is done to avoid weird issues.
-            $totalByReference = $response->getTotalResults();
-            if ($totalByReference):
-                $recursive .= '<ul class="recursive-list">';
-                foreach ($response->getContent() as $resourceByRef):
+        if ($listByMax):
+            $recursive .= '<ul class="recursive-list">';
+            if ($options['raw']):
+                foreach ($referenceData['resources'] as $resId => $resTitle):
                     $recursive .= '<li>';
-                    $recursive .= $resourceByRef->linkPretty();
+                    $recursive .= $escape($resTitle);
                     $recursive .= '</li>';
                 endforeach;
-                $hasMore = $totalByReference > $listBy;
+                $hasMore = $referenceData['total'] > $listByMax;
                 if ($hasMore):
                     $recursive .= '<li class="see-all">';
-                    $recursive .= '<a href="' . $referenceUrl . '">' . $seeAll . '</a>';
+                    $recursive .= sprintf($andMore, $referenceData['total'] - $listByMax);
                     $recursive .= '</li>';
                 endif;
-                $recursive .= '</ul>';
+            elseif ($referenceData['total'] === 1):
+                $recursive .= '<li>';
+                $recursive .= '<a href="' . $referenceUrl . '">' . $escape(reset($referenceData['resources'])) . '</a>';
+                $recursive .= '</li>';
+            else:
+                // The link is not pretty for speed purpose.
+                foreach ($referenceData['resources'] as $resId => $resTitle):
+                    $recursive .= '<li>';
+                    $recursive .= '<a href="' . str_replace('{reference}', $resId, $templateUrlSingle) . '">' . $escape($resTitle) . '</a>';
+                    $recursive .= '</li>';
+                endforeach;
             endif;
+            $hasMore = $referenceData['total'] > $listByMax;
+            if ($hasMore):
+                $recursive .= '<li class="see-all">';
+                $recursive .= '<a href="' . $referenceUrl . '">' . $seeAll . '</a>';
+                $recursive .= '</li>';
+            endif;
+            $recursive .= '</ul>';
         elseif ($hasSubjectProperty && !empty($referenceData['first'])):
             /** @var \Omeka\Api\Representation\AbstractResourceEntityRepresentation $res */
             $res = $api->read('resources', $referenceData['first'])->getContent();
@@ -236,11 +255,19 @@ if (count($references)):
             if (count($subjectValues)):
                 $recursive .= '<ul class="recursive-list">';
                 /** @var \Omeka\Api\Representation\ValueRepresentation $subjectValue */
-                foreach ($subjectValues[$options['subject_property']['term']] as $subjectValue):
-                    $recursive .= '<li>';
-                    $recursive .= $subjectValue->resource()->linkPretty();
-                    $recursive .= '</li>';
-                endforeach;
+                if ($options['raw']):
+                    foreach ($subjectValues[$options['subject_property']['term']] as $subjectValue):
+                        $recursive .= '<li>';
+                        $recursive .= $escape($subjectValue->resource()->displayTitle());
+                        $recursive .= '</li>';
+                    endforeach;
+                else:
+                    foreach ($subjectValues[$options['subject_property']['term']] as $subjectValue):
+                        $recursive .= '<li>';
+                        $recursive .= $subjectValue->resource()->linkPretty();
+                        $recursive .= '</li>';
+                    endforeach;
+                endif;
                 $recursive .= '</ul>';
             endif;
         endif;

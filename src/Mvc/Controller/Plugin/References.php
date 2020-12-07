@@ -117,6 +117,8 @@ class References extends AbstractPlugin
      *     Use module Bulk Edit or Bulk Check to specify all resources automatically.
      * - values: array Allow to limit the answer to the specified values.
      * - first: false (default), or true (get first resource).
+     * - list_by_max: 0 (default), or the max number of resources for each reference)
+     *   The max number should be below 1024 (mysql limit for group_concat).
      * - initial: false (default), or true (get first letter of each result).
      * - distinct: false (default), or true (distinct values by type).
      * - datatype: false (default), or true (include datatype of values).
@@ -203,6 +205,7 @@ class References extends AbstractPlugin
             'values' => [],
             // Output options.
             'first' => false,
+            'list_by_max' => 0,
             'initial' => false,
             'distinct' => false,
             'datatype' => false,
@@ -215,6 +218,7 @@ class References extends AbstractPlugin
                 ? $options['resource_name']
                 : $defaults['resource_name'];
             $first = !empty($options['first']);
+            $listByMax = empty($options['list_by_max']) ? 0 : (int) $options['list_by_max'];
             $initial = !empty($options['initial']);
             $distinct = !empty($options['distinct']);
             $datatype = !empty($options['datatype']);
@@ -229,12 +233,15 @@ class References extends AbstractPlugin
                 'filters' => @$options['filters'] ? $options['filters'] + $defaults['filters'] : $defaults['filters'],
                 'values' => $options['values'] ?? [],
                 'first' => $first,
+                'list_by_max' => $listByMax,
                 'initial' => $initial,
                 'distinct' => $distinct,
                 'datatype' => $datatype,
                 'lang' => $lang,
                 'include_without_meta' => (bool) @$options['include_without_meta'],
-                'output' => @$options['output'] === 'associative' && !$first && !$initial && !$distinct && !$datatype && !$lang ? 'associative' : 'list',
+                'output' => @$options['output'] === 'associative' && !$first && !$listByMax && !$initial && !$distinct && !$datatype && !$lang
+                    ? 'associative'
+                    : 'list',
             ];
 
             // The check for length avoids to add a filter on values without any
@@ -250,6 +257,7 @@ class References extends AbstractPlugin
         } else {
             $this->options = $defaults;
         }
+
         return $this;
     }
 
@@ -842,10 +850,10 @@ class References extends AbstractPlugin
 
     protected function manageOptions(QueryBuilder $qb, $type): void
     {
+        $expr = $qb->expr();
         if (in_array($type, ['resource_classes', 'resource_templates', 'item_sets'])
             && $this->options['initial']
         ) {
-            $expr = $qb->expr();
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
             $qb
                 ->addSelect([
@@ -857,7 +865,6 @@ class References extends AbstractPlugin
         }
 
         if ($type === 'properties' && $this->options['initial']) {
-            $expr = $qb->expr();
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
             $qb
                 ->addSelect([
@@ -908,6 +915,24 @@ class References extends AbstractPlugin
                 ->addSelect([
                     'MIN(resource.id) AS first',
                 ]);
+        }
+
+        if ($type === 'properties' && $this->options['list_by_max']) {
+            $qb
+                // Add and order by title, because it's the most common and
+                // simple. Use a single select to avoid issue with null and
+                // duplicate titles.
+                // that should not exist in Omeka data. The unit separator is
+                // not used but tabulation in order to check results simpler.
+                // Mysql max length: 1024.
+                ->leftJoin(\Omeka\Entity\Resource::class, 'ress', Join::WITH, $expr->eq('value.resource', 'ress'))
+                ->addSelect([
+                    // Note: for doctrine, separators must be set as parameters.
+                    'GROUP_CONCAT(ress.id, :unit_separator, ress.title SEPARATOR :group_separator) AS resources',
+                ])
+                ->setParameter('unit_separator', chr(0x1F))
+                ->setParameter('group_separator', chr(0x1D))
+            ;
         }
 
         if ($this->options['values']) {
@@ -1045,6 +1070,17 @@ class References extends AbstractPlugin
         if ($hasFirst) {
             $result = array_map(function ($v) {
                 $v['first'] = (int) $v['first'] ?: null;
+                return $v;
+            }, $result);
+        }
+
+        $hasListBy = array_key_exists('resources', $first);
+        if ($hasListBy) {
+            $result = array_map(function ($v) {
+                $list = array_map(function ($vv) {
+                    return explode(chr(0x1F), $vv, 2);
+                }, explode(chr(0x1D), (string) $v['resources']));
+                $v['resources'] = array_column($list, 1, 0);
                 return $v;
             }, $result);
         }

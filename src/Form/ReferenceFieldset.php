@@ -163,15 +163,17 @@ class ReferenceFieldset extends Form
                 ],
             ])
             ->add([
-                'name' => 'list_by',
+                'name' => 'list_by_max',
                 'type' => Element\Number::class,
                 'options' => [
                     'label' => 'Maximum resources to display by reference', // @translate
-                    'info' => 'For example, display the items by subject. Let 0 to display a simple list.', // @translate
+                    'info' => 'For example, display the items by subject. Let 0 to display a simple list. Maximum is 1024.', // @translate
                 ],
                 'attributes' => [
-                    'id' => 'list_by',
+                    'id' => 'list_by_max',
                     'required' => false,
+                    'min' => 0,
+                    'max' => 1024,
                 ],
             ])
             ->add([
