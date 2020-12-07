@@ -1,7 +1,10 @@
 <?php declare(strict_types=1);
+
 namespace Reference\Controller;
 
 use Laminas\Http\Response;
+use Omeka\Api\Manager as ApiManager;
+use Omeka\Stdlib\Paginator;
 use Omeka\View\Model\ApiJsonModel;
 
 /**
@@ -10,49 +13,30 @@ use Omeka\View\Model\ApiJsonModel;
  */
 class ApiController extends \Omeka\Controller\ApiController
 {
-    /**
-     * @var array
-     */
-    protected $config;
-
-    /**
-     * @param array $config
-     */
-    public function __construct(array $config)
+    public function __construct(Paginator $paginator, ApiManager $api)
     {
-        $this->config = $config;
+        $this->paginator = $paginator;
+        $this->api = $api;
     }
 
     public function create($data, $fileData = [])
     {
-        return $this->returnError(
-            $this->translate('Method Not Allowed'), // @translate
-            Response::STATUS_CODE_405
-        );
+        return $this->returnErrorMethodNotAllowed();
     }
 
     public function delete($id)
     {
-        return $this->returnError(
-            $this->translate('Method Not Allowed'), // @translate
-            Response::STATUS_CODE_405
-        );
+        return $this->returnErrorMethodNotAllowed();
     }
 
     public function deleteList($data)
     {
-        return $this->returnError(
-            $this->translate('Method Not Allowed'), // @translate
-            Response::STATUS_CODE_405
-        );
+        return $this->returnErrorMethodNotAllowed();
     }
 
     public function get($id)
     {
-        return $this->returnError(
-            $this->translate('Method Not Allowed'), // @translate
-            Response::STATUS_CODE_405
-        );
+        return $this->returnErrorMethodNotAllowed();
     }
 
     public function getList()
@@ -85,50 +69,32 @@ class ApiController extends \Omeka\Controller\ApiController
 
     public function head($id = null)
     {
-        return $this->returnError(
-            $this->translate('Method Not Allowed'), // @translate
-            Response::STATUS_CODE_405
-        );
+        return $this->returnErrorMethodNotAllowed();
     }
 
     public function options()
     {
-        return $this->returnError(
-            $this->translate('Method Not Allowed'), // @translate
-            Response::STATUS_CODE_405
-        );
+        return $this->returnErrorMethodNotAllowed();
     }
 
     public function patch($id, $data)
     {
-        return $this->returnError(
-            $this->translate('Method Not Allowed'), // @translate
-            Response::STATUS_CODE_405
-        );
+        return $this->returnErrorMethodNotAllowed();
     }
 
     public function replaceList($data)
     {
-        return $this->returnError(
-            $this->translate('Method Not Allowed'), // @translate
-            Response::STATUS_CODE_405
-        );
+        return $this->returnErrorMethodNotAllowed();
     }
 
     public function patchList($data)
     {
-        return $this->returnError(
-            $this->translate('Method Not Allowed'), // @translate
-            Response::STATUS_CODE_405
-        );
+        return $this->returnErrorMethodNotAllowed();
     }
 
     public function update($id, $data)
     {
-        return $this->returnError(
-            $this->translate('Method Not Allowed'), // @translate
-            Response::STATUS_CODE_405
-        );
+        return $this->returnErrorMethodNotAllowed();
     }
 
     public function notFoundAction()
@@ -136,6 +102,14 @@ class ApiController extends \Omeka\Controller\ApiController
         return $this->returnError(
             $this->translate('Page not found'), // @translate
             Response::STATUS_CODE_404
+        );
+    }
+
+    protected function returnErrorMethodNotAllowed()
+    {
+        return $this->returnError(
+            $this->translate('Method Not Allowed'), // @translate
+            Response::STATUS_CODE_405
         );
     }
 
@@ -172,13 +146,5 @@ class ApiController extends \Omeka\Controller\ApiController
             }
         }
         return $query;
-    }
-
-    /**
-     * @return bool
-     */
-    protected function hasResource($resourceName)
-    {
-        return (bool) @$this->config['api_adapters']['invokables'][$resourceName];
     }
 }

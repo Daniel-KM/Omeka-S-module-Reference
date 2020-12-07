@@ -53,7 +53,7 @@ class Module extends AbstractModule
 
     protected function initDataToPopulate(SettingsInterface $settings, string $settingsType, $id = null, iterable $values = []): bool
     {
-        // Check site settinbs , because array options cannot be set by default
+        // Check site settings , because array options cannot be set by default
         // automatically.
         if ($settingsType === 'site_settings') {
             $exist = $settings->get('reference_resource_name');
