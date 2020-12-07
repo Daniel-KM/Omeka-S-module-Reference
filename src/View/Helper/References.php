@@ -64,6 +64,9 @@ class References extends AbstractHelper
      *     "resource:media" and "uri".
      *     Warning: "resource" is not the same than specific resources.
      *     Use module Bulk Edit or Bulk Check to specify all resources automatically.
+     *   - "begin": array Filter property values that begin with these strings,
+     *     generally one or more initials.
+     *   - "end": array Filter property values that end with these strings.
      * - values: array Allow to limit the answer to the specified values.
      * - first: false (default), or true (get first resource).
      * - list_by_max: 0 (default), or the max number of resources for each reference)

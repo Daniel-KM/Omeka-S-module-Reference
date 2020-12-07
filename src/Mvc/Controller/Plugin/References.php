@@ -116,6 +116,9 @@ class References extends AbstractPlugin
      *     "resource:media" and "uri".
      *     Warning: "resource" is not the same than specific resources.
      *     Use module Bulk Edit or Bulk Check to specify all resources automatically.
+     *   - "begin": array Filter property values that begin with these strings,
+     *     generally one or more initials.
+     *   - "end": array Filter property values that end with these strings.
      * - values: array Allow to limit the answer to the specified values.
      * - first: false (default), or true (get first resource).
      * - list_by_max: 0 (default), or the max number of resources for each reference)
@@ -205,6 +208,8 @@ class References extends AbstractPlugin
             'filters' => [
                 'languages' => [],
                 'datatypes' => [],
+                'begin' => [],
+                'end' => [],
             ],
             'values' => [],
             // Output options.
@@ -261,6 +266,17 @@ class References extends AbstractPlugin
                 $this->options['filters']['datatypes'] = explode('|', str_replace(',', '|', $this->options['filters']['datatypes']));
             }
             $this->options['filters']['datatypes'] = array_unique(array_filter(array_map('trim', $this->options['filters']['datatypes'])));
+
+            // No trim for begin/end.
+            if (!is_array($this->options['filters']['begin'])) {
+                $this->options['filters']['begin'] = explode('|', str_replace(',', '|', $this->options['filters']['begin']));
+            }
+            $this->options['filters']['begin'] = array_unique(array_filter($this->options['filters']['begin']));
+            if (!is_array($this->options['filters']['end'])) {
+                $this->options['filters']['end'] = explode('|', str_replace(',', '|', $this->options['filters']['end']));
+            }
+            $this->options['filters']['end'] = array_unique(array_filter($this->options['filters']['end']));
+
             if (!is_array($this->options['fields'])) {
                 $this->options['fields'] = explode('|', str_replace(',', '|', $this->options['fields']));
             }
@@ -511,6 +527,7 @@ class References extends AbstractPlugin
 
         $this->filterByDatatype($qb);
         $this->filterByLanguage($qb);
+        $this->filterByBeginOrEnd($qb);
         $this->manageOptions($qb, 'properties');
         return $this->outputMetadata($qb, 'properties');
     }
@@ -836,7 +853,8 @@ class References extends AbstractPlugin
         if ($this->options['filters']['datatypes']) {
             $expr = $qb->expr();
             $qb
-                ->andWhere($expr->in('value.type', $this->options['filters']['datatypes']));
+                ->andWhere($expr->in('value.type', ':datatypes'))
+                ->setParameter('datatypes', $this->options['filters']['datatypes'], \Doctrine\DBAL\Types\Type::SIMPLE_ARRAY);
         }
     }
 
@@ -848,13 +866,60 @@ class References extends AbstractPlugin
             if ($hasEmptyLanguage) {
                 $qb
                     ->andWhere($expr->orX(
-                        $expr->in('value.lang', $this->options['filters']['languages']),
+                        $expr->in('value.lang', ':languages'),
                         // FIXME For an unknown reason, doctrine may crash with "IS NULL" in some non-reproductible cases. Db version related?
                         $expr->isNull('value.lang')
-                    ));
+                    ))
+                    ->setParameter('languages', $this->options['filters']['languages'], \Doctrine\DBAL\Types\Type::SIMPLE_ARRAY);
             } else {
                 $qb
-                    ->andWhere($expr->in('value.lang', $this->options['filters']['languages']));
+                    ->andWhere($expr->in('value.lang', ':languages'))
+                    ->setParameter('languages', $this->options['filters']['languages'], \Doctrine\DBAL\Types\Type::SIMPLE_ARRAY);
+            }
+        }
+    }
+
+    protected function filterByBeginOrEnd(QueryBuilder $qb): void
+    {
+        $expr = $qb->expr();
+        // This is a and by default.
+        foreach (['begin', 'end'] as $filter) {
+            if ($this->options['filters'][$filter]) {
+                if ($filter === 'begin') {
+                    $filterB = '';
+                    $filterE = '%';
+                } else {
+                    $filterB = '%';
+                    $filterE = '';
+                }
+
+                // Use "or like" in most of the cases, else a regex (slower).
+                // TODO Add more checks and a php unit.
+                if (count($this->options['filters'][$filter]) === 1) {
+                    $qb
+                        ->andWhere($expr->like('value.value', ":filter_$filter"))
+                        ->setParameter(
+                            "filter_$filter",
+                            $filterB . str_replace(['%', '_'], ['\%', '\_'], reset($this->options['filters'][$filter])) . $filterE
+                        );
+                } elseif (count($this->options['filters'][$filter]) <= 20) {
+                    $orX = [];
+                    foreach (array_values($this->options['filters'][$filter]) as $key => $string) {
+                        $orX[] = $expr->like('value.value', sprintf(':filter_%s_%d)', $filter, ++$key));
+                        $qb
+                            ->setParameter(
+                                "filter_{$filter}_$key",
+                                $filterB . str_replace(['%', '_'], ['\%', '\_'], $string) . $filterE
+                            );
+                    }
+                    $qb
+                        ->andWhere($expr->orX(...$orX));
+                } else {
+                    $regexp = implode('|', array_map('preg_quote', $this->options['filters'][$filter]));
+                    $qb
+                        ->andWhere("REGEXP(value.value, :filter_filter) = true")
+                        ->setParameter("filter_$filter", $regexp);
+                }
             }
         }
     }
