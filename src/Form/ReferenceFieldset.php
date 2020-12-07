@@ -163,11 +163,23 @@ class ReferenceFieldset extends Form
                 ],
             ])
             ->add([
+                'name' => 'list_by',
+                'type' => Element\Number::class,
+                'options' => [
+                    'label' => 'Maximum resources to display by reference', // @translate
+                    'info' => 'For example, display the items by subject. Let 0 to display a simple list.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'list_by',
+                    'required' => false,
+                ],
+            ])
+            ->add([
                 'name' => 'subject_property',
                 'type' => PropertySelect::class,
                 'options' => [
                     'label' => 'Subject values', // @translate
-                    'info' => 'Allow to list related resources, for example to get a list of documents by author.', // @translate
+                    'info' => 'Allow to list related resources. For example, in a library where there are items of types "Authors" and "Documents", and if the creator of the documents are linked resources, then select "Creator" to see the list of documents by author. This option is skipped when option "max by reference" is used.', // @translate
                     'term_as_value' => true,
                     'empty_option' => '',
                 ],

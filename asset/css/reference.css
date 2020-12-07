@@ -80,3 +80,7 @@ ul.references li {
     flex: 1;
     min-width: 0;
 }
+.recursive-list .see-all {
+    font-style: italic;
+    list-style: none;
+}

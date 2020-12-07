@@ -34,7 +34,7 @@ return [
     'form_elements' => [
         'invokables' => [
             Form\Element\DoubleArrayTextarea::class => Form\Element\DoubleArrayTextarea::class,
-            Form\Element\OptionalMultiCheckbox::class=> Form\Element\OptionalMultiCheckbox::class,
+            Form\Element\OptionalMultiCheckbox::class => Form\Element\OptionalMultiCheckbox::class,
             Form\SiteSettingsFieldset::class => Form\SiteSettingsFieldset::class,
             Form\ReferenceFieldset::class => Form\ReferenceFieldset::class,
             Form\ReferenceIndexFieldset::class => Form\ReferenceIndexFieldset::class,
@@ -167,6 +167,7 @@ return [
                     'skiplinks' => true,
                     'headings' => true,
                     'total' => true,
+                    'list_by' => 0,
                     'subject_property' => null,
                     'template' => '',
                 ],

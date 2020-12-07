@@ -36,7 +36,9 @@ if (count($references)):
     $propertyTitle = 'dcterms:title';
     $termId = $field['o:id'];
     $term = @$field['o:term'];
+    $listBy = empty($options['list_by']) ? false : (int) $options['list_by'];
     $hasSubjectProperty = !empty($options['subject_property']);
+    $seeAll = $this->escapeHtml($translate('See all…')); // @translate
 
     $queryKeys = [
         'o:ResourceClass' => 'resource_class_id',
@@ -105,6 +107,19 @@ if (count($references)):
         endif;
     endif;
 
+    $querier = function ($reference, $emptyReferenceValue, $limit = null) use ($term, $termId, $queryKey, $propertyTitle) {
+        if ($queryKey):
+            $query = [];
+            $query[$queryKey] = $termId;
+            $query['property'] = $emptyReferenceValue
+                ? [['property' => $propertyTitle, 'type' => 'nex'], 'limit' => $limit]
+                : [['property' => $propertyTitle, 'type' => 'eq', 'text' => $reference], 'limit' => $limit];
+        else:
+            $query = ['property' => [['property' => $term, 'type' => 'eq', 'text' => $reference]], 'limit' => $limit];
+        endif;
+        return $query;
+    };
+
     // Prepare and display skip links.
     if ($options['skiplinks']):
         $paginationList = $this->partial('common/reference-skiplinks', ['references' => $references]);
@@ -160,16 +175,7 @@ if (count($references)):
 
             if ($options['custom_url']):
                 if ($referenceNumber):
-                    if ($queryKey):
-                        $query = [];
-                        $query[$queryKey] = $termId;
-                        $query['property'] = $emptyReferenceValue
-                            ? [['property' => $propertyTitle, 'type' => 'nex']]
-                            : [['property' => $propertyTitle, 'type' => 'eq', 'text' => $reference]];
-                    else:
-                        $query = ['property' => [['property' => $term, 'type' => 'eq', 'text' => $reference]]];
-                    endif;
-                    $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
+                    $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $querier($reference, $emptyReferenceValue)], false);
                 else:
                     // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
                     // $referenceUrl = $api->read($resourceName, $referenceData['first'])->getContent()->siteUrl();
@@ -201,15 +207,34 @@ if (count($references)):
         endif;
 
         $recursive = '';
-        if ($hasSubjectProperty && !empty($referenceData['first'])):
+        // TODO To be improved to avoid to read from the api (resources by reference or linked resources).
+        // TODO Make it recursive.
+        if ($listBy):
+            $response = $api->search('items', $querier($reference, $emptyReferenceValue, $listBy));
+            // By construction, there are always at least one result, but a check is done to avoid weird issues.
+            $totalByReference = $response->getTotalResults();
+            if ($totalByReference):
+                $recursive .= '<ul class="recursive-list">';
+                foreach ($response->getContent() as $resourceByRef):
+                    $recursive .= '<li>';
+                    $recursive .= $resourceByRef->linkPretty();
+                    $recursive .= '</li>';
+                endforeach;
+                $hasMore = $totalByReference > $listBy;
+                if ($hasMore):
+                    $recursive .= '<li class="see-all">';
+                    $recursive .= '<a href="' . $referenceUrl . '">' . $seeAll . '</a>';
+                    $recursive .= '</li>';
+                endif;
+                $recursive .= '</ul>';
+            endif;
+        elseif ($hasSubjectProperty && !empty($referenceData['first'])):
             /** @var \Omeka\Api\Representation\AbstractResourceEntityRepresentation $res */
-            // TODO To be improved to avoid to read from the api.
-            // TODO Make it recursive.
             $res = $api->read('resources', $referenceData['first'])->getContent();
             $res = $api->read($res->resourceName(), $referenceData['first'])->getContent();
             $subjectValues = $res->subjectValues(null, null, $options['subject_property']['id']);
             if (count($subjectValues)):
-                $recursive .= '<ul class="recursive-list list-unstyled">';
+                $recursive .= '<ul class="recursive-list">';
                 /** @var \Omeka\Api\Representation\ValueRepresentation $subjectValue */
                 foreach ($subjectValues[$options['subject_property']['term']] as $subjectValue):
                     $recursive .= '<li>';
