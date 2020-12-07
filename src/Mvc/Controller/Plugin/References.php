@@ -474,8 +474,8 @@ class References extends AbstractPlugin
         $qb
             ->select([
                 $this->supportAnyValue
-                    ? "ANY_VALUE(COALESCE(value.value, 'valueResource.title', value.uri)) AS val"
-                    : "COALESCE(value.value, 'valueResource.title', value.uri) AS val",
+                    ? "ANY_VALUE(COALESCE(value.value, valueResource.title, value.uri)) AS val"
+                    : "COALESCE(value.value, valueResource.title, value.uri) AS val",
                 // "Distinct" avoids to count duplicate values in properties in
                 // a resource: we count resources, not properties.
                 $expr->countDistinct('resource.id') . ' AS total',
@@ -863,8 +863,8 @@ class References extends AbstractPlugin
                 ->addSelect([
                     // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? 'ANY_VALUE(' . $expr->upper($expr->substring("COALESCE(value.value, 'valueResource.title', value.uri)", 1, 1)) . ') AS initial'
-                        : $expr->upper($expr->substring("COALESCE(value.value, 'valueResource.title', value.uri)", 1, 1)) . ' AS initial',
+                        ? 'ANY_VALUE(' . $expr->upper($expr->substring("COALESCE(value.value, valueResource.title, value.uri)", 1, 1)) . ') AS initial'
+                        : $expr->upper($expr->substring("COALESCE(value.value, valueResource.title, value.uri)", 1, 1)) . ' AS initial',
                 ]);
         }
 
