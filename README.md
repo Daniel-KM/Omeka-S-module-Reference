@@ -2,7 +2,8 @@ Reference (module for Omeka S)
 ==============================
 
 > __New versions of this module and support for Omeka S version 3.0 and above
-> are available on [GitLab], which seems to respect users and privacy better.__
+> are available on [GitLab], which seems to respect users and privacy better
+> than the previous repository.__
 
 [Reference] is a module for [Omeka S] that allows to serve a glossary (an
 alphabetized index) of links to records or to searches for all resources classes
@@ -148,6 +149,62 @@ For `query`, it is the standard query used in the api of Omeka, or the arguments
 taken from the url of an advanced search, converted into an array with `parse_str`.
 The conversion is automatically done inside the user interface (page blocks).
 
+### Api to get references and facets
+
+To get the results via api, use a standard query and append the options you need,
+for example `/api/references?metadata=dcterms:subject` to get the list of all
+subjects, or `/api/references?metadata=foaf:Person` to get the list of all
+resources with class "Person". You can add multiple metadata together: `medatadata[]=dcterms:subject&medatadata[]=dcterms:creator`
+
+Options are the same than the view helper:
+
+- resource_name: items (default), "item_sets", "media", "resources".
+- sort_by: "alphabetic" (default), "count", or any available column.
+- sort_order: "asc" (default) or "desc".
+- filters: array Limit values to the specified data. Currently managed:
+  - "languages": list of languages. Values without language are returned with
+    the empty value "". This option is used only for properties.
+  - "datatypes": array Filter property values according to the data types.
+    Default datatypes are "literal", "resource", "resource:item", "resource:itemset",
+    "resource:media" and "uri".
+    Warning: "resource" is not the same than specific resources.
+    Use module Bulk Edit or Bulk Check to specify all resources automatically.
+  - "begin": array Filter property values that begin with these strings,
+    generally one or more initials.
+  - "end": array Filter property values that end with these strings.
+- values: array Allow to limit the answer to the specified values.
+- first: false (default), or true (get first resource).
+- list_by_max: 0 (default), or the max number of resources for each reference)
+  The max number should be below 1024 (mysql limit for group_concat).
+- fields: the fields to use for the list of resources, if any. If not set, the
+  output is an associative array with id as key and title as value. If set,
+  value is an array of the specified fields.
+- initial: false (default), or true (get first letter of each result).
+- distinct: false (default), or true (distinct values by type).
+- datatype: false (default), or true (include datatype of values).
+- lang: false (default), or true (include language of value to result).
+- include_without_meta: false (default), or true (include total of resources
+  with no metadata) (TODO Check if this option is still needed).
+- output: "list" (default) or "associative" (possible only without added
+  options: first, initial, distinct, datatype, or lang).
+
+A standard resource query can be appended to the query. The property argument
+supports some more types for the properties: `sw`/`nsw` for "starts with" or not,
+`ew`/`new` for "ends with" or not, `in`/`nin` for "in list" or not, `res`/`nres`
+for "has resource" or not.
+
+Don't confuse the filters and the query: the query limits the resource to search,
+generally a site or an item set, and the filters limits the returned list of
+references.
+
+For the filters and the fields, they can be written in various ways to simplify
+url request, for example:
+`fields[]=o:id&fields[]=o:title&fields[]=o:item_set&fields[]=bibo:shortTitle`
+`fields=o:id,o:title,o:item_set,bibo:shortTitle`
+or
+`filters[begin][]=w&filters[begin][]=x&filters[begin][]=y&filters[begin][]=z`
+`filters[begin]=w,x,y,z`
+
 
 Note about linked resources
 ---------------------------
@@ -171,6 +228,7 @@ TODO
 - [ ] Make the reference recursive (two levels currently).
 - [ ] Get the second levels via a single sql, not via api.
 - [ ] Check if the option "include_without_meta" is still needed with data types.
+- [ ] Include the fields in the main request or get them via a second request, not via api.
 
 
 Warning

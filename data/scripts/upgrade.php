@@ -248,12 +248,11 @@ if (version_compare($oldVersion, '3.4.23.3', '<')) {
     }
 
     /**
-    * List properties and resource classes by term.
-    *
-    * @return array
-    */
-    $listTerms = function (): array
-    {
+     * List properties and resource classes by term.
+     *
+     * @return array
+     */
+    $listTerms = function (): array {
         /** @var \Doctrine\DBAL\Connection $connection */
         $connection = $this->getServiceLocator()->get('Omeka\Connection');
 
@@ -341,4 +340,17 @@ if (version_compare($oldVersion, '3.4.23.3', '<')) {
 
     // Final flush.
     $entityManager->flush();
+}
+
+if (version_compare($oldVersion, '3.4.24.3', '<')) {
+    $messenger = new Messenger();
+    $message = new Message(
+        'It is possible now to limit the list of references, for example only the of subjects starting with "a" with argument "filters[begin]=a".' // @translate
+    );
+    $messenger->addWarning($message);
+
+    $message = new Message(
+        'It is possible now to list not only references, but resources by reference, for example all documents of an author or all items with each subject.' // @translate
+    );
+    $messenger->addWarning($message);
 }
