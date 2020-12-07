@@ -119,6 +119,9 @@ class References extends AbstractPlugin
      * - first: false (default), or true (get first resource).
      * - list_by_max: 0 (default), or the max number of resources for each reference)
      *   The max number should be below 1024 (mysql limit for group_concat).
+     * - fields: the fields to use for the list of resources, if any. If not
+     *   set, the output is an associative array with id as key and title as
+     *   value. If set, value is an array of the specified fields.
      * - initial: false (default), or true (get first letter of each result).
      * - distinct: false (default), or true (distinct values by type).
      * - datatype: false (default), or true (include datatype of values).
@@ -206,6 +209,7 @@ class References extends AbstractPlugin
             // Output options.
             'first' => false,
             'list_by_max' => 0,
+            'fields' => [],
             'initial' => false,
             'distinct' => false,
             'datatype' => false,
@@ -219,6 +223,7 @@ class References extends AbstractPlugin
                 : $defaults['resource_name'];
             $first = !empty($options['first']);
             $listByMax = empty($options['list_by_max']) ? 0 : (int) $options['list_by_max'];
+            $fields = empty($options['fields']) ? [] : $options['fields'];
             $initial = !empty($options['initial']);
             $distinct = !empty($options['distinct']);
             $datatype = !empty($options['datatype']);
@@ -234,6 +239,7 @@ class References extends AbstractPlugin
                 'values' => $options['values'] ?? [],
                 'first' => $first,
                 'list_by_max' => $listByMax,
+                'fields' => $fields,
                 'initial' => $initial,
                 'distinct' => $distinct,
                 'datatype' => $datatype,
@@ -254,6 +260,10 @@ class References extends AbstractPlugin
                 $this->options['filters']['datatypes'] = explode('|', str_replace(',', '|', $this->options['filters']['datatypes']));
             }
             $this->options['filters']['datatypes'] = array_unique(array_filter(array_map('trim', $this->options['filters']['datatypes'])));
+            if (!is_array($this->options['fields'])) {
+                $this->options['fields'] = explode('|', str_replace(',', '|', $this->options['fields']));
+            }
+            $this->options['fields'] = array_unique(array_filter(array_map('trim', $this->options['fields'])));
         } else {
             $this->options = $defaults;
         }
@@ -1083,6 +1093,33 @@ class References extends AbstractPlugin
                 $v['resources'] = array_column($list, 1, 0);
                 return $v;
             }, $result);
+
+            if ($this->options['fields']) {
+                $fields = array_fill_keys($this->options['fields'], true);
+                $result = array_map(function ($v) use ($fields) {
+                    // Search resources is not available.
+                    if ($this->options['resource_name'] === 'resource') {
+                        $v['resources'] = array_map(function ($title, $id) use ($fields) {
+                            try {
+                                return array_intersect_key(
+                                    $this->api->read('resources', ['id' => $id])->getContent()->jsonSerialize(),
+                                    $fields
+                                    );
+                            } catch (\Omeka\Api\Exception\NotFoundException $e) {
+                                // May not be possible, except with weird rights.
+                                // return array_intersect_key(['o:id' => $id, 'o:title' => $title], $fields);
+                                return [];
+                            }
+                        }, $v['resources'], array_keys($v['resources']));
+                    } else {
+                        $resources = $this->api->search($this->options['resource_name'], ['id' => array_keys($v['resources']), 'sort_by' => 'title', 'sort_order' => 'asc'])->getContent();
+                        $v['resources'] = array_map(function ($r) use ($fields) {
+                            return array_intersect_key($r->jsonSerialize(), $fields);
+                        }, $resources);
+                    }
+                    return $v;
+                }, $result);
+            }
         }
 
         if ($this->options['include_without_meta']) {

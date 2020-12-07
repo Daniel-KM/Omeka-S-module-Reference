@@ -68,6 +68,9 @@ class References extends AbstractHelper
      * - first: false (default), or true (get first resource).
      * - list_by_max: 0 (default), or the max number of resources for each reference)
      *   The max number should be below 1024 (mysql limit for group_concat).
+     * - fields: the fields to use for the list of resources, if any. If not
+     *   set, the output is an associative array with id as key and title as
+     *   value. If set, value is an array of the specified fields.
      * - initial: false (default), or true (get first letter of each result).
      * - distinct: false (default), or true (distinct values by type).
      * - datatype: false (default), or true (include datatype of values).
