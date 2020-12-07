@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
+use Omeka\Api\Adapter\AbstractResourceEntityAdapter;
 use Omeka\Api\Adapter\Manager as AdapterManager;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Mvc\Controller\Plugin\Translate;
@@ -305,7 +306,7 @@ class References extends AbstractPlugin
 
             switch ($field['type']) {
                 case 'properties':
-                    $values = $this->listResourcesForProperty($field['id']);
+                    $values = $this->listDataForProperty($field['id']);
                     $result[$field['term']] = [
                         '@type' => $field['@type'],
                         'o:id' => $field['id'],
@@ -316,7 +317,7 @@ class References extends AbstractPlugin
                     break;
 
                 case 'resource_classes':
-                    $values = $this->listResourcesForResourceClass($field['id']);
+                    $values = $this->listDataForResourceClass($field['id']);
                     $result[$field['term']] = [
                         '@type' => $field['@type'],
                         'o:id' => $field['id'],
@@ -327,7 +328,7 @@ class References extends AbstractPlugin
                     break;
 
                 case 'resource_templates':
-                    $values = $this->listResourcesForResourceTemplate($field['id']);
+                    $values = $this->listDataForResourceTemplate($field['id']);
                     $result[$field['term']] = [
                         '@type' => $field['@type'],
                         'o:id' => $field['id'],
@@ -338,7 +339,7 @@ class References extends AbstractPlugin
                     break;
 
                 case 'item_sets':
-                    $values = $this->listResourcesForItemSet($field['id']);
+                    $values = $this->listDataForItemSet($field['id']);
                     $result[$field['term']] = [
                         '@type' => $field['@type'],
                         'o:id' => $field['id'],
@@ -481,7 +482,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listResourcesForProperty($termId)
+    protected function listDataForProperty($termId)
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
@@ -522,7 +523,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listResourcesForResourceClass($resourceClassId)
+    protected function listDataForResourceClass($resourceClassId)
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
@@ -555,7 +556,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listResourcesForResourceTemplate($resourceTemplateId)
+    protected function listDataForResourceTemplate($resourceTemplateId)
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
@@ -588,7 +589,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listResourcesForItemSet($itemSetId)
+    protected function listDataForItemSet($itemSetId)
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
@@ -991,7 +992,7 @@ class References extends AbstractPlugin
             }
         }
 
-        $this->limitQuery($qb);
+        $this->searchQuery($qb);
 
         // Don't add useless order by resource id, since value are unique.
         // Furthermore, it may break mySql 5.7.5 and later, where ONLY_FULL_GROUP_BY
@@ -1163,7 +1164,7 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, 'res.id = resource.id');
         }
 
-        $this->limitQuery($qb);
+        $this->searchQuery($qb);
 
         return $qb->getQuery()->getSingleScalarResult();
     }
@@ -1186,7 +1187,7 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, 'res.id = resource.id');
         }
 
-        $this->limitQuery($qb);
+        $this->searchQuery($qb);
 
         return $qb->getQuery()->getSingleScalarResult();
     }
@@ -1209,7 +1210,7 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, 'res.id = resource.id');
         }
 
-        $this->limitQuery($qb);
+        $this->searchQuery($qb);
 
         return $qb->getQuery()->getSingleScalarResult();
     }
@@ -1237,7 +1238,7 @@ class References extends AbstractPlugin
             )
             ->setParameter('item_sets', (int) $id);
 
-        $this->limitQuery($qb);
+        $this->searchQuery($qb);
 
         return $qb->getQuery()->getSingleScalarResult();
     }
@@ -1247,7 +1248,7 @@ class References extends AbstractPlugin
      *
      * @param QueryBuilder $qb
      */
-    protected function limitQuery(QueryBuilder $qb): void
+    protected function searchQuery(QueryBuilder $qb): void
     {
         if (empty($this->query)) {
             return;
@@ -1256,9 +1257,20 @@ class References extends AbstractPlugin
         $subQb = $this->entityManager->createQueryBuilder()
             ->select('omeka_root.id')
             ->from($this->options['entity_class'], 'omeka_root');
-        $this->adapterManager
-            ->get($this->options['resource_name'])
-            ->buildQuery($subQb, $this->query);
+
+        // Support of "starts with" is needed to get all subjects for a letter.
+        // So, the properties part of the query is managed separately.
+        $mainQuery = $this->query;
+        unset($mainQuery['property']);
+
+        /** @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::search() */
+        /** @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter */
+        $adapter = $this->adapterManager->get($this->options['resource_name']);
+        $adapter->buildBaseQuery($subQb, $mainQuery);
+        $adapter->buildQuery($subQb, $mainQuery);
+        if (isset($this->query['property']) && is_array($this->query['property'])) {
+            $this->buildPropertyQuery($subQb, $adapter);
+        }
 
         // There is no colision: the adapter query uses alias "omeka_" + index.
         $qb
@@ -1271,6 +1283,232 @@ class References extends AbstractPlugin
                 $parameter->getValue(),
                 $parameter->getType()
             );
+        }
+    }
+
+    /**
+     * Improve the default property query for resources.
+     *
+     * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
+     * @see \AdvancedSearchPlus\Module::buildPropertyQuery()
+     *
+     * Complete \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
+     *
+     * Query format:
+     *
+     * - property[{index}][joiner]: "and" OR "or" joiner with previous query
+     * - property[{index}][property]: property ID
+     * - property[{index}][text]: search text
+     * - property[{index}][type]: search type
+     *   - eq: is exactly (core)
+     *   - neq: is not exactly (core)
+     *   - in: contains (core)
+     *   - nin: does not contain (core)
+     *   - ex: has any value (core)
+     *   - nex: has no value (core)
+     *   - list: is in list
+     *   - nlist: is not in list
+     *   - sw: starts with
+     *   - nsw: does not start with
+     *   - ew: ends with
+     *   - new: does not end with
+     *   - res: has resource
+     *   - nres: has no resource
+     *
+     * @param QueryBuilder $qb
+     * @param AbstractResourceEntityAdapter $adapter
+     */
+    protected function buildPropertyQuery(QueryBuilder $qb, AbstractResourceEntityAdapter $adapter): void
+    {
+        // if (empty($this->query['property']) || !is_array($this->query['property'])) {
+        //     return;
+        // }
+
+        $valuesJoin = 'omeka_root.values';
+        $where = '';
+        $expr = $qb->expr();
+
+        $escape = function ($string) {
+            return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], (string) $string);
+        };
+
+        foreach ($this->query['property'] as $queryRow) {
+            if (!(
+                is_array($queryRow)
+                && array_key_exists('property', $queryRow)
+                && array_key_exists('type', $queryRow)
+            )) {
+                continue;
+            }
+            $propertyId = $queryRow['property'];
+            $queryType = $queryRow['type'];
+            $joiner = $queryRow['joiner'] ?? '';
+            $value = $queryRow['text'] ?? '';
+
+            if (!strlen((string) $value) && $queryType !== 'nex' && $queryType !== 'ex') {
+                continue;
+            }
+
+            $valuesAlias = $adapter->createAlias();
+            $positive = true;
+
+            switch ($queryType) {
+                case 'neq':
+                    $positive = false;
+                    // no break.
+                case 'eq':
+                    $param = $adapter->createNamedParameter($qb, $value);
+                    $subqueryAlias = $adapter->createAlias();
+                    $subquery = $adapter->getEntityManager()
+                        ->createQueryBuilder()
+                        ->select("$subqueryAlias.id")
+                        ->from('Omeka\Entity\Resource', $subqueryAlias)
+                        ->where($expr->eq("$subqueryAlias.title", $param));
+                    $predicateExpr = $expr->orX(
+                        $expr->in("$valuesAlias.valueResource", $subquery->getDQL()),
+                        $expr->eq("$valuesAlias.value", $param),
+                        $expr->eq("$valuesAlias.uri", $param)
+                    );
+                    break;
+
+                case 'nin':
+                    $positive = false;
+                    // no break.
+                case 'in':
+                    $param = $adapter->createNamedParameter($qb, '%' . $escape($value) . '%');
+                    $subqueryAlias = $adapter->createAlias();
+                    $subquery = $adapter->getEntityManager()
+                        ->createQueryBuilder()
+                        ->select("$subqueryAlias.id")
+                        ->from('Omeka\Entity\Resource', $subqueryAlias)
+                        ->where($expr->like("$subqueryAlias.title", $param));
+                    $predicateExpr = $expr->orX(
+                        $expr->in("$valuesAlias.valueResource", $subquery->getDQL()),
+                        $expr->like("$valuesAlias.value", $param),
+                        $expr->like("$valuesAlias.uri", $param)
+                    );
+                    break;
+
+                case 'nlist':
+                    $positive = false;
+                    // no break.
+                case 'list':
+                    $list = is_array($value) ? $value : explode("\n", $value);
+                    $list = array_filter(array_map('trim', array_map('strval', $list)), 'strlen');
+                    if (empty($list)) {
+                        continue 2;
+                    }
+                    $param = $adapter->createNamedParameter($qb, $list);
+                    $subqueryAlias = $adapter->createAlias();
+                    $subquery = $adapter->getEntityManager()
+                        ->createQueryBuilder()
+                        ->select("$subqueryAlias.id")
+                        ->from('Omeka\Entity\Resource', $subqueryAlias)
+                        ->where($expr->eq("$subqueryAlias.title", $param));
+                    $predicateExpr = $expr->orX(
+                        $expr->in("$valuesAlias.valueResource", $subquery->getDQL()),
+                        $expr->in("$valuesAlias.value", $param),
+                        $expr->in("$valuesAlias.uri", $param)
+                    );
+                    break;
+
+                case 'nsw':
+                    $positive = false;
+                    // no break.
+                case 'sw':
+                    $param = $adapter->createNamedParameter($qb, $escape($value) . '%');
+                    $subqueryAlias = $adapter->createAlias();
+                    $subquery = $adapter->getEntityManager()
+                        ->createQueryBuilder()
+                        ->select("$subqueryAlias.id")
+                        ->from('Omeka\Entity\Resource', $subqueryAlias)
+                        ->where($expr->like("$subqueryAlias.title", $param));
+                    $predicateExpr = $expr->orX(
+                        $expr->in("$valuesAlias.valueResource", $subquery->getDQL()),
+                        $expr->like("$valuesAlias.value", $param),
+                        $expr->like("$valuesAlias.uri", $param)
+                    );
+                    break;
+
+                case 'new':
+                    $positive = false;
+                    // no break.
+                case 'ew':
+                    $param = $adapter->createNamedParameter($qb, '%' . $escape($value));
+                    $subqueryAlias = $adapter->createAlias();
+                    $subquery = $adapter->getEntityManager()
+                        ->createQueryBuilder()
+                        ->select("$subqueryAlias.id")
+                        ->from('Omeka\Entity\Resource', $subqueryAlias)
+                        ->where($expr->like("$subqueryAlias.title", $param));
+                    $predicateExpr = $expr->orX(
+                        $expr->in("$valuesAlias.valueResource", $subquery->getDQL()),
+                        $expr->like("$valuesAlias.value", $param),
+                        $expr->like("$valuesAlias.uri", $param)
+                    );
+                    break;
+
+                case 'nres':
+                    $positive = false;
+                    // no break.
+                case 'res':
+                    $predicateExpr = $expr->eq(
+                    "$valuesAlias.valueResource",
+                    $adapter->createNamedParameter($qb, $value)
+                    );
+                    break;
+
+                case 'nex':
+                    $positive = false;
+                    // no break.
+                case 'ex':
+                    $predicateExpr = $expr->isNotNull("$valuesAlias.id");
+                    break;
+
+                default:
+                    continue 2;
+            }
+
+            $joinConditions = [];
+            // Narrow to specific property, if one is selected
+            if ($propertyId) {
+                if (is_numeric($propertyId)) {
+                    $propertyId = (int) $propertyId;
+                } else {
+                    $property = $adapter->getPropertyByTerm($propertyId);
+                    if ($property) {
+                        $propertyId = $property->getId();
+                    } else {
+                        $propertyId = 0;
+                    }
+                }
+                $joinConditions[] = $expr->eq("$valuesAlias.property", (int) $propertyId);
+            }
+
+            if ($positive) {
+                $whereClause = '(' . $predicateExpr . ')';
+            } else {
+                $joinConditions[] = $predicateExpr;
+                $whereClause = $expr->isNull("$valuesAlias.id");
+            }
+
+            if ($joinConditions) {
+                $qb->leftJoin($valuesJoin, $valuesAlias, 'WITH', $expr->andX(...$joinConditions));
+            } else {
+                $qb->leftJoin($valuesJoin, $valuesAlias);
+            }
+
+            if ($where == '') {
+                $where = $whereClause;
+            } elseif ($joiner == 'or') {
+                $where .= " OR $whereClause";
+            } else {
+                $where .= " AND $whereClause";
+            }
+        }
+
+        if ($where) {
+            $qb->andWhere($where);
         }
     }
 
