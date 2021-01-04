@@ -19,13 +19,18 @@
 // single values.
 
 if (count($references)):
-    $translate = $this->plugin('translate');
-    $escape = $this->plugin('escapeHtml');
-    $url = $this->plugin('url');
-    $siteSlug = $this->params()->fromRoute('site-slug');
-    $api = $this->api();
+    $plugins = $this->getHelperPluginManager();
+    $translate = $plugins->get('translate');
+    $escape = $plugins->get('escapeHtml');
+    $url = $plugins->get('url');
+    $api = $plugins->get('api');
+
     // This is the Omeka default title. May be different in the database.
     $emptyTitle = $translate('[Untitled]');
+    $siteSlug = $this->params()->fromRoute('site-slug')
+        ?? $plugins->get('Laminas\View\Helper\ViewModel')->getRoot()->getVariable('site')
+        ?? (($siteSlug = $api->searchOne('sites', ['id' => $this->setting('default_site')])->getContent()) ? $siteSlug->slug() : null)
+        ?? $api->searchOne('sites', ['sort_by' => 'is_public', 'sort_order' => 'desc'])->getContent()->slug();
 
     $this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Reference'));
 
