@@ -51,9 +51,12 @@ class ReferenceTree extends AbstractBlockLayout
         $data = $block->getData();
 
         // Check if data are already formatted, checking the main value.
-        if (is_array($data['tree'])) {
+        if (!isset($data['tree']) || is_array($data['tree'])) {
             return;
         }
+
+        $defaultSettings = include dirname(__DIR__, 3) . '/config/module.config.php';
+        $data += $defaultSettings['reference']['block_settings']['referenceTree'];
 
         $data['tree'] = $this->referenceTreePlugin->convertTreeToLevels($data['tree']);
         if (empty($data['resource_name'])) {
@@ -64,7 +67,7 @@ class ReferenceTree extends AbstractBlockLayout
         $data['query'] = $query;
 
         // Normalize options.
-        $data['link_to_single'] = (bool) $data['link_to_single'];
+        $data['link_to_single'] = (bool) $data['link_to_single'] ?? true;
         $data['custom_url'] = (bool) $data['custom_url'];
         $data['total'] = (bool) $data['total'];
         $data['branch'] = (bool) $data['branch'];

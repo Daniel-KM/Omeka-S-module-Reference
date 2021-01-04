@@ -192,7 +192,7 @@ return [
                 'term' => 'dcterms:subject',
                 'tree' => [],
                 'resource_name' => 'items',
-                'query' => '',
+                'query' => [],
                 'query_type' => 'eq',
                 'link_to_single' => true,
                 'custom_url' => false,
