@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-12-07 00:00+0000\n"
+"POT-Creation-Date: 2021-01-04 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -35,7 +35,7 @@ msgstr ""
 msgid "This module has resources that connot be installed."
 msgstr ""
 
-#: src/Generic/AbstractModule.php:710
+#: src/Generic/AbstractModule.php:707
 #, php-format
 msgid ""
 "The module \"%s\" was automatically deactivated because the dependencies are "
@@ -74,11 +74,11 @@ msgstr ""
 msgid "Browse %s"
 msgstr ""
 
-#: view/common/reference.phtml:43
+#: view/common/reference.phtml:48
 msgid "See all…"
 msgstr ""
 
-#: view/common/reference.phtml:44
+#: view/common/reference.phtml:49
 #, php-format
 msgid "And %d more."
 msgstr ""

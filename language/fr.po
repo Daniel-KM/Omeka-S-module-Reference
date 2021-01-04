@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Reference\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-12-07 00:00+0000\n"
-"PO-Revision-Date: 2020-12-07 00:00+0000\n"
+"POT-Creation-Date: 2021-01-04 00:00+0000\n"
+"PO-Revision-Date: 2021-01-01 14:50+0100\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -35,7 +35,7 @@ msgstr "Ce module requiert les modules « %s »."
 msgid "This module has resources that connot be installed."
 msgstr "Ce module a des ressources qui ne peuvent pas être installées."
 
-#: src/Generic/AbstractModule.php:710
+#: src/Generic/AbstractModule.php:707
 #, php-format
 msgid ""
 "The module \"%s\" was automatically deactivated because the dependencies are "
@@ -78,11 +78,11 @@ msgstr "%s (%d)"
 msgid "Browse %s"
 msgstr "Parcourir %s"
 
-#: view/common/reference.phtml:43
+#: view/common/reference.phtml:48
 msgid "See all…"
 msgstr "Tout voir…"
 
-#: view/common/reference.phtml:44
+#: view/common/reference.phtml:49
 #, php-format
 msgid "And %d more."
 msgstr "Et %d de plus."
