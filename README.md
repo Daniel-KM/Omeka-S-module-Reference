@@ -155,6 +155,8 @@ To get the results via api, use a standard query and append the options you need
 for example `/api/references?metadata=dcterms:subject` to get the list of all
 subjects, or `/api/references?metadata=foaf:Person` to get the list of all
 resources with class "Person". You can add multiple metadata together: `medatadata[]=dcterms:subject&medatadata[]=dcterms:creator`
+You can use the special metadata `o:title` too, but some options won't be
+available for it since it is managed differently inside Omeka.
 
 Options are the same than the view helper:
 
@@ -277,7 +279,7 @@ Copyright
 
 * Copyright William Mayo, 2011
 * Copyright Philip Collins, 2013 ([jQuery tree view])
-* Copyright Daniel Berthereau, 2014-2020 (see [Daniel-KM] on GitLab)
+* Copyright Daniel Berthereau, 2014-2021 (see [Daniel-KM] on GitLab)
 
 This module is inspired from earlier work done by William Mayo (see [pobocks] on
 GitLab) in [Subject Browse], with some ideas from [Metadata Browser] and
