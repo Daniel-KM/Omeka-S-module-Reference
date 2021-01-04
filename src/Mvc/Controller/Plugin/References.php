@@ -332,6 +332,17 @@ class References extends AbstractPlugin
                     ];
                     break;
 
+                case 'resource_titles':
+                    $values = $this->listDataForResourceTitle();
+                    $result[$field['term']] = [
+                        '@type' => $field['@type'],
+                        'o:id' => '0',
+                        'o:term' => $field['term'],
+                        'o:label' => $field['label'],
+                        'o:references' => $values,
+                    ];
+                    break;
+
                 case 'resource_classes':
                     $values = $this->listDataForResourceClass($field['id']);
                     $result[$field['term']] = [
@@ -529,6 +540,44 @@ class References extends AbstractPlugin
         $this->filterByLanguage($qb);
         $this->filterByBeginOrEnd($qb);
         $this->manageOptions($qb, 'properties');
+        return $this->outputMetadata($qb, 'properties');
+    }
+
+    /**
+     * Get the list of used values for the title, the total for each one and the
+     * first item.
+     *
+     * @return array Associative list of references, with the total, the first
+     * record, and the first character, according to the parameters.
+     */
+    protected function listDataForResourceTitle()
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        // Note: Doctrine requires simple label, without quote or double quote:
+        // "o:label" is not possible, neither "count".
+
+        $qb
+            ->select([
+                $this->supportAnyValue
+                ? "ANY_VALUE(resource.title) AS val"
+                : "resource.title AS val",
+                // "Distinct" avoids to count duplicate values in properties in
+                // a resource: we count resources, not properties.
+                $expr->countDistinct('resource.id') . ' AS total',
+            ])
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            // This join allow to check visibility automatically too.
+            ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res', 'resource'))
+            ->groupBy('val')
+        ;
+
+        // TODO Improve filter for "o:title".
+        // $this->filterByDatatype($qb);
+        // $this->filterByLanguage($qb);
+        $this->filterByBeginOrEnd($qb, 'resource.title');
+        $this->manageOptions($qb, 'resource_titles');
         return $this->outputMetadata($qb, 'properties');
     }
 
@@ -879,7 +928,7 @@ class References extends AbstractPlugin
         }
     }
 
-    protected function filterByBeginOrEnd(QueryBuilder $qb): void
+    protected function filterByBeginOrEnd(QueryBuilder $qb, $column = 'value.value'): void
     {
         $expr = $qb->expr();
         // This is a and by default.
@@ -897,7 +946,7 @@ class References extends AbstractPlugin
                 // TODO Add more checks and a php unit.
                 if (count($this->options['filters'][$filter]) === 1) {
                     $qb
-                        ->andWhere($expr->like('value.value', ":filter_$filter"))
+                        ->andWhere($expr->like($column, ":filter_$filter"))
                         ->setParameter(
                             "filter_$filter",
                             $filterB . str_replace(['%', '_'], ['\%', '\_'], reset($this->options['filters'][$filter])) . $filterE
@@ -905,7 +954,7 @@ class References extends AbstractPlugin
                 } elseif (count($this->options['filters'][$filter]) <= 20) {
                     $orX = [];
                     foreach (array_values($this->options['filters'][$filter]) as $key => $string) {
-                        $orX[] = $expr->like('value.value', sprintf(':filter_%s_%d)', $filter, ++$key));
+                        $orX[] = $expr->like($column, sprintf(':filter_%s_%d)', $filter, ++$key));
                         $qb
                             ->setParameter(
                                 "filter_{$filter}_$key",
@@ -917,7 +966,7 @@ class References extends AbstractPlugin
                 } else {
                     $regexp = implode('|', array_map('preg_quote', $this->options['filters'][$filter]));
                     $qb
-                        ->andWhere("REGEXP(value.value, :filter_filter) = true")
+                        ->andWhere("REGEXP($column, :filter_filter) = true")
                         ->setParameter("filter_$filter", $regexp);
                 }
             }
@@ -927,7 +976,7 @@ class References extends AbstractPlugin
     protected function manageOptions(QueryBuilder $qb, $type): void
     {
         $expr = $qb->expr();
-        if (in_array($type, ['resource_classes', 'resource_templates', 'item_sets'])
+        if (in_array($type, ['resource_classes', 'resource_templates', 'item_sets', 'resource_titles'])
             && $this->options['initial']
         ) {
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
@@ -993,7 +1042,10 @@ class References extends AbstractPlugin
                 ]);
         }
 
-        if ($type === 'properties' && $this->options['list_by_max']) {
+        if ($this->options['list_by_max']
+            // TODO May be simplified for "resource_titles".
+            && ($type === 'properties' || $type === 'resource_titles')
+        ) {
             $qb
                 // Add and order by title, because it's the most common and
                 // simple. Use a single select to avoid issue with null and
@@ -1001,7 +1053,7 @@ class References extends AbstractPlugin
                 // that should not exist in Omeka data. The unit separator is
                 // not used but tabulation in order to check results simpler.
                 // Mysql max length: 1024.
-                ->leftJoin(\Omeka\Entity\Resource::class, 'ress', Join::WITH, $expr->eq('value.resource', 'ress'))
+                ->leftJoin(\Omeka\Entity\Resource::class, 'ress', Join::WITH, $expr->eq($type === 'resource_titles' ? 'resource' : 'value.resource', 'ress'))
                 ->addSelect([
                     // Note: for doctrine, separators must be set as parameters.
                     'GROUP_CONCAT(ress.id, :unit_separator, ress.title SEPARATOR :group_separator) AS resources',
@@ -1019,6 +1071,9 @@ class References extends AbstractPlugin
                     $qb
                         ->andWhere('value.value IN (:values)')
                         ->setParameter('values', $this->options['values']);
+                    break;
+                case 'resource_titles':
+                    // TODO Nothing to filter for resource titles?
                     break;
                 case 'o:property':
                     $values = is_numeric($this->options['values'][0])
@@ -1622,6 +1677,16 @@ class References extends AbstractPlugin
                 'id' => $property->id(),
                 'term' => $field,
                 'label' => $property->label(),
+            ];
+        }
+
+        if ($field === 'o:title') {
+            return [
+                '@type' => 'o:Property',
+                'type' => 'resource_titles',
+                'id' => null,
+                'term' => 'o:title',
+                'label' => 'Title', // @translate
             ];
         }
 
