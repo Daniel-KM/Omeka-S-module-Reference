@@ -15,7 +15,8 @@ be limited by site or any other pool, and ordered alphabetically or by count.
 
 The references are available via the api too, for example `/api/references?metadata=dcterms:subject`
 to get the list of all subjects, or `/api/references?metadata=foaf:Person` to
-get the list of all resources with class "Person".
+get the list of all resources with class "Person". Another format for the query
+is provided by the module [Api Info].
 
 This [Omeka S] module is a rewrite and an improvement of the [Reference plugin]
 for [Omeka].
@@ -91,7 +92,8 @@ echo $this->references()->count('dcterms:subject', $query, $options);
 ```
 
 The references are available via the api in `/api/references` too. Arguments are
-the same than above. This feature is available via the module [ApiInfo] too.
+the same than above. This feature is available via the module [Api Info] too,
+with a different format and on `/api/infos/references`.
 
 ### Tree view
 
@@ -150,6 +152,8 @@ taken from the url of an advanced search, converted into an array with `parse_st
 The conversion is automatically done inside the user interface (page blocks).
 
 ### Api to get references and facets
+
+Note: [Api Info] offers another query format to get the same results.
 
 To get the results via api, use a standard query and append the options you need,
 for example `/api/references?metadata=dcterms:subject` to get the list of all
@@ -295,7 +299,7 @@ Performance fixes were made for Article 19.
 [Reference plugin]: https://gitlab.com/Daniel-KM/Omeka-plugin-Reference
 [Reference.zip]: https://gitlab.com/Daniel-KM/Omeka-S-module-Reference/-/releases
 [Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
-[ApiInfo]: https://gitlab.com/Daniel-KM/Omeka-S-module-ApiInfo
+[Api Info]: https://gitlab.com/Daniel-KM/Omeka-S-module-ApiInfo
 [Bulk Edit]: https://gitlab.com/Daniel-KM/Omeka-S-module-BulkEdit
 [Bulk Check]: https://gitlab.com/Daniel-KM/Omeka-S-module-BulkCheck
 [module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-Reference/-/issues
