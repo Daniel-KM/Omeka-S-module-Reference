@@ -261,24 +261,24 @@ class References extends AbstractPlugin
             if (is_string($this->options['filters']['languages']) && strlen($this->options['filters']['languages'])) {
                 $this->options['filters']['languages'] = explode('|', str_replace(',', '|', $this->options['filters']['languages']));
             }
-            $this->options['filters']['languages'] = array_unique(array_map('trim', $this->options['filters']['languages']));
+            $this->options['filters']['languages'] = array_unique(array_map('trim', $this->options['filters']['languages'] ?: []));
             if (!is_array($this->options['filters']['datatypes'])) {
-                $this->options['filters']['datatypes'] = explode('|', str_replace(',', '|', $this->options['filters']['datatypes']));
+                $this->options['filters']['datatypes'] = explode('|', str_replace(',', '|', $this->options['filters']['datatypes'] ?: ''));
             }
             $this->options['filters']['datatypes'] = array_unique(array_filter(array_map('trim', $this->options['filters']['datatypes'])));
 
             // No trim for begin/end.
             if (!is_array($this->options['filters']['begin'])) {
-                $this->options['filters']['begin'] = explode('|', str_replace(',', '|', $this->options['filters']['begin']));
+                $this->options['filters']['begin'] = explode('|', str_replace(',', '|', $this->options['filters']['begin'] ?? ''));
             }
             $this->options['filters']['begin'] = array_unique(array_filter($this->options['filters']['begin']));
             if (!is_array($this->options['filters']['end'])) {
-                $this->options['filters']['end'] = explode('|', str_replace(',', '|', $this->options['filters']['end']));
+                $this->options['filters']['end'] = explode('|', str_replace(',', '|', $this->options['filters']['end'] ?? ''));
             }
             $this->options['filters']['end'] = array_unique(array_filter($this->options['filters']['end']));
 
             if (!is_array($this->options['fields'])) {
-                $this->options['fields'] = explode('|', str_replace(',', '|', $this->options['fields']));
+                $this->options['fields'] = explode('|', str_replace(',', '|', $this->options['fields'] ?? ''));
             }
             $this->options['fields'] = array_unique(array_filter(array_map('trim', $this->options['fields'])));
         } else {
