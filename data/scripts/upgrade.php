@@ -268,7 +268,7 @@ if (version_compare($oldVersion, '3.4.23.3', '<')) {
             ->innerJoin('property', 'vocabulary', 'vocabulary', 'property.vocabulary_id = vocabulary.id');
         // Fetch by key pair is not supported by doctrine 2.0.
         $result = $connection->executeQuery($qb)->fetchAll(\PDO::FETCH_ASSOC);
-        $terms['properties'] = array_column($result, 'id', 'term');
+        $terms['properties'] = array_map('intval', array_column($result, 'id', 'term'));
 
         $qb = $connection->createQueryBuilder();
         $qb
@@ -280,7 +280,7 @@ if (version_compare($oldVersion, '3.4.23.3', '<')) {
             ->innerJoin('resource_class', 'vocabulary', 'vocabulary', 'resource_class.vocabulary_id = vocabulary.id');
         // Fetch by key pair is not supported by doctrine 2.0.
         $result = $connection->executeQuery($qb)->fetchAll(\PDO::FETCH_ASSOC);
-        $terms['resource_classes'] = array_column($result, 'id', 'term');
+        $terms['resource_classes'] = array_map('intval', array_column($result, 'id', 'term'));
 
         return $terms;
     };
