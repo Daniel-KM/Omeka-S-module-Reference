@@ -306,7 +306,6 @@ class References extends AbstractPlugin
             return [];
         }
 
-        $options = $this->getOptions();
         $isAssociative = $this->options['output'] === 'associative';
 
         // TODO Convert all queries into a single or two sql queries (at least for properties and classes).
@@ -426,8 +425,8 @@ class References extends AbstractPlugin
                     break;
 
                 case 'o:item_set':
-                    // Manage an exception for the resource "items" exception.
-                    if ($field['type'] === 'o:item_set' && $options['resource_name'] !== 'items') {
+                    // Manage an exception for the resource "items".
+                    if ($field['type'] === 'o:item_set' && $this->options['resource_name'] !== 'items') {
                         $values = [];
                     } else {
                         $values = $this->listItemSets();
@@ -520,8 +519,8 @@ class References extends AbstractPlugin
         $qb
             ->select([
                 $this->supportAnyValue
-                    ? "ANY_VALUE(COALESCE(value.value, valueResource.title, value.uri)) AS val"
-                    : "COALESCE(value.value, valueResource.title, value.uri) AS val",
+                    ? 'ANY_VALUE(COALESCE(value.value, valueResource.title, value.uri)) AS val'
+                    : 'COALESCE(value.value, valueResource.title, value.uri) AS val',
                 // "Distinct" avoids to count duplicate values in properties in
                 // a resource: we count resources, not properties.
                 $expr->countDistinct('resource.id') . ' AS total',
@@ -561,8 +560,8 @@ class References extends AbstractPlugin
         $qb
             ->select([
                 $this->supportAnyValue
-                ? "ANY_VALUE(resource.title) AS val"
-                : "resource.title AS val",
+                ? 'ANY_VALUE(resource.title) AS val'
+                : 'resource.title AS val',
                 // "Distinct" avoids to count duplicate values in properties in
                 // a resource: we count resources, not properties.
                 $expr->countDistinct('resource.id') . ' AS total',
@@ -697,7 +696,7 @@ class References extends AbstractPlugin
         $qb
             ->select(
                 // 'property.label as val',
-                "CONCAT(vocabulary.prefix, ':', property.localName) AS val",
+                'CONCAT(vocabulary.prefix, ":", property.localName) AS val',
                 // "Distinct" avoids to count resources with multiple
                 // values multiple times for the same property: we count
                 // resources, not properties.
@@ -755,7 +754,7 @@ class References extends AbstractPlugin
         $qb
             ->select(
                 // 'resource_class.label as val',
-                "CONCAT(vocabulary.prefix, ':', resource_class.localName) AS val",
+                'CONCAT(vocabulary.prefix, ":", resource_class.localName) AS val',
                 'COUNT(resource.id) AS total'
             )
             // The use of resource checks visibility automatically.
@@ -912,19 +911,16 @@ class References extends AbstractPlugin
         if ($this->options['filters']['languages']) {
             $expr = $qb->expr();
             $hasEmptyLanguage = in_array('', $this->options['filters']['languages']);
-            if ($hasEmptyLanguage) {
-                $qb
-                    ->andWhere($expr->orX(
-                        $expr->in('value.lang', ':languages'),
-                        // FIXME For an unknown reason, doctrine may crash with "IS NULL" in some non-reproductible cases. Db version related?
-                        $expr->isNull('value.lang')
-                    ))
-                    ->setParameter('languages', $this->options['filters']['languages'], \Doctrine\DBAL\Types\Type::SIMPLE_ARRAY);
-            } else {
-                $qb
-                    ->andWhere($expr->in('value.lang', ':languages'))
-                    ->setParameter('languages', $this->options['filters']['languages'], \Doctrine\DBAL\Types\Type::SIMPLE_ARRAY);
-            }
+            $filter = $hasEmptyLanguage
+                ? $expr->orX(
+                    $expr->in('value.lang', ':languages'),
+                    // FIXME For an unknown reason, doctrine may crash with "IS NULL" in some non-reproductible cases. Db version related?
+                    $expr->isNull('value.lang')
+                )
+                : $expr->in('value.lang', ':languages');
+            $qb
+                ->andWhere($filter)
+                ->setParameter('languages', $this->options['filters']['languages'], \Doctrine\DBAL\Types\Type::SIMPLE_ARRAY);
         }
     }
 
@@ -995,8 +991,8 @@ class References extends AbstractPlugin
                 ->addSelect([
                     // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? 'ANY_VALUE(' . $expr->upper($expr->substring("COALESCE(value.value, valueResource.title, value.uri)", 1, 1)) . ') AS initial'
-                        : $expr->upper($expr->substring("COALESCE(value.value, valueResource.title, value.uri)", 1, 1)) . ' AS initial',
+                        ? 'ANY_VALUE(' . $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, 1)) . ') AS initial'
+                        : $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, 1)) . ' AS initial',
                 ]);
         }
 
@@ -1573,8 +1569,8 @@ class References extends AbstractPlugin
                     // no break.
                 case 'res':
                     $predicateExpr = $expr->eq(
-                    "$valuesAlias.valueResource",
-                    $adapter->createNamedParameter($qb, $value)
+                        "$valuesAlias.valueResource",
+                        $adapter->createNamedParameter($qb, $value)
                     );
                     break;
 
