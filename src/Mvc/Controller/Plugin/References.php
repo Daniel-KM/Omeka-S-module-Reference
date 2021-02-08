@@ -258,10 +258,10 @@ class References extends AbstractPlugin
 
             // The check for length avoids to add a filter on values without any
             // language. It should be specified as "||" (or leading/trailing "|").
-            if (is_string($this->options['filters']['languages']) && strlen($this->options['filters']['languages'])) {
-                $this->options['filters']['languages'] = explode('|', str_replace(',', '|', $this->options['filters']['languages']));
+            if (!is_array($this->options['filters']['languages'])) {
+                $this->options['filters']['languages'] = explode('|', str_replace(',', '|', $this->options['filters']['languages'] ?: ''));
             }
-            $this->options['filters']['languages'] = array_unique(array_map('trim', $this->options['filters']['languages'] ?: []));
+            $this->options['filters']['languages'] = array_unique(array_map('trim', $this->options['filters']['languages']));
             if (!is_array($this->options['filters']['datatypes'])) {
                 $this->options['filters']['datatypes'] = explode('|', str_replace(',', '|', $this->options['filters']['datatypes'] ?: ''));
             }
@@ -899,10 +899,15 @@ class References extends AbstractPlugin
     protected function filterByDatatype(QueryBuilder $qb): void
     {
         if ($this->options['filters']['datatypes']) {
+            /* // TODO Fix doctrine IN for array of strings.
             $expr = $qb->expr();
             $qb
                 ->andWhere($expr->in('value.type', ':datatypes'))
                 ->setParameter('datatypes', $this->options['filters']['datatypes'], \Doctrine\DBAL\Types\Type::SIMPLE_ARRAY);
+            */
+            $connection = $this->entityManager->getConnection();
+            $qb
+                ->andWhere('value.type IN (' . implode(',', array_map([$connection, 'quote'], $this->options['filters']['datatypes'])) . ')');
         }
     }
 
@@ -911,16 +916,19 @@ class References extends AbstractPlugin
         if ($this->options['filters']['languages']) {
             $expr = $qb->expr();
             $hasEmptyLanguage = in_array('', $this->options['filters']['languages']);
-            $filter = $hasEmptyLanguage
-                ? $expr->orX(
-                    $expr->in('value.lang', ':languages'),
-                    // FIXME For an unknown reason, doctrine may crash with "IS NULL" in some non-reproductible cases. Db version related?
-                    $expr->isNull('value.lang')
-                )
-                : $expr->in('value.lang', ':languages');
+            // Note: For an unknown reason, doctrine may crash with "IS NULL" in
+            // some non-reproductible cases. Db version related?
+            /* // TODO Fix doctrine IN for array of strings.
+            $in = $expr->in('value.lang', ':languages');
+            $filter = $hasEmptyLanguage ? $expr->orX($in, $expr->isNull('value.lang')) : $in;
             $qb
                 ->andWhere($filter)
                 ->setParameter('languages', $this->options['filters']['languages'], \Doctrine\DBAL\Types\Type::SIMPLE_ARRAY);
+            */
+            $connection = $this->entityManager->getConnection();
+            $in = 'value.lang IN (' . implode(',', array_map([$connection, 'quote'], $this->options['filters']['languages'])) . ')';
+            $qb
+                ->andWhere($hasEmptyLanguage ? $expr->orX($in, $expr->isNull('value.lang')) : $in);
         }
     }
 
