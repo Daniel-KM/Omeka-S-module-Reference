@@ -696,7 +696,8 @@ class References extends AbstractPlugin
         $qb
             ->select(
                 // 'property.label as val',
-                'CONCAT(vocabulary.prefix, ":", property.localName) AS val',
+                // Important: use single quote for string ":", else doctrine fails.
+                "CONCAT(vocabulary.prefix, ':', property.localName) AS val",
                 // "Distinct" avoids to count resources with multiple
                 // values multiple times for the same property: we count
                 // resources, not properties.
@@ -754,7 +755,8 @@ class References extends AbstractPlugin
         $qb
             ->select(
                 // 'resource_class.label as val',
-                'CONCAT(vocabulary.prefix, ":", resource_class.localName) AS val',
+                // Important: use single quote for string ":", else doctrine fails.
+                "CONCAT(vocabulary.prefix, ':', resource_class.localName) AS val",
                 'COUNT(resource.id) AS total'
             )
             // The use of resource checks visibility automatically.
