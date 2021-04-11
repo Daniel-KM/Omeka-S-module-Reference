@@ -1,0 +1,460 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-01-04 00:00+0000\n"
+"PO-Revision-Date: 2021-04-11 14:10+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.4.2\n"
+"Last-Translator: Giorgio Comai <g@giorgiocomai.eu>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: it\n"
+
+#: src/Controller/ApiController.php:111
+msgid "Method Not Allowed"
+msgstr "Metodo non permesso"
+
+#: src/Generic/AbstractModule.php:66
+#, php-format
+msgid "This module requires the module \"%s\"."
+msgstr "Questo modulo ha bisogno del modulo \"%s\"."
+
+#: src/Generic/AbstractModule.php:73
+#, php-format
+msgid "This module requires modules \"%s\"."
+msgstr "Questo modulo ha bisogno dei moduli \"%s\"."
+
+#: src/Generic/AbstractModule.php:80
+msgid "This module has resources that connot be installed."
+msgstr "Questo modulo contiene risorse che non possono essere installate."
+
+#: src/Generic/AbstractModule.php:707
+#, php-format
+msgid ""
+"The module \"%s\" was automatically deactivated because the dependencies are "
+"unavailable."
+msgstr ""
+"Il modulo \"%s\" è stato disattivato automaticamente perché le dipendenze "
+"non sono disponibili."
+
+#: src/Site/BlockLayout/Reference.php:143
+msgid "Choose a property or a resource class."
+msgstr "Scegli una proprietà o una classe di risorse."
+
+#: src/Site/BlockLayout/ReferenceIndex.php:141
+msgid "Choose a list of property or resource class."
+msgstr "Scegli una lista di proprietà o una classe di risorse."
+
+#: src/Site/BlockLayout/ReferenceIndex.php:142
+msgid ""
+"The pages for the selected terms should be created manually with the terms "
+"as slug, with the \":\" replaced by a \"-\"."
+msgstr ""
+"Le pagine per i termini selezionati dovrebbero essere create manualmente con "
+"i termini riportati quali slug, sostituendo il segno \":\" con \"-\"."
+
+#: view/common/block-layout/reference-index.phtml:19
+#: view/common/block-layout/reference-tree.phtml:24
+#: view/common/block-layout/reference.phtml:22
+msgid "There is no references."
+msgstr "Non ci sono riferimenti."
+
+#: view/common/reference-index.phtml:29
+#, php-format
+msgid "%s (%d)"
+msgstr "%s (%d)"
+
+#: view/common/reference-index.phtml:32 view/common/reference-index.phtml:41
+#: view/reference/site/reference/browse.phtml:38
+#: view/reference/site/reference/browse.phtml:67
+#, php-format
+msgid "Browse %s"
+msgstr "Sfoglia %s"
+
+#: view/common/reference.phtml:48
+msgid "See all…"
+msgstr "Vedi tutti…"
+
+#: view/common/reference.phtml:49
+#, php-format
+msgid "And %d more."
+msgstr "E %d altri."
+
+#: view/reference/site/reference/browse.phtml:28
+msgid "No references available."
+msgstr "Nessun riferimento disponibile."
+
+#: view/reference/site/reference/browse.phtml:58
+msgid "Main types"
+msgstr "Tipologie principali"
+
+#: view/reference/site/reference/list.phtml:17
+#, php-format
+msgid "Browse items by \"%s\" (%d headings)"
+msgstr "Sfoglia contenuti per \"%s\" (%d titoli)"
+
+#: view/reference/site/reference/list.phtml:21
+#, php-format
+msgid "There is no references for \"%s\"."
+msgstr "Non ci sono riferimenti per \"%s\"."
+
+#: data/scripts/upgrade.php:348
+msgid ""
+"It is possible now to limit the list of references, for example only the of "
+"subjects starting with \"a\" with argument \"filters[begin]=a\"."
+msgstr ""
+"È possibile limitare la lista di riferimenti, ad esempio includendo solo i "
+"soggetti che iniziano con la lettera con il seguente parametro "
+"\"filters[begin]=a\"."
+
+#: data/scripts/upgrade.php:353
+msgid ""
+"It is possible now to list not only references, but resources by reference, "
+"for example all documents of an author or all items with each subject."
+msgstr ""
+"È ora possibile elencare non solo i riferimenti, ma anche risorse per "
+"riferimento, ad esempio tutti i documenti di un autore o tutti i contenuti "
+"con ciascun soggetto."
+
+#: src/Form/ReferenceTreeFieldset.php:18
+msgid "Block title"
+msgstr "Titolo del blocco"
+
+#: src/Form/ReferenceTreeFieldset.php:19
+msgid "Heading for the block, if any. The placeholder {total} can be used."
+msgstr ""
+"Titolo per il blocco (opzionale). Può essere utilizzato il segnaposto "
+"{total}."
+
+#: src/Form/ReferenceTreeFieldset.php:37 src/Form/ReferenceFieldset.php:33
+#: src/Form/ReferenceFieldset.php:192
+msgid "Select a property…"
+msgstr "Seleziona una proprietà…"
+
+#: src/Form/ReferenceTreeFieldset.php:44
+msgid "Static tree of references"
+msgstr "Albero dei riferimenti statico"
+
+#: src/Form/ReferenceTreeFieldset.php:45
+msgid ""
+"Format is: one reference by line, preceded by zero, one or more \"-\" to "
+"indicate the hierarchy level.\n"
+"Separate the \"-\" and the reference with a space. Empty lines are not "
+"considered.\n"
+"Note: sql does case insensitive searches, so all references should be case-"
+"insensitively unique."
+msgstr ""
+"Il formato è: un riferimento per linea, preceduto da zero, uno o più "
+"trattini \"-\" per indicare il livello nella gerarchia.\n"
+"Separa il trattino \"-\" e il riferimento con uno spazio. Linee vuote non "
+"sono considerate.\n"
+"Nota: sql effettua ricerche che non differenziano tra maiuscolo e minuscolo, "
+"quindi per distinguersi tutti i riferimenti dovrebbero essere unici e non "
+"avere diverso solo una maiuscola o minuscola."
+
+#: src/Form/ReferenceTreeFieldset.php:54
+msgid ""
+"Europe\n"
+"- France\n"
+"-- Paris\n"
+"- United Kingdom\n"
+"-- England\n"
+"--- London\n"
+"Asia\n"
+"- Japan\n"
+msgstr ""
+"Europa\n"
+"- Francia\n"
+"-- Parigi\n"
+"- Regno Unito\n"
+"-- Inghilterra\n"
+"--- Londra\n"
+"Asia\n"
+"- Giappone\n"
+
+#: src/Form/ReferenceTreeFieldset.php:73 src/Form/ReferenceIndexFieldset.php:63
+#: src/Form/SiteSettingsFieldset.php:25 src/Form/ReferenceFieldset.php:58
+msgid "value_options"
+msgstr "value_options"
+
+#: src/Form/ReferenceTreeFieldset.php:92 src/Form/ReferenceIndexFieldset.php:96
+#: src/Form/ReferenceFieldset.php:91
+msgid "Query to limit resources"
+msgstr "Query per limitare le risorse"
+
+#: src/Form/ReferenceTreeFieldset.php:93 src/Form/ReferenceIndexFieldset.php:97
+#: src/Form/ReferenceFieldset.php:92
+msgid ""
+"Limit the reference to a particular subset of resources, for example a site, "
+"via an advanced search query."
+msgstr ""
+"Limita i riferimenti a uno specifico sottogruppo di risorse, ad esempio un "
+"sito, attraverso una query di ricerca avanzata."
+
+#: src/Form/ReferenceTreeFieldset.php:108
+msgid ""
+"The type of query defines how elements are regrouped (see the advanced "
+"search)."
+msgstr ""
+"Il tipo di query definisce come gli elementi sono raggruppati (vedi ricerca "
+"avanzata)."
+
+#: src/Form/ReferenceTreeFieldset.php:110
+msgid "Is Exactly"
+msgstr "È esattamente"
+
+#: src/Form/ReferenceTreeFieldset.php:111
+msgid "Contains"
+msgstr "Contiene"
+
+#: src/Form/ReferenceTreeFieldset.php:123 src/Form/SiteSettingsFieldset.php:48
+#: src/Form/ReferenceFieldset.php:132
+msgid "Link to single records"
+msgstr "Link a un singolo contenuto"
+
+#: src/Form/ReferenceTreeFieldset.php:124 src/Form/ReferenceFieldset.php:133
+msgid ""
+"When a reference has only one item, link to it directly instead of to the "
+"items/browse page."
+msgstr ""
+"Quando a un riferimento corrisponde un singolo contenuto, includi link "
+"diretto al contenuto invece che alla relativa pagina per sfogliare contenuti."
+
+#: src/Form/ReferenceTreeFieldset.php:134 src/Form/ReferenceFieldset.php:140
+msgid "Custom url for single"
+msgstr "Url personalizzata"
+
+#: src/Form/ReferenceTreeFieldset.php:135 src/Form/ReferenceFieldset.php:141
+msgid ""
+"May be set with modules such Clean Url or Ark. May slow the display when "
+"there are many single references."
+msgstr ""
+"Può essere impostato con moduli quali Clean Url o Ark. Può rallentare la "
+"visualizzazione quando ci sono molti riferimenti unici."
+
+#: src/Form/ReferenceTreeFieldset.php:145
+#: src/Form/ReferenceIndexFieldset.php:143 src/Form/ReferenceFieldset.php:162
+msgid "Add the total of resources for each reference"
+msgstr "Aggiungi il totale delle risorse per ogni riferimento"
+
+#: src/Form/ReferenceTreeFieldset.php:155
+msgid "Expand the tree"
+msgstr "Espandi l'albero"
+
+#: src/Form/ReferenceTreeFieldset.php:165
+msgid "Managed as branch"
+msgstr "Gestito come un ramo"
+
+#: src/Form/ReferenceTreeFieldset.php:166
+msgid ""
+"Check this box if the tree is managed as branch (the path is saved with "
+"\" :: \" between each branch)."
+msgstr ""
+"Seleziona questa opzione se l'albero è gestito come un ramo (il percorso è "
+"salvato con \" :: \" tra ogni ramo)."
+
+#: src/Form/ReferenceTreeFieldset.php:179
+#: src/Form/ReferenceIndexFieldset.php:156 src/Form/ReferenceFieldset.php:202
+msgid "Template to display"
+msgstr "Modello da mostrare"
+
+#: src/Form/ReferenceTreeFieldset.php:180
+msgid ""
+"Templates are in folder \"common/block-layout\" of the theme and should "
+"start with \"reference-tree\"."
+msgstr ""
+"I modelli sono nella cartella \"common/block-layout\" del tema e dovrebbero "
+"iniziare con \"reference-tree\"."
+
+#: src/Form/ReferenceIndexFieldset.php:36
+msgid "Select properties…"
+msgstr "Seleziona proprietà…"
+
+#: src/Form/ReferenceIndexFieldset.php:43
+msgid "Resource classes"
+msgstr "Classi di risorse"
+
+#: src/Form/ReferenceIndexFieldset.php:52
+msgid "Select resource classes…"
+msgstr "Seleziona classi di risorsa…"
+
+#: src/Form/ReferenceIndexFieldset.php:74
+msgid "chosen-select"
+msgstr "chosen-select"
+
+#: src/Form/ReferenceIndexFieldset.php:108 src/Form/ReferenceFieldset.php:100
+msgid "Filter by language"
+msgstr "Filtra per lingua"
+
+#: src/Form/ReferenceIndexFieldset.php:109 src/Form/ReferenceFieldset.php:101
+msgid ""
+"Limit the results to the specified languages. Use \"|\" to separate multiple "
+"languages. Use \"||\" for values without language."
+msgstr ""
+"Limita i risultati alle lingue specificate. Usa \"|\" per separare più "
+"lingue. Usa \"||\" per valori privi di lingua."
+
+#: src/Form/ReferenceIndexFieldset.php:122 src/Form/SiteSettingsFieldset.php:43
+#: src/Form/ReferenceFieldset.php:114
+msgid "Display"
+msgstr "Mostra"
+
+#: src/Form/ReferenceIndexFieldset.php:132 src/Form/ReferenceFieldset.php:124
+msgid "Heading"
+msgstr "Titolo"
+
+#: src/Form/ReferenceIndexFieldset.php:157
+msgid ""
+"Templates are in folder \"common/block-layout\" of the theme and should "
+"start with \"reference-index\"."
+msgstr ""
+"I modelli sono nella cartella \"common/block-layout\" del tema e dovrebbero "
+"iniziare con reference-index\"."
+
+#: src/Form/SiteSettingsFieldset.php:15 src/Site/BlockLayout/Reference.php:36
+msgid "Reference"
+msgstr "Riferimenti"
+
+#: src/Form/SiteSettingsFieldset.php:24
+msgid "Resources to link"
+msgstr "Risorse da collegare"
+
+#: src/Form/SiteSettingsFieldset.php:45
+msgid "Headings"
+msgstr "Titoli"
+
+#: src/Form/SiteSettingsFieldset.php:46
+msgid "Skip links"
+msgstr "Salta link"
+
+#: src/Form/SiteSettingsFieldset.php:47
+msgid "Individual total"
+msgstr "Totale individuali"
+
+#: src/Form/SiteSettingsFieldset.php:49
+msgid "Custom url for single records"
+msgstr "URL personalizzata per singoli contenuti"
+
+#: src/Form/SiteSettingsFieldset.php:62
+msgid "Reference pages for selected classes and properties"
+msgstr "Riferimenti alle pagine per classi e proprietà selezionate"
+
+#: src/Form/ReferenceFieldset.php:40
+msgid "Resource class"
+msgstr "Classe di risorse"
+
+#: src/Form/ReferenceFieldset.php:47
+msgid "Select a resource class…"
+msgstr "Seleziona una classe di risorse…"
+
+#: src/Form/ReferenceFieldset.php:75
+msgid "Select order"
+msgstr "Seleziona ordine"
+
+#: src/Form/ReferenceFieldset.php:77
+msgid "Alphabetic ascendant"
+msgstr "Alfabetico crescente"
+
+#: src/Form/ReferenceFieldset.php:78
+msgid "Alphabetic descendant"
+msgstr "Alfabetico decrescente"
+
+#: src/Form/ReferenceFieldset.php:79
+msgid "Total ascendant"
+msgstr "Totale crescente"
+
+#: src/Form/ReferenceFieldset.php:80
+msgid "Total descendant"
+msgstr "Totale decrescente"
+
+#: src/Form/ReferenceFieldset.php:125
+msgid ""
+"Translatable title above references, if any. The placeholder {total} can be "
+"used."
+msgstr ""
+"Titolo traducibile sopra i riferimenti, se presente. Può essere utilizzato "
+"il segnaposto {total}."
+
+#: src/Form/ReferenceFieldset.php:148
+msgid "Add skiplinks above and below list"
+msgstr ""
+"Aggiungi link per saltare da una lettera ad un'altra in cima e in fondo alla "
+"lista"
+
+#: src/Form/ReferenceFieldset.php:155
+msgid "Add first letter as headings between references"
+msgstr "Aggiungi la prima lettera come titolo tra i riferimenti"
+
+#: src/Form/ReferenceFieldset.php:169
+msgid "Maximum resources to display by reference"
+msgstr "Massimo numero di risorse per riferimento da mostrare"
+
+#: src/Form/ReferenceFieldset.php:170
+msgid ""
+"For example, display the items by subject. Let 0 to display a simple list. "
+"Maximum is 1024."
+msgstr ""
+"Per esempio, mostra i contenuti per soggetto. Lascia 0 per mostrare una "
+"lista semplice. Il valore massimo è 1024."
+
+#: src/Form/ReferenceFieldset.php:183
+msgid "Subject values"
+msgstr "Valori soggetto"
+
+#: src/Form/ReferenceFieldset.php:184
+msgid ""
+"Allow to list related resources. For example, in a library where there are "
+"items of types \"Authors\" and \"Documents\", and if the creator of the "
+"documents are linked resources, then select \"Creator\" to see the list of "
+"documents by author. This option is skipped when option \"max by reference\" "
+"is used."
+msgstr ""
+"Permetti una lista di risorse correlate. Per esempio, in una raccolta in cui "
+"ci sono contenuti di tipo \"Autori\" e \"Documenti\", e se il creatore dei "
+"documenti è una risorsa collegata, allora seleziona \"Creatore\" per vedere "
+"una lista dei documenti per autore. Questa opzione è ignorata quando il "
+"massimo numero di risorse per riferimento è specificato."
+
+#: src/Form/ReferenceFieldset.php:203
+msgid ""
+"Templates are in folder \"common/block-layout\" of the theme and should "
+"start with \"reference\"."
+msgstr ""
+"I modelli sono nella cartella \"common/block-layout\" del tema e il loro "
+"nome inizia con \"reference\"."
+
+#: src/Site/BlockLayout/Reference.php:55
+msgid "To create references, there must be a property or a resource class."
+msgstr ""
+"Per creare riferimenti, deve esserci una proprietà o una classe di risorse."
+
+#: src/Site/BlockLayout/ReferenceTree.php:46
+msgid "Reference tree"
+msgstr "Albero dei riferimenti"
+
+#: src/Site/BlockLayout/ReferenceIndex.php:36 config/module.config.php:185
+msgid "Reference index"
+msgstr "Indice dei riferimenti"
+
+#: src/Site/BlockLayout/ReferenceIndex.php:65
+msgid ""
+"To create a list of references, there must be properties or resource classes."
+msgstr ""
+"Per creare una lista di riferimenti, devono esserci proprietà o classi di "
+"risorsa."
+
+#: config/module.config.php:166
+msgid "Subjects"
+msgstr "Soggetti"
+
+#: config/module.config.php:191
+msgid "Tree of subjects"
+msgstr "Albero dei soggetti"
