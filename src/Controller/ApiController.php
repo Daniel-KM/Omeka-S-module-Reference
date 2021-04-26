@@ -42,10 +42,6 @@ class ApiController extends \Omeka\Controller\ApiController
     public function getList()
     {
         $query = $this->cleanQuery();
-        $resourceName = $this->params('resource');
-        if ($resourceName) {
-            $query['resource_name'] = $resourceName;
-        }
 
         // Field may be an array.
         // Empty string field means meta results.
@@ -53,15 +49,43 @@ class ApiController extends \Omeka\Controller\ApiController
         $fields = is_array($field) ? $field : [$field];
         $fields = array_unique($fields);
 
-        // Either "field" or "text" is required.
-        if (empty($fields)) {
-            return new ApiJsonModel([], $this->getViewOptions());
-        }
         unset($query['metadata']);
 
+        $resourceName = $this->params('resource');
+        if ($resourceName) {
+            $query['resource_name'] = $resourceName;
+        }
+
         $options = $query;
-        $query = $options['query'] ?? [];
+        if (array_key_exists('query', $options)) {
+            $query = is_array($options['query']) ? $options['query'] : ['text' => $options['query']];
+        }
+
+        if (isset($options['option']) && is_array($options['option'])) {
+            $options = $options['option'];
+        }
+
+        unset($query['query']);
+        unset($query['option']);
         unset($options['query']);
+        unset($options['option']);
+
+        // Text is full text, but full text doesn't work via api.
+        if (array_key_exists('text', $query) && strlen($query['text'])) {
+            $query['property'][] = [
+                'joiner' => 'and',
+                'property' => '',
+                'type' => 'in',
+                'text' => $query['text'],
+            ];
+        }
+        unset($query['text']);
+        unset($query['per_page']);
+        unset($query['page']);
+        unset($query['sort_by']);
+        unset($query['sort_order']);
+        unset($query['offset']);
+        unset($query['limit']);
 
         $result = $this->references($fields, $query, $options)->list();
         return new ApiJsonModel($result, $this->getViewOptions());
