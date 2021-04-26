@@ -92,8 +92,9 @@ echo $this->references()->count('dcterms:subject', $query, $options);
 ```
 
 The references are available via the api in `/api/references` too. Arguments are
-the same than above. This feature is available via the module [Api Info] too,
-with a different format and on `/api/infos/references`.
+the same than above: the search query + a `metadata` array for the list of
+fields to get, and an array of `options` to use. The same feature is available
+via the module [Api Info] too on `/api/infos/references`.
 
 ### Tree view
 
@@ -153,14 +154,31 @@ The conversion is automatically done inside the user interface (page blocks).
 
 ### Api to get references and facets
 
-Note: [Api Info] offers another query format to get the same results.
-
 To get the results via api, use a standard query and append the options you need,
 for example `/api/references?metadata=dcterms:subject` to get the list of all
 subjects, or `/api/references?metadata=foaf:Person` to get the list of all
 resources with class "Person". You can add multiple metadata together: `medatadata[]=dcterms:subject&medatadata[]=dcterms:creator`
 You can use the special metadata `o:title` too, but some options won't be
-available for it since it is managed differently inside Omeka.
+available for it since it is managed differently inside Omeka. The metadata can
+be a property term, or `o:item_set`, `o:resource_class`, and `o:resource_template`
+too. If no `metadata` is set, you will get the totals of references for
+properties.
+
+The query from the url can be simplified with `text=my-text` in most of the
+cases, so the references are filtered by this text in any property.
+If one or multiple fields are specified, the references are returned for these
+fields. The fields can be a comma separated list of an array, for example:
+`/api/infos/references?text=example&metadata=dcterms:subject` allows to get all
+references for the specified text in the specified field.
+
+To get the facets for the search result page, you can use this query:
+`text=xxx&site_id=1&option[resource_name]=items&option[sort_by]=total&option[sort_order]=desc&option[filters][languages][]=fra&option[filters][languages][]=&option[filters][languages]=&option[lang]=1&metadata[]=dcterms:subject`
+Note: if you use the filters for the language, it may be needed to add an
+empty language `&option[filters][languages][]=` or, for string format, `&option[filters][languages]=fra,`
+because many metadata have no language (date, names, etc.).
+
+Options can be appended to the query. If you don't want to mix them, you can use
+the keys `query` and `option`.
 
 Options are the same than the view helper:
 
@@ -203,13 +221,17 @@ Don't confuse the filters and the query: the query limits the resource to search
 generally a site or an item set, and the filters limits the returned list of
 references.
 
-For the filters and the fields, they can be written in various ways to simplify
-url request, for example:
-`fields[]=o:id&fields[]=o:title&fields[]=o:item_set&fields[]=bibo:shortTitle`
-`fields=o:id,o:title,o:item_set,bibo:shortTitle`
+For the filters and the metadata, they can be written in various ways to
+simplify url request, for example:
+- `metadata[]=o:id&metadata[]=o:title&metadata[]=o:item_set&metadata[]=bibo:shortTitle`
+- `metadata=o:id,o:title,o:item_set,bibo:shortTitle`
 or
-`filters[begin][]=w&filters[begin][]=x&filters[begin][]=y&filters[begin][]=z`
-`filters[begin]=w,x,y,z`
+- `filters[begin][]=w&filters[begin][]=x&filters[begin][]=y&filters[begin][]=z`
+- `filters[begin]=w,x,y,z`
+
+**Important**:
+The response is for all sites by default. Add argument `site_id={##}` or `site_slug={slug}`
+to get data for a site.
 
 
 Note about linked resources
