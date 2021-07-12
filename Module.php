@@ -19,7 +19,7 @@ use Omeka\Settings\SettingsInterface;
  * Allows to serve an alphabetized and a hierarchical page of links to searches
  * for all resources classes and properties of all resources of Omeka S.
  *
- * @copyright Daniel Berthereau, 2017-2020
+ * @copyright Daniel Berthereau, 2017-2021
  * @license http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.txt
  */
 class Module extends AbstractModule
