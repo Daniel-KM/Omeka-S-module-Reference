@@ -108,7 +108,7 @@ class Reference extends AbstractBlockLayout
             $data = $block->data() + $defaultSettings;
             if (is_array($data['args']['query'])) {
                 $data['args']['query'] = urldecode(
-                    http_build_query($data['args']['query'], "\n", '&', PHP_QUERY_RFC3986)
+                    http_build_query($data['args']['query'], '', '&', PHP_QUERY_RFC3986)
                 );
             }
         } else {
