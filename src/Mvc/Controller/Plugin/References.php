@@ -174,6 +174,8 @@ class References extends AbstractPlugin
         $filter = function ($v) {
             return is_string($v) ? (bool) strlen($v) : (bool) $v;
         };
+        unset($query['sort_by']);
+        unset($query['sort_order']);
         unset($query['per_page']);
         unset($query['page']);
         unset($query['offset']);
