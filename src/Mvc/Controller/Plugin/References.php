@@ -1417,6 +1417,8 @@ class References extends AbstractPlugin
     /**
      * Improve the default property query for resources.
      *
+     * @todo Unlike advanced search, does not manage excluded fields.
+     *
      * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
      * @see \AdvancedSearch\Listener\SearchResourcesListener::buildPropertyQuery()
      *
@@ -1442,6 +1444,13 @@ class References extends AbstractPlugin
      *   - new: does not end with
      *   - res: has resource
      *   - nres: has no resource
+     *   For date time only for now (a check is done to have a meaningful answer):
+     *   TODO Remove the check for valid date time? Add another key (before/after)?
+     *   Of course, it's better to use Numeric Data Types.
+     *   - gt: greater than (after)
+     *   - gte: greater than or equal
+     *   - lte: lower than or equal
+     *   - lt: lower than (before)
      *
      * @param QueryBuilder $qb
      * @param AbstractResourceEntityAdapter $adapter
@@ -1489,6 +1498,7 @@ class References extends AbstractPlugin
 
             $valuesAlias = $adapter->createAlias();
             $positive = true;
+            $incorrectValue = false;
 
             switch ($queryType) {
                 case 'neq':
@@ -1603,6 +1613,52 @@ class References extends AbstractPlugin
                     $predicateExpr = $expr->isNotNull("$valuesAlias.id");
                     break;
 
+                    // TODO Manage uri and resources with gt, gte, lte, lt (it has a meaning at least for resource ids, but separate).
+                case 'gt':
+                    $valueNorm = $this->getDateTimeFromValue($value, false);
+                    if (is_null($valueNorm)) {
+                        $incorrectValue = true;
+                    } else {
+                        $predicateExpr = $expr->gt(
+                            "$valuesAlias.value",
+                            $adapter->createNamedParameter($qb, $valueNorm)
+                        );
+                    }
+                    break;
+                case 'gte':
+                    $valueNorm = $this->getDateTimeFromValue($value, true);
+                    if (is_null($valueNorm)) {
+                        $incorrectValue = true;
+                    } else {
+                        $predicateExpr = $expr->gte(
+                            "$valuesAlias.value",
+                            $adapter->createNamedParameter($qb, $valueNorm)
+                        );
+                    }
+                    break;
+                case 'lte':
+                    $valueNorm = $this->getDateTimeFromValue($value, false);
+                    if (is_null($valueNorm)) {
+                        $incorrectValue = true;
+                    } else {
+                        $predicateExpr = $expr->lte(
+                            "$valuesAlias.value",
+                            $adapter->createNamedParameter($qb, $valueNorm)
+                        );
+                    }
+                    break;
+                case 'lt':
+                    $valueNorm = $this->getDateTimeFromValue($value, true);
+                    if (is_null($valueNorm)) {
+                        $incorrectValue = true;
+                    } else {
+                        $predicateExpr = $expr->lt(
+                            "$valuesAlias.value",
+                            $adapter->createNamedParameter($qb, $valueNorm)
+                        );
+                    }
+                    break;
+
                 default:
                     continue 2;
             }
@@ -1612,6 +1668,12 @@ class References extends AbstractPlugin
             // The check is done against the requested property, like in core.
             if ($queryRow['property']) {
                 $joinConditions[] = $expr->eq("$valuesAlias.property", (int) $propertyId);
+            }
+
+            // Avoid to get results with an incorrect query.
+            if ($incorrectValue) {
+                $where = $expr->eq('omeka_root.id', 0);
+                break;
             }
 
             if ($positive) {
@@ -1803,5 +1865,167 @@ class References extends AbstractPlugin
             'resources' => \Omeka\Entity\Resource::class,
         ];
         return $resourceEntityMap[$resourceName] ?? \Omeka\Entity\Resource::class;
+    }
+
+    /**
+     * Copied from module AdvancedSearch to allow basic date range search.
+     *
+     * Convert into a standard DateTime. Manage some badly formatted values.
+     *
+     * Adapted from module NumericDataType.
+     * The regex pattern allows partial month and day too.
+     * @link https://mariadb.com/kb/en/datetime/
+     * @see \NumericDataTypes\DataType\AbstractDateTimeDataType::getDateTimeFromValue()
+     *
+     * Allow mysql datetime too, not only iso 8601 (so with a space, not only a
+     * "T" to separate date and time).
+     *
+     * Warning, year "0" does not exists, so output is null in that case.
+     *
+     * @param string $value
+     * @param bool $defaultFirst
+     * @return array|null
+     */
+    protected function getDateTimeFromValue($value, $defaultFirst = true)
+    {
+        $yearMin = -292277022656;
+        $yearMax = 292277026595;
+        $patternIso8601 = '^(?<date>(?<year>-?\d{1,})(-(?<month>\d{1,2}))?(-(?<day>\d{1,2}))?)(?<time>((?:T| )(?<hour>\d{1,2}))?(:(?<minute>\d{1,2}))?(:(?<second>\d{1,2}))?)(?<offset>((?<offset_hour>[+-]\d{1,2})?(:(?<offset_minute>\d{1,2}))?)|Z?)$';
+        static $dateTimes = [];
+
+        $firstOrLast = $defaultFirst ? 'first' : 'last';
+        if (isset($dateTimes[$value][$firstOrLast])) {
+            return $dateTimes[$value][$firstOrLast];
+        }
+
+        $dateTimes[$value][$firstOrLast] = null;
+
+        // Match against ISO 8601, allowing for reduced accuracy.
+        $matches = [];
+        if (!preg_match(sprintf('/%s/', $patternIso8601), $value, $matches)) {
+            return null;
+        }
+
+        // Remove empty values.
+        $matches = array_filter($matches, 'strlen');
+        if (!isset($matches['date'])) {
+            return null;
+        }
+
+        // An hour requires a day.
+        if (isset($matches['hour']) && !isset($matches['day'])) {
+            return null;
+        }
+
+        // An offset requires a time.
+        if (isset($matches['offset']) && !isset($matches['time'])) {
+            return null;
+        }
+
+        // Set the datetime components included in the passed value.
+        $dateTime = [
+            'value' => $value,
+            'date_value' => $matches['date'],
+            'time_value' => $matches['time'] ?? null,
+            'offset_value' => $matches['offset'] ?? null,
+            'year' => empty($matches['year']) ? null : (int) $matches['year'],
+            'month' => isset($matches['month']) ? (int) $matches['month'] : null,
+            'day' => isset($matches['day']) ? (int) $matches['day'] : null,
+            'hour' => isset($matches['hour']) ? (int) $matches['hour'] : null,
+            'minute' => isset($matches['minute']) ? (int) $matches['minute'] : null,
+            'second' => isset($matches['second']) ? (int) $matches['second'] : null,
+            'offset_hour' => isset($matches['offset_hour']) ? (int) $matches['offset_hour'] : null,
+            'offset_minute' => isset($matches['offset_minute']) ? (int) $matches['offset_minute'] : null,
+        ];
+
+        // Set the normalized datetime components. Each component not included
+        // in the passed value is given a default value.
+        $dateTime['month_normalized'] = $dateTime['month'] ?? ($defaultFirst ? 1 : 12);
+        // The last day takes special handling, as it depends on year/month.
+        $dateTime['day_normalized'] = $dateTime['day']
+        ?? ($defaultFirst ? 1 : self::getLastDay($dateTime['year'], $dateTime['month_normalized']));
+        $dateTime['hour_normalized'] = $dateTime['hour'] ?? ($defaultFirst ? 0 : 23);
+        $dateTime['minute_normalized'] = $dateTime['minute'] ?? ($defaultFirst ? 0 : 59);
+        $dateTime['second_normalized'] = $dateTime['second'] ?? ($defaultFirst ? 0 : 59);
+        $dateTime['offset_hour_normalized'] = $dateTime['offset_hour'] ?? 0;
+        $dateTime['offset_minute_normalized'] = $dateTime['offset_minute'] ?? 0;
+        // Set the UTC offset (+00:00) if no offset is provided.
+        $dateTime['offset_normalized'] = isset($dateTime['offset_value'])
+            ? ('Z' === $dateTime['offset_value'] ? '+00:00' : $dateTime['offset_value'])
+            : '+00:00';
+
+        // Validate ranges of the datetime component.
+        if (($yearMin > $dateTime['year']) || ($yearMax < $dateTime['year'])) {
+            return null;
+        }
+        if ((1 > $dateTime['month_normalized']) || (12 < $dateTime['month_normalized'])) {
+            return null;
+        }
+        if ((1 > $dateTime['day_normalized']) || (31 < $dateTime['day_normalized'])) {
+            return null;
+        }
+        if ((0 > $dateTime['hour_normalized']) || (23 < $dateTime['hour_normalized'])) {
+            return null;
+        }
+        if ((0 > $dateTime['minute_normalized']) || (59 < $dateTime['minute_normalized'])) {
+            return null;
+        }
+        if ((0 > $dateTime['second_normalized']) || (59 < $dateTime['second_normalized'])) {
+            return null;
+        }
+        if ((-23 > $dateTime['offset_hour_normalized']) || (23 < $dateTime['offset_hour_normalized'])) {
+            return null;
+        }
+        if ((0 > $dateTime['offset_minute_normalized']) || (59 < $dateTime['offset_minute_normalized'])) {
+            return null;
+        }
+
+        // Adding the DateTime object here to reduce code duplication. To ensure
+        // consistency, use Coordinated Universal Time (UTC) if no offset is
+        // provided. This avoids automatic adjustments based on the server's
+        // default timezone.
+        // With strict type, "now" is required.
+        $dateTime['date'] = new \DateTime('now', new \DateTimeZone($dateTime['offset_normalized']));
+        $dateTime['date']
+            ->setDate(
+                $dateTime['year'],
+                $dateTime['month_normalized'],
+                $dateTime['day_normalized']
+            )
+            ->setTime(
+                $dateTime['hour_normalized'],
+                $dateTime['minute_normalized'],
+                $dateTime['second_normalized']
+            );
+
+        // Cache the date/time as a sql date time.
+        $dateTimes[$value][$firstOrLast] = $dateTime['date']->format('Y-m-d H:i:s');
+        return $dateTimes[$value][$firstOrLast];
+    }
+
+    /**
+     * Get the last day of a given year/month.
+     *
+     * @param int $year
+     * @param int $month
+     * @return int
+     */
+    protected function getLastDay($year, $month)
+    {
+        switch ($month) {
+            case 2:
+                // February (accounting for leap year)
+                $leapYear = date('L', mktime(0, 0, 0, 1, 1, $year));
+                return $leapYear ? 29 : 28;
+            case 4:
+            case 6:
+            case 9:
+            case 11:
+                // April, June, September, November
+                return 30;
+            default:
+                // January, March, May, July, August, October, December
+                return 31;
+        }
     }
 }
