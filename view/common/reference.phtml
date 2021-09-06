@@ -39,7 +39,7 @@ $mapResourcesControllers = ['resources' => 'resource', 'items' => 'item', 'item_
 $controllerName = $mapResourcesControllers[$options['resource_name']];
 
 // Set default values if needed.
-$options += ['link_to_single' => true, 'total' => true, 'raw' => false, 'skiplinks' => true, 'headings' => true, 'custom_url' => false];
+$options += ['link_to_single' => true, 'total' => true, 'raw' => false, 'raw_sub' => false, 'skiplinks' => true, 'headings' => true, 'custom_url' => false];
 $options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
 $hasInitial = array_key_exists('initial', $references[key($references)]);
 $propertyTitle = 'dcterms:title';
@@ -50,6 +50,8 @@ $seeAll = $escape($translate('See all…')); // @translate
 $andMore = $escape($translate('And %d more.')); // @translate
 $hasSubjectProperty = !empty($options['subject_property']);
 $options['link_to_single'] = $options['link_to_single'] && !$listByMax;
+$isRecursive = $listByMax || $hasSubjectProperty;
+$options['raw_sub'] = $options['raw_sub'] || !$isRecursive;
 
 $queryKeys = [
     'o:ResourceClass' => 'resource_class_id',
@@ -77,6 +79,12 @@ if ($options['headings']) {
 
 $replaceBase['{reference_text}'] = '';
 
+// List by max may require templateUrlSingle.
+if (!$options['raw'] || ($listByMax && !$options['raw_sub'])) {
+    $tempPlaceholder = '__temp_placeholder__';
+    $templateUrlSingle = str_replace($tempPlaceholder, '{reference}', $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $tempPlaceholder], false));
+}
+
 if ($options['raw']) {
     if ($options['total']) {
         $template .= '<div class="reference-record">{reference_text}{reference_total}{recursive}</div>' . PHP_EOL;
@@ -92,9 +100,6 @@ if ($options['raw']) {
     } else {
         $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}</a>{recursive}</div>' . PHP_EOL;
     }
-    $tempPlaceholder = '00999999990999999001';
-    $templateUrlSingle = str_replace($tempPlaceholder, '{reference}',
-        $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $tempPlaceholder], false));
     if (!$options['custom_url']) {
         $query = [];
         if ($queryKey) {
@@ -145,6 +150,7 @@ if ($options['skiplinks']):
 <div id="reference-headings">
     <?php
 
+    $referenceUrl = '';
     $current_heading = '';
     $current_heading_id = '';
     foreach ($references as $referenceData):
@@ -179,6 +185,8 @@ if ($options['skiplinks']):
                 $replace['{heading}'] = $heading;
             }
         }
+
+        // FIXME ListByMax may need referenceUrl.
 
         if ($options['raw']) {
             $referenceText = $reference;
@@ -225,7 +233,7 @@ if ($options['skiplinks']):
         // TODO Make it recursive.
         if ($listByMax) {
             $recursive .= '<ul class="recursive-list">';
-            if ($options['raw']) {
+            if ($options['raw_sub']) {
                 foreach ($referenceData['resources'] as $resId => $resTitle) {
                     $recursive .= '<li>';
                     $recursive .= $escape($resTitle);
@@ -264,7 +272,7 @@ if ($options['skiplinks']):
             if (count($subjectValues)) {
                 $recursive .= '<ul class="recursive-list">';
                 /** @var \Omeka\Api\Representation\ValueRepresentation $subjectValue */
-                if ($options['raw']) {
+                if ($options['raw_sub']) {
                     foreach ($subjectValues[$options['subject_property']['term']] as $subjectValue) {
                         $recursive .= '<li>';
                         $recursive .= $escape($subjectValue->resource()->displayTitle());
