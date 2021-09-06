@@ -55,6 +55,15 @@ class References extends AbstractPlugin
     protected $resourceTemplatesByLabelsAndIds;
 
     /**
+     * List of item sets by title and id.
+     *
+     * Warning: titles are not unique.
+     *
+     * @var array
+     */
+    protected $itemSetsByTitlesAndIds;
+
+    /**
      * @param bool
      */
     protected $supportAnyValue;
@@ -421,15 +430,9 @@ class References extends AbstractPlugin
                     if ($isAssociative) {
                         $result[$field['term']]['o:references'] = $values;
                     } else {
-                        foreach (array_filter($values) as $value => $valueData) {
-                            // TODO Improve this process via the resource title (Omeka 2).
-                            $meta = $this->api->read('item_sets', ['id' => $valueData['val']])->getContent();
-                            $result[$field['term']]['o:references'][] = [
-                                '@type' => 'o:ItemSet',
-                                'o:id' => (int) $value,
-                                'o:label' => $meta->displayTitle(),
-                                '@language' => null,
-                            ] + $valueData;
+                        foreach (array_filter($values) as $valueData) {
+                            $meta = $this->getItemSet($valueData['val']);
+                            $result[$field['term']]['o:references'][] = $meta + $valueData;
                         }
                     }
                     break;
@@ -1778,18 +1781,15 @@ class References extends AbstractPlugin
             ];
         }
 
-        if (is_numeric($field)) {
-            try {
-                $itemSet = $this->api->read('item_sets', $field)->getContent();
-                return [
-                    '@type' => 'o:ItemSet',
-                    'type' => 'item_sets',
-                    'id' => $itemSet->id(),
-                    'term' => $field,
-                    'label' => $itemSet->displayTitle(),
-                ];
-            } catch (\Omeka\Api\Exception\NotFoundException $e) {
-            }
+        $meta = $this->getItemSet($field);
+        if ($meta) {
+            return [
+                '@type' => 'o:ItemSet',
+                'type' => 'item_sets',
+                'id' => $meta['o:id'],
+                'term' => null,
+                'label' => $meta['o:label'],
+            ];
         }
 
         return [
@@ -2069,6 +2069,103 @@ class References extends AbstractPlugin
                 unset($result['id']);
                 $this->resourceTemplatesByLabelsAndIds[$result['o:id']] = $result;
                 $this->resourceTemplatesByLabelsAndIds[$result['o:label']] = $result;
+            }
+            return $this;
+        }
+    }
+
+    /**
+     * Get item set ids by title or by numeric ids.
+     *
+     * Warning, titles are not unique.
+     *
+     * @return int[]
+     */
+    protected function getItemSetIds(array $titlesOrIds): array
+    {
+        if (is_null($this->itemSetsByTitlesAndIds)) {
+            $this->prepareItemSets();
+        }
+        return array_column(array_intersect_key($this->itemSetsByTitlesAndIds, array_flip($titlesOrIds)), 'o:id');
+    }
+
+    /**
+     * Get item set id by title or by numeric id.
+     *
+     * Warning, titles are not unique.
+     */
+    protected function getItemSetId($labelOrId): ?int
+    {
+        if (is_null($this->itemSetsByTitlesAndIds)) {
+            $this->prepareItemSets();
+        }
+        return $this->itemSetsByTitlesAndIds[$labelOrId]['o:id'] ?? null;
+    }
+
+    /**
+     * Get item set ids by titles or by numeric ids.
+     *
+     * Warning, titles are not unique.
+     *
+     * @return int[]
+     */
+    protected function getItemSets(array $titlesOrIds): array
+    {
+        if (is_null($this->itemSetsByTitlesAndIds)) {
+            $this->prepareItemSets();
+        }
+        return array_values(array_intersect_key($this->itemSetsByTitlesAndIds, array_flip($titlesOrIds)));
+    }
+
+    /**
+     * Get item set by title or by numeric id.
+     *
+     * Warning, titles are not unique.
+     */
+    protected function getItemSet($labelOrId): ?array
+    {
+        if (is_null($this->itemSetsByTitlesAndIds)) {
+            $this->prepareItemSets();
+        }
+        return $this->itemSetsByTitlesAndIds[$labelOrId] ?? null;
+    }
+
+    /**
+     * Prepare the list of item sets.
+     *
+     * Warning, titles are not unique.
+     */
+    protected function prepareItemSets(): self
+    {
+        if (is_null($this->itemSetsByTitlesAndIds)) {
+            $connection = $this->entityManager->getConnection();
+            $qb = $connection->createQueryBuilder();
+            $qb
+                ->select([
+                    'DISTINCT resource.id AS "o:id"',
+                    '"o:ItemSet" AS "@type"',
+                    'resource.title AS "o:label"',
+                    'NULL AS "@language"',
+                    // Only the two first selects are needed, but some databases
+                    // require "order by" or "group by" value to be in the select.
+                    'resource.id',
+                ])
+                ->from('resource', 'resource')
+                ->inner_join('item_set', 'item_set')
+                // TODO Improve return of private item sets.
+                ->where('resource.is_public', '1')
+                ->orderBy('resource.id', 'asc')
+                ->addGroupBy('resource.id')
+            ;
+            $stmt = $connection->executeQuery($qb);
+            // Fetch by key pair is not supported by doctrine 2.0.
+            $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $this->itemSetsByTitlesAndIds = [];
+            foreach ($results as $result) {
+                $result['o:id'] = (int) $result['o:id'];
+                unset($result['id']);
+                $this->itemSetsByTitlesAndIds[$result['o:id']] = $result;
+                $this->itemSetsByTitlesAndIds[$result['o:label']] = $result;
             }
             return $this;
         }
