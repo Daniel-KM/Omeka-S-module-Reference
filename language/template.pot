@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-01-04 00:00+0000\n"
+"POT-Creation-Date: 2021-09-06 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/Controller/ApiController.php:111
+#: src/Controller/ApiController.php:135
 msgid "Method Not Allowed"
 msgstr ""
 
@@ -32,10 +32,10 @@ msgid "This module requires modules \"%s\"."
 msgstr ""
 
 #: src/Generic/AbstractModule.php:80
-msgid "This module has resources that connot be installed."
+msgid "This module has resources that cannot be installed."
 msgstr ""
 
-#: src/Generic/AbstractModule.php:707
+#: src/Generic/AbstractModule.php:725
 #, php-format
 msgid ""
 "The module \"%s\" was automatically deactivated because the dependencies are "
@@ -58,7 +58,7 @@ msgstr ""
 
 #: view/common/block-layout/reference-index.phtml:19
 #: view/common/block-layout/reference-tree.phtml:24
-#: view/common/block-layout/reference.phtml:22
+#: view/common/block-layout/reference.phtml:23
 msgid "There is no references."
 msgstr ""
 
@@ -74,11 +74,11 @@ msgstr ""
 msgid "Browse %s"
 msgstr ""
 
-#: view/common/reference.phtml:48
+#: view/common/reference.phtml:49
 msgid "See all…"
 msgstr ""
 
-#: view/common/reference.phtml:49
+#: view/common/reference.phtml:50
 #, php-format
 msgid "And %d more."
 msgstr ""
@@ -263,10 +263,6 @@ msgstr ""
 #: src/Form/ReferenceIndexFieldset.php:122 src/Form/SiteSettingsFieldset.php:43
 #: src/Form/ReferenceFieldset.php:114
 msgid "Display"
-msgstr ""
-
-#: src/Form/ReferenceIndexFieldset.php:132 src/Form/ReferenceFieldset.php:124
-msgid "Heading"
 msgstr ""
 
 #: src/Form/ReferenceIndexFieldset.php:157
