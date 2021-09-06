@@ -254,7 +254,8 @@ class References extends AbstractHelper
      *
      * @param array|string $referenceLevels References and levels to show as
      * array or dash tree.
-     * @param array $query An Omeka search query to limit results.
+     * @param array $query An Omeka search query to limit results. It is used in
+     *   for urls in the tree too.
      * @param array $options Options to display the references.
      * - template (string): the template to use (default: "common/reference")
      * - term (string): Term or id to search (dcterms:subject by default).
