@@ -90,7 +90,7 @@ if ($options['raw']) {
         $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}</a>{reference_total}{recursive}</div>' . PHP_EOL;
         $replaceBase['{reference_total}'] = '';
     } else {
-        $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}{recursive}</a></div>' . PHP_EOL;
+        $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}</a>{recursive}</div>' . PHP_EOL;
     }
     $tempPlaceholder = '00999999990999999001';
     $templateUrlSingle = str_replace($tempPlaceholder, '{reference}',
