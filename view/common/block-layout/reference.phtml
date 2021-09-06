@@ -6,21 +6,20 @@
  * @var array $options
  */
 
-$translate = $this->plugin('translate');
+$plugins = $this->getHelperPluginManager();
+$translate = $plugins->get('translate');
+$escape = $plugins->get('escapeHtml');
+
 $total = $this->references()->count($term, $query, $options);
 ?>
 
 <div class="reference-block">
     <?php if ($options['heading']): ?>
-    <h3><?= str_replace('{total}', $total, $translate($options['heading'])) ?></h3>
+    <h3><?= $escape(str_replace('{total}', $total, $translate($options['heading']))) ?></h3>
     <?php endif; ?>
-    <?php
-    if ($total):
-        echo $this->references()->displayListForTerm($term, $query, $options);
-    else:
-    ?>
+    <?php if ($total): ?>
+    <?= $this->references()->displayListForTerm($term, $query, $options) ?>
+    <?php else: ?>
     <p><?= $translate('There is no references.') ?></p>
-    <?php
-    endif;
-    ?>
+    <?php endif; ?>
 </div>
