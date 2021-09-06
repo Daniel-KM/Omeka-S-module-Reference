@@ -34,19 +34,25 @@ class References extends AbstractPlugin
     protected $translate;
 
     /**
-     * @var \Omeka\Api\Representation\PropertyRepresentation[]
+     * List of property main data by term and id.
+     *
+     * @var array
      */
-    protected $properties;
+    protected $propertiesByTermsAndIds;
 
     /**
-     * @var \Omeka\Api\Representation\ResourceClassRepresentation[]
+     * List of resource class main data by term and id.
+     *
+     * @var array
      */
-    protected $resourceClasses;
+    protected $resourceClassesByTermsAndIds;
 
     /**
-     * @var \Omeka\Api\Representation\ResourceTemplateRepresentation[]
+     * List of resource template main data by label and id.
+     *
+     * @var array
      */
-    protected $resourceTemplates;
+    protected $resourceTemplatesByLabelsAndIds;
 
     /**
      * @param bool
@@ -73,9 +79,6 @@ class References extends AbstractPlugin
      * @param AdapterManager $adapterManager
      * @param Api $api
      * @param Translate $translate
-     * @param \Omeka\Api\Representation\PropertyRepresentation[] $properties
-     * @param \Omeka\Api\Representation\ResourceClassRepresentation[] $resourceClasses
-     * @param \Omeka\Api\Representation\ResourceTemplateRepresentation[] $resourceTemplates
      * @param bool $supportAnyValue
      */
     public function __construct(
@@ -83,18 +86,12 @@ class References extends AbstractPlugin
         AdapterManager $adapterManager,
         Api $api,
         Translate $translate,
-        array $properties,
-        array $resourceClasses,
-        array $resourceTemplates,
         $supportAnyValue
     ) {
         $this->entityManager = $entityManager;
         $this->adapterManager = $adapterManager;
         $this->api = $api;
         $this->translate = $translate;
-        $this->properties = $properties;
-        $this->resourceClasses = $resourceClasses;
-        $this->resourceTemplates = $resourceTemplates;
         $this->supportAnyValue = $supportAnyValue;
     }
 
@@ -381,14 +378,10 @@ class References extends AbstractPlugin
                     if ($isAssociative) {
                         $result[$field['term']]['o:references'] = $values;
                     } else {
-                        foreach (array_filter($values) as $value => $valueData) {
-                            $property = $this->properties[$valueData['val']];
-                            $result[$field['term']]['o:references'][] = [
-                                'o:id' => $property->id(),
-                                'o:term' => $property->term(),
-                                'o:label' => $this->translate->__invoke($property->label()),
-                                '@language' => null,
-                            ] + $valueData;
+                        foreach (array_filter($values) as $valueData) {
+                            $property = $this->getProperty($valueData['val']);
+                            $property['o:label'] = $this->translate->__invoke($property['o:label']);
+                            $result[$field['term']]['o:references'][] = $property + $valueData;
                         }
                     }
                     break;
@@ -398,14 +391,10 @@ class References extends AbstractPlugin
                     if ($isAssociative) {
                         $result[$field['term']]['o:references'] = $values;
                     } else {
-                        foreach (array_filter($values) as $value => $valueData) {
-                            $resourceClass = $this->resourceClasses[$valueData['val']];
-                            $result[$field['term']]['o:references'][] = [
-                                'o:id' => $resourceClass->id(),
-                                'o:term' => $resourceClass->term(),
-                                'o:label' => $this->translate->__invoke($resourceClass->label()),
-                                '@language' => null,
-                            ] + $valueData;
+                        foreach (array_filter($values) as $valueData) {
+                            $resourceClass = $this->getResourceClass($valueData['val']);
+                            $resourceClass['o:label'] = $this->translate->__invoke($resourceClass->label());
+                            $result[$field['term']]['o:references'][] = $resourceClass + $valueData;
                         }
                     }
                     break;
@@ -415,13 +404,9 @@ class References extends AbstractPlugin
                     if ($isAssociative) {
                         $result[$field['term']]['o:references'] = $values;
                     } else {
-                        foreach (array_filter($values) as $value => $valueData) {
-                            $resourceTemplate = $this->resourceTemplates[$valueData['val']];
-                            $result[$field['term']]['o:references'][] = [
-                                'o:id' => $resourceTemplate->id(),
-                                'o:label' => $resourceTemplate->label(),
-                                '@language' => null,
-                            ] + $valueData;
+                        foreach (array_filter($values) as $valueData) {
+                            $resourceTemplate = $this->getResourceTemplates($valueData['val']);
+                            $result[$field['term']]['o:references'][] = $resourceTemplate + $valueData;
                         }
                     }
                     break;
@@ -1084,31 +1069,31 @@ class References extends AbstractPlugin
                     // TODO Nothing to filter for resource titles?
                     break;
                 case 'o:property':
-                    $values = is_numeric($this->options['values'][0])
-                        ? $this->options['values']
-                        : $this->listPropertyIds($this->options['values']);
+                    $values = $this->getPropertyIds($this->options['values']);
+                    if (!$values) {
+                        $values = [0];
+                    }
                     $qb
                         ->andWhere('property' . '.id IN (:ids)')
                         ->setParameter('ids', $values);
                     break;
                 case 'o:resource_class':
-                    $values = is_numeric($this->options['values'][0])
-                        ? $this->options['values']
-                        : $this->listResourceClassIds($this->options['values']);
+                    $values = $this->getResourceClassIds($this->options['values']);
+                    if (!$values) {
+                        $values = [0];
+                    }
                     $qb
                         ->andWhere('resource_class' . '.id IN (:ids)')
                         ->setParameter('ids', $values);
                     break;
                 case 'o:resource_template':
-                    if (is_numeric($this->options['values'][0])) {
-                        $qb
-                            ->andWhere('resource_template' . '.id IN (:ids)')
-                            ->setParameter('ids', $this->options['values']);
-                    } else {
-                        $qb
-                            ->andWhere('resource_template' . '.label IN (:labels)')
-                            ->setParameter('labels', $this->options['values']);
+                    $values = $this->getResourceTemplateIds($this->options['values']);
+                    if (!$values) {
+                        $values = [0];
                     }
+                    $qb
+                        ->andWhere('resource_template' . '.id IN (:ids)')
+                        ->setParameter('ids', $this->options['values']);
                     break;
                 case 'o:item_set':
                     $qb
@@ -1225,6 +1210,7 @@ class References extends AbstractPlugin
 
             if ($this->options['fields']) {
                 $fields = array_fill_keys($this->options['fields'], true);
+                // FIXME Api call inside a loop.
                 $result = array_map(function ($v) use ($fields) {
                     // Search resources is not available.
                     if ($this->options['resource_name'] === 'resource') {
@@ -1233,7 +1219,7 @@ class References extends AbstractPlugin
                                 return array_intersect_key(
                                     $this->api->read('resources', ['id' => $id])->getContent()->jsonSerialize(),
                                     $fields
-                                    );
+                                );
                             } catch (\Omeka\Api\Exception\NotFoundException $e) {
                                 // May not be possible, except with weird rights.
                                 // return array_intersect_key(['o:id' => $id, 'o:title' => $title], $fields);
@@ -1493,7 +1479,7 @@ class References extends AbstractPlugin
 
             $propertyId = $queryRow['property'];
             if ($propertyId) {
-                $propertyId = $this->properties[$propertyId] ?? $propertyId;
+                $propertyId = $this->getPropertyId($propertyId);
             }
 
             $valuesAlias = $adapter->createAlias();
@@ -1709,7 +1695,7 @@ class References extends AbstractPlugin
      * @param string|int $field
      * @return array
      */
-    protected function prepareField($field)
+    protected function prepareField($field): array
     {
         static $labels;
 
@@ -1740,14 +1726,12 @@ class References extends AbstractPlugin
             ];
         }
 
-        if (isset($this->properties[$field])) {
-            $property = $this->properties[$field];
+        // It's not possible to determine what is a numeric value.
+        if (is_numeric($field)) {
             return [
-                '@type' => 'o:Property',
-                'type' => 'properties',
-                'id' => $property->id(),
+                'type' => null,
                 'term' => $field,
-                'label' => $property->label(),
+                'label' => $field,
             ];
         }
 
@@ -1761,25 +1745,36 @@ class References extends AbstractPlugin
             ];
         }
 
-        if (isset($this->resourceClasses[$field])) {
-            $resourceClass = $this->resourceClasses[$field];
+        $meta = $this->getProperty($field);
+        if ($meta) {
             return [
-                '@type' => 'o:ResourceClass',
-                'type' => 'resource_classes',
-                'id' => $resourceClass->id(),
-                'term' => $field,
-                'label' => $resourceClass->label(),
+                '@type' => 'o:Property',
+                'type' => 'properties',
+                'id' => $meta['o:id'],
+                'term' => $meta['o:term'],
+                'label' => $meta['o:label'],
             ];
         }
 
-        if (isset($this->resourceTemplates[$field])) {
-            $resourceTemplate = $this->resourceTemplates[$field];
+        $meta = $this->getResourceClass($field);
+        if ($meta) {
+            return [
+                '@type' => 'o:ResourceClass',
+                'type' => 'resource_classes',
+                'id' => $meta['o:id'],
+                'term' => $meta['o:term'],
+                'label' => $meta['o:label'],
+            ];
+        }
+
+        $meta = $this->getResourceTemplate($field);
+        if ($meta) {
             return [
                 '@type' => 'o:ResourceTemplate',
                 'type' => 'resource_templates',
-                'id' => $resourceTemplate->id(),
-                'term' => $field,
-                'label' => $resourceTemplate->label(),
+                'id' => $meta['o:id'],
+                'term' => null,
+                'label' => $meta['o:label'],
             ];
         }
 
@@ -1805,51 +1800,6 @@ class References extends AbstractPlugin
     }
 
     /**
-     * Convert a list of terms into a list of property ids.
-     *
-     * @param array $values
-     * @return array Only values that are terms are converted into ids, the
-     * other are removed.
-     */
-    protected function listPropertyIds(array $values)
-    {
-        $result = array_intersect_key($this->properties, array_fill_keys($values, null));
-        return array_map(function ($v) {
-            return $v->id();
-        }, $result);
-    }
-
-    /**
-     * Convert a list of terms into a list of resource class ids.
-     *
-     * @param array $values
-     * @return array Only values that are terms are converted into ids, the
-     * other are removed.
-     */
-    protected function listResourceClassIds(array $values)
-    {
-        $result = array_intersect_key($this->resourceClasses, array_fill_keys($values, null));
-        return array_map(function ($v) {
-            return $v->id();
-        }, $result);
-    }
-
-    /**
-     * Convert a list of labels into a list of resource template ids.
-     *
-     * @param array $values
-     * @return array Only values that are terms are converted into ids, the
-     * other are removed.
-     */
-    protected function listResourceTemplateIds(array $values)
-    {
-        $result = array_intersect_key($this->resourceTemplates, array_fill_keys($values, null));
-        return array_map(function ($v) {
-            return $v->id();
-        }, $result);
-    }
-
-    /**
      * Normalize the resource name as an entity class.
      *
      * @param string $resourceName
@@ -1865,6 +1815,263 @@ class References extends AbstractPlugin
             'resources' => \Omeka\Entity\Resource::class,
         ];
         return $resourceEntityMap[$resourceName] ?? \Omeka\Entity\Resource::class;
+    }
+
+    /**
+     * Get property ids by JSON-LD terms or by numeric ids.
+     *
+     * @return int[]
+     */
+    protected function getPropertyIds(array $termsOrIds): array
+    {
+        if (is_null($this->propertiesByTermsAndIds)) {
+            $this->prepareProperties();
+        }
+        return array_column(array_intersect_key($this->propertiesByTermsAndIds, array_flip($termsOrIds)), 'o:id');
+    }
+
+    /**
+     * Get a property id by JSON-LD term or by numeric id.
+     */
+    protected function getPropertyId($termOrId): ?int
+    {
+        if (is_null($this->propertiesByTermsAndIds)) {
+            $this->prepareProperties();
+        }
+        return $this->propertiesByTermsAndIds[$termOrId]['o:id'] ?? null;
+    }
+
+    /**
+     * Get property by JSON-LD terms or by numeric ids.
+     *
+     * @return int[]
+     */
+    protected function getProperties(array $termsOrIds): array
+    {
+        if (is_null($this->propertiesByTermsAndIds)) {
+            $this->prepareProperties();
+        }
+        return array_values(array_intersect_key($this->propertiesByTermsAndIds, array_flip($termsOrIds)));
+    }
+
+    /**
+     * Get a property by JSON-LD term or by numeric id.
+     */
+    protected function getProperty($termOrId): ?array
+    {
+        if (is_null($this->propertiesByTermsAndIds)) {
+            $this->prepareProperties();
+        }
+        return $this->propertiesByTermsAndIds[$termOrId] ?? null;
+    }
+
+    /**
+     * Prepare the list of properties.
+     */
+    protected function prepareProperties(): self
+    {
+        if (is_null($this->propertiesByTermsAndIds)) {
+            $connection = $this->entityManager->getConnection();
+            $qb = $connection->createQueryBuilder();
+            $qb
+                ->select([
+                    'DISTINCT property.id AS "o:id"',
+                    'CONCAT(vocabulary.prefix, ":", property.local_name) AS "o:term"',
+                    'property.label AS "o:label"',
+                    'NULL AS "@language"',
+                    // Only the two first selects are needed, but some databases
+                    // require "order by" or "group by" value to be in the select.
+                    'vocabulary.id',
+                    'property.id',
+                ])
+                ->from('property', 'property')
+                ->innerJoin('property', 'vocabulary', 'vocabulary', 'property.vocabulary_id = vocabulary.id')
+                ->orderBy('vocabulary.id', 'asc')
+                ->addOrderBy('property.id', 'asc')
+                ->addGroupBy('property.id')
+            ;
+            $stmt = $connection->executeQuery($qb);
+            // Fetch by key pair is not supported by doctrine 2.0.
+            $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $this->propertiesByTermsAndIds = [];
+            foreach ($results as $result) {
+                $result['o:id'] = (int) $result['o:id'];
+                unset($result['id']);
+                $this->propertiesByTermsAndIds[$result['o:id']] = $result;
+                $this->propertiesByTermsAndIds[$result['o:term']] = $result;
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Get resource class ids by JSON-LD terms or by numeric ids.
+     *
+     * @return int[]
+     */
+    protected function getResourceClassIds(array $termsOrIds): array
+    {
+        if (is_null($this->resourceClassesByTermsAndIds)) {
+            $this->prepareResourceClasses();
+        }
+        return array_column(array_intersect_key($this->resourceClassesByTermsAndIds, array_flip($termsOrIds)), 'o:id');
+    }
+
+    /**
+     * Get resource class id by JSON-LD term or by numeric id.
+     */
+    protected function getResourceClassId($termOrId): ?int
+    {
+        if (is_null($this->resourceClassesByTermsAndIds)) {
+            $this->prepareResourceClasses();
+        }
+        return $this->resourceClassesByTermsAndIds[$termOrId]['o:id'] ?? null;
+    }
+
+    /**
+     * Get resource classes by JSON-LD terms or by numeric ids.
+     *
+     * @return int[]
+     */
+    protected function getResourceClasses(array $termsOrIds): array
+    {
+        if (is_null($this->resourceClassesByTermsAndIds)) {
+            $this->prepareResourceClasses();
+        }
+        return array_values(array_intersect_key($this->resourceClassesByTermsAndIds, array_flip($termsOrIds)));
+    }
+
+    /**
+     * Get resource class by JSON-LD term or by numeric id.
+     */
+    protected function getResourceClass($termOrId): ?array
+    {
+        if (is_null($this->resourceClassesByTermsAndIds)) {
+            $this->prepareResourceClasses();
+        }
+        return $this->resourceClassesByTermsAndIds[$termOrId] ?? null;
+    }
+
+    /**
+     * Prepare the list of resource classes.
+     */
+    protected function prepareResourceClasses(): self
+    {
+        if (is_null($this->propertiesByTermsAndIds)) {
+            $connection = $this->entityManager->getConnection();
+            $qb = $connection->createQueryBuilder();
+            $qb
+                ->select([
+                    'DISTINCT resource_class.id AS "o:id"',
+                    'CONCAT(vocabulary.prefix, ":", resource_class.local_name) AS "o:term"',
+                    'resource_class.label AS "o:label"',
+                    'NULL AS "@language"',
+                    // Only the two first selects are needed, but some databases
+                    // require "order by" or "group by" value to be in the select.
+                    'vocabulary.id',
+                    'resource_class.id',
+                ])
+                ->from('resource_class', 'resource_class')
+                ->innerJoin('resource_class', 'vocabulary', 'vocabulary', 'resource_class.vocabulary_id = vocabulary.id')
+                ->orderBy('vocabulary.id', 'asc')
+                ->addOrderBy('resource_class.id', 'asc')
+                ->addGroupBy('resource_class.id')
+            ;
+            $stmt = $connection->executeQuery($qb);
+            // Fetch by key pair is not supported by doctrine 2.0.
+            $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $this->resourceClassesByTermsAndIds = [];
+            foreach ($results as $result) {
+                $result['o:id'] = (int) $result['o:id'];
+                unset($result['id']);
+                $this->resourceClassesByTermsAndIds[$result['o:id']] = $result;
+                $this->resourceClassesByTermsAndIds[$result['o:term']] = $result;
+            }
+            return $this;
+        }
+    }
+
+    /**
+     * Get resource template ids by labels or by numeric ids.
+     *
+     * @return int[]
+     */
+    protected function getResourceTemplateIds(array $labelsOrIds): array
+    {
+        if (is_null($this->resourceTemplatesByLabelsAndIds)) {
+            $this->prepareResourceTemplates();
+        }
+        return array_column(array_intersect_key($this->resourceTemplatesByLabelsAndIds, array_flip($labelsOrIds)), 'o:id');
+    }
+
+    /**
+     * Get resource template id by label or by numeric id.
+     */
+    protected function getResourceTemplateId($labelOrId): ?int
+    {
+        if (is_null($this->resourceTemplatesByLabelsAndIds)) {
+            $this->prepareResourceTemplates();
+        }
+        return $this->resourceTemplatesByLabelsAndIds[$labelOrId]['o:id'] ?? null;
+    }
+
+    /**
+     * Get resource template ids by labels or by numeric ids.
+     *
+     * @return int[]
+     */
+    protected function getResourceTemplates(array $labelsOrIds): array
+    {
+        if (is_null($this->resourceTemplatesByLabelsAndIds)) {
+            $this->prepareResourceTemplates();
+        }
+        return array_values(array_intersect_key($this->resourceTemplatesByLabelsAndIds, array_flip($labelsOrIds)));
+    }
+
+    /**
+     * Get resource template by label or by numeric id.
+     */
+    protected function getResourceTemplate($labelOrId): ?array
+    {
+        if (is_null($this->resourceTemplatesByLabelsAndIds)) {
+            $this->prepareResourceTemplates();
+        }
+        return $this->resourceTemplatesByLabelsAndIds[$labelOrId] ?? null;
+    }
+
+    /**
+     * Prepare the list of resource templates.
+     */
+    protected function prepareResourceTemplates(): self
+    {
+        if (is_null($this->resourceTemplatesByLabelsAndIds)) {
+            $connection = $this->entityManager->getConnection();
+            $qb = $connection->createQueryBuilder();
+            $qb
+                ->select([
+                    'DISTINCT resource_template.id AS "o:id"',
+                    'resource_template.label AS "o:label"',
+                    'NULL AS "@language"',
+                    // Only the two first selects are needed, but some databases
+                    // require "order by" or "group by" value to be in the select.
+                    'resource_template.id',
+                ])
+                ->from('resource_template', 'resource_template')
+                ->orderBy('resource_template.id', 'asc')
+                ->addGroupBy('resource_template.id')
+            ;
+            $stmt = $connection->executeQuery($qb);
+            // Fetch by key pair is not supported by doctrine 2.0.
+            $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $this->resourceTemplatesByLabelsAndIds = [];
+            foreach ($results as $result) {
+                $result['o:id'] = (int) $result['o:id'];
+                unset($result['id']);
+                $this->resourceTemplatesByLabelsAndIds[$result['o:id']] = $result;
+                $this->resourceTemplatesByLabelsAndIds[$result['o:label']] = $result;
+            }
+            return $this;
+        }
     }
 
     /**

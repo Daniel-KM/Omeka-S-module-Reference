@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Reference\Service\ControllerPlugin;
 
 use Interop\Container\ContainerInterface;
@@ -12,29 +13,11 @@ class ReferencesFactory implements FactoryInterface
         $plugins = $services->get('ControllerPluginManager');
         $api = $plugins->get('api');
 
-        $properties = [];
-        foreach ($api->search('properties')->getContent() as $property) {
-            $properties[$property->term()] = $property;
-        }
-
-        $resourceClasses = [];
-        foreach ($api->search('resource_classes')->getContent() as $resourceClass) {
-            $resourceClasses[$resourceClass->term()] = $resourceClass;
-        }
-
-        $resourceTemplates = [];
-        foreach ($api->search('resource_templates')->getContent() as $resourceTemplate) {
-            $resourceTemplates[$resourceTemplate->label()] = $resourceTemplate;
-        }
-
         return new References(
             $services->get('Omeka\EntityManager'),
             $services->get('Omeka\ApiAdapterManager'),
             $api,
             $plugins->get('translate'),
-            $properties,
-            $resourceClasses,
-            $resourceTemplates,
             $this->supportAnyValue($services)
         );
     }
