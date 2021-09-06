@@ -97,7 +97,7 @@ class ReferenceTree extends AbstractPlugin
     {
         $tree = array_map(function ($v) {
             $level = reset($v);
-            $term = trim(key($v));
+            $term = trim((string) key($v));
             return $level ? str_repeat('-', $level) . ' ' . $term : $term;
         }, $levels);
         return implode("\n", $tree);
