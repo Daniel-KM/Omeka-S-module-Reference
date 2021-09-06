@@ -1418,7 +1418,7 @@ class References extends AbstractPlugin
      * Improve the default property query for resources.
      *
      * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
-     * @see \AdvancedSearchPlus\Module::buildPropertyQuery()
+     * @see \AdvancedSearch\Listener\SearchResourcesListener::buildPropertyQuery()
      *
      * Complete \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
      *
@@ -1448,9 +1448,9 @@ class References extends AbstractPlugin
      */
     protected function buildPropertyQuery(QueryBuilder $qb, AbstractResourceEntityAdapter $adapter): void
     {
-        // if (empty($this->query['property']) || !is_array($this->query['property'])) {
-        //     return;
-        // }
+        if (empty($this->query['property']) || !is_array($this->query['property'])) {
+            return;
+        }
 
         $valuesJoin = 'omeka_root.values';
         $where = '';
@@ -1468,14 +1468,23 @@ class References extends AbstractPlugin
             )) {
                 continue;
             }
-            $propertyId = $queryRow['property'];
+
             $queryType = $queryRow['type'];
             $joiner = $queryRow['joiner'] ?? '';
             $value = $queryRow['text'] ?? '';
 
-            // Compatibility with module AdvancedSearch (in list).
-            if (!in_array($queryType, ['ex', 'nex', 'list', 'nlist']) && !strlen((string) $value)) {
+            // A value can be an array with types "list" and "nlist".
+            if (!is_array($value)
+                && !strlen((string) $value)
+                && $queryType !== 'nex'
+                && $queryType !== 'ex'
+            ) {
                 continue;
+            }
+
+            $propertyId = $queryRow['property'];
+            if ($propertyId) {
+                $propertyId = $this->properties[$propertyId] ?? $propertyId;
             }
 
             $valuesAlias = $adapter->createAlias();
@@ -1488,7 +1497,7 @@ class References extends AbstractPlugin
                 case 'eq':
                     $param = $adapter->createNamedParameter($qb, $value);
                     $subqueryAlias = $adapter->createAlias();
-                    $subquery = $adapter->getEntityManager()
+                    $subquery = $this->entityManager
                         ->createQueryBuilder()
                         ->select("$subqueryAlias.id")
                         ->from('Omeka\Entity\Resource', $subqueryAlias)
@@ -1506,7 +1515,7 @@ class References extends AbstractPlugin
                 case 'in':
                     $param = $adapter->createNamedParameter($qb, '%' . $escape($value) . '%');
                     $subqueryAlias = $adapter->createAlias();
-                    $subquery = $adapter->getEntityManager()
+                    $subquery = $this->entityManager
                         ->createQueryBuilder()
                         ->select("$subqueryAlias.id")
                         ->from('Omeka\Entity\Resource', $subqueryAlias)
@@ -1529,7 +1538,7 @@ class References extends AbstractPlugin
                     }
                     $param = $adapter->createNamedParameter($qb, $list);
                     $subqueryAlias = $adapter->createAlias();
-                    $subquery = $adapter->getEntityManager()
+                    $subquery = $this->entityManager
                         ->createQueryBuilder()
                         ->select("$subqueryAlias.id")
                         ->from('Omeka\Entity\Resource', $subqueryAlias)
@@ -1547,7 +1556,7 @@ class References extends AbstractPlugin
                 case 'sw':
                     $param = $adapter->createNamedParameter($qb, $escape($value) . '%');
                     $subqueryAlias = $adapter->createAlias();
-                    $subquery = $adapter->getEntityManager()
+                    $subquery = $this->entityManager
                         ->createQueryBuilder()
                         ->select("$subqueryAlias.id")
                         ->from('Omeka\Entity\Resource', $subqueryAlias)
@@ -1565,7 +1574,7 @@ class References extends AbstractPlugin
                 case 'ew':
                     $param = $adapter->createNamedParameter($qb, '%' . $escape($value));
                     $subqueryAlias = $adapter->createAlias();
-                    $subquery = $adapter->getEntityManager()
+                    $subquery = $this->entityManager
                         ->createQueryBuilder()
                         ->select("$subqueryAlias.id")
                         ->from('Omeka\Entity\Resource', $subqueryAlias)
@@ -1599,18 +1608,9 @@ class References extends AbstractPlugin
             }
 
             $joinConditions = [];
-            // Narrow to specific property, if one is selected
-            if ($propertyId) {
-                if (is_numeric($propertyId)) {
-                    $propertyId = (int) $propertyId;
-                } else {
-                    $property = $adapter->getPropertyByTerm($propertyId);
-                    if ($property) {
-                        $propertyId = $property->getId();
-                    } else {
-                        $propertyId = 0;
-                    }
-                }
+            // Narrow to specific property, if one is selected.
+            // The check is done against the requested property, like in core.
+            if ($queryRow['property']) {
                 $joinConditions[] = $expr->eq("$valuesAlias.property", (int) $propertyId);
             }
 
