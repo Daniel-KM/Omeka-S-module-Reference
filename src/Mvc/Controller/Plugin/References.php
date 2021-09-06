@@ -1473,7 +1473,8 @@ class References extends AbstractPlugin
             $joiner = $queryRow['joiner'] ?? '';
             $value = $queryRow['text'] ?? '';
 
-            if (!strlen((string) $value) && $queryType !== 'nex' && $queryType !== 'ex') {
+            // Compatibility with module AdvancedSearch (in list).
+            if (!in_array($queryType, ['ex', 'nex', 'list', 'nlist']) && !strlen((string) $value)) {
                 continue;
             }
 
@@ -1522,7 +1523,7 @@ class References extends AbstractPlugin
                     // no break.
                 case 'list':
                     $list = is_array($value) ? $value : explode("\n", $value);
-                    $list = array_filter(array_map('trim', array_map('strval', $list)), 'strlen');
+                    $list = array_unique(array_filter(array_map('trim', array_map('strval', $list)), 'strlen'));
                     if (empty($list)) {
                         continue 2;
                     }
@@ -1532,7 +1533,7 @@ class References extends AbstractPlugin
                         ->createQueryBuilder()
                         ->select("$subqueryAlias.id")
                         ->from('Omeka\Entity\Resource', $subqueryAlias)
-                        ->where($expr->eq("$subqueryAlias.title", $param));
+                        ->where($expr->in("$subqueryAlias.title", $param));
                     $predicateExpr = $expr->orX(
                         $expr->in("$valuesAlias.valueResource", $subquery->getDQL()),
                         $expr->in("$valuesAlias.value", $param),
