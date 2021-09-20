@@ -503,6 +503,8 @@ class References extends AbstractPlugin
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
 
+        // TODO This is no more the case.
+        // TODO Check if ANY_VALUE can be replaced by MIN in order to remove it.
         // Note: Doctrine requires simple label, without quote or double quote:
         // "o:label" is not possible, neither "count".
 
