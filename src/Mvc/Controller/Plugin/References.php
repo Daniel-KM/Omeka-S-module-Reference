@@ -258,7 +258,7 @@ class References extends AbstractPlugin
                 'distinct' => $distinct,
                 'datatype' => $datatype,
                 'lang' => $lang,
-                'include_without_meta' => (bool) @$options['include_without_meta'],
+                'include_without_meta' => !empty($options['include_without_meta']),
                 'output' => @$options['output'] === 'associative' && !$first && !$listByMax && !$initial && !$distinct && !$datatype && !$lang
                     ? 'associative'
                     : 'list',
