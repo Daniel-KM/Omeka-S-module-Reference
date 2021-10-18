@@ -1377,23 +1377,34 @@ class References extends AbstractPlugin
             ->select('omeka_root.id')
             ->from($this->options['entity_class'], 'omeka_root');
 
+        $expr = $qb->expr();
+
         // Support of "starts with" is needed to get all subjects for a letter.
         // So, the properties part of the query is managed separately.
         $mainQuery = $this->query;
         unset($mainQuery['property']);
 
-        /** @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::search() */
-        /** @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter */
+        /**
+         * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::search()
+         * @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter
+         */
         $adapter = $this->adapterManager->get($this->options['resource_name']);
         $adapter->buildBaseQuery($subQb, $mainQuery);
         $adapter->buildQuery($subQb, $mainQuery);
+
+        // Full text search is not managed by adapters, but by a special event.
+        if (isset($this->query['fulltext_search'])) {
+            $this->buildFullTextSearchQuery($subQb, $adapter);
+        }
+
+        // Managed separated properties.
         if (isset($this->query['property']) && is_array($this->query['property'])) {
             $this->buildPropertyQuery($subQb, $adapter);
         }
 
         // There is no colision: the adapter query uses alias "omeka_" + index.
         $qb
-            ->andWhere($qb->expr()->in('resource.id', $subQb->getDQL()));
+            ->andWhere($expr->in('resource.id', $subQb->getDQL()));
 
         $subParams = $subQb->getParameters();
         foreach ($subParams as $parameter) {
@@ -1403,6 +1414,49 @@ class References extends AbstractPlugin
                 $parameter->getType()
             );
         }
+    }
+
+    /**
+     * Manage full text search.
+     *
+     * Full text search is not managed by adapters, but by a special event.
+     *
+     * This is an adaptation of the core method, except rights check.
+     * @see \Omeka\Module::searchFulltext()
+     */
+    protected function buildFullTextSearchQuery(QueryBuilder $qb, AbstractResourceEntityAdapter $adapter): void
+    {
+        if (!($adapter instanceof \Omeka\Api\Adapter\FulltextSearchableInterface)) {
+            return;
+        }
+
+        if (!isset($this->query['fulltext_search']) || ('' === trim($this->query['fulltext_search']))) {
+            return;
+        }
+
+        $searchAlias = $adapter->createAlias();
+
+        $match = sprintf(
+            'MATCH(%s.title, %s.text) AGAINST (%s)',
+            $searchAlias,
+            $searchAlias,
+            $adapter->createNamedParameter($qb, $this->query['fulltext_search'])
+        );
+        $joinConditions = sprintf(
+            '%s.id = omeka_root.id AND %s.resource = %s',
+            $searchAlias,
+            $searchAlias,
+            $adapter->createNamedParameter($qb, $adapter->getResourceName())
+        );
+
+        $qb
+            ->innerJoin(\Omeka\Entity\FulltextSearch::class, $searchAlias, Join::WITH, $joinConditions)
+            // Filter out resources with no similarity.
+            ->andWhere(sprintf('%s > 0', $match))
+            // Order by the relevance. Note the use of orderBy() and not
+            // addOrderBy(). This should ensure that ordering by relevance
+            // is the first thing being ordered.
+            ->orderBy($match, 'DESC');
     }
 
     /**
