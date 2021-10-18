@@ -60,7 +60,8 @@ if (version_compare($oldVersion, '3.4.5', '<')) {
 }
 
 if (version_compare($oldVersion, '3.4.7', '<')) {
-    $tree = $settings->get('reference_tree_hierarchy', '');
+    $tree = $settings->get('reference_tree_hierarchy') ?: [];
+    $tree = (array) $tree;
     $treeString = $referenceTreePlugin->convertFlatLevelsToTree($tree);
     $settings->set(
         'reference_tree_hierarchy',
