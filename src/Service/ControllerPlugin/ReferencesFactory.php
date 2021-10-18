@@ -16,6 +16,8 @@ class ReferencesFactory implements FactoryInterface
         return new References(
             $services->get('Omeka\EntityManager'),
             $services->get('Omeka\ApiAdapterManager'),
+            $services->get('Omeka\Acl'),
+            $services->get('Omeka\AuthenticationService')->getIdentity(),
             $api,
             $plugins->get('translate'),
             $this->supportAnyValue($services)

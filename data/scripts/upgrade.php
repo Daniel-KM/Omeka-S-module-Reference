@@ -30,7 +30,15 @@ include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/ReferenceTree.php
 $entityManager = $services->get('Omeka\EntityManager');
 $controllerPluginManager = $services->get('ControllerPluginManager');
 $api = $controllerPluginManager->get('api');
-$referencesPlugin = new Mvc\Controller\Plugin\References($entityManager, $services->get('Omeka\ApiAdapterManager'), $api, $controllerPluginManager->get('translate'), [], [], [], false);
+$referencesPlugin = new Mvc\Controller\Plugin\References(
+    $entityManager,
+    $services->get('Omeka\ApiAdapterManager'),
+    $services->get('Omeka\Acl'),
+    $services->get('Omeka\AuthenticationService')->getIdentity(),
+    $api,
+    $controllerPluginManager->get('translate'),
+    false
+);
 $referenceTreePlugin = new Mvc\Controller\Plugin\ReferenceTree($api, $referencesPlugin);
 
 if (version_compare($oldVersion, '3.4.5', '<')) {

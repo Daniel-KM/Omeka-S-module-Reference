@@ -8,8 +8,10 @@ use Doctrine\ORM\QueryBuilder;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Api\Adapter\AbstractResourceEntityAdapter;
 use Omeka\Api\Adapter\Manager as AdapterManager;
+use Omeka\Entity\User;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Mvc\Controller\Plugin\Translate;
+use Omeka\Permissions\Acl;
 
 class References extends AbstractPlugin
 {
@@ -24,6 +26,16 @@ class References extends AbstractPlugin
     protected $adapterManager;
 
     /**
+     * @var Acl
+     */
+    protected $acl;
+
+    /**
+     * @var ?User
+     */
+    protected $user;
+
+    /**
      * @var Api
      */
     protected $api;
@@ -32,6 +44,11 @@ class References extends AbstractPlugin
      * @var Translate
      */
     protected $translate;
+
+    /**
+     * @param bool
+     */
+    protected $supportAnyValue;
 
     /**
      * List of property main data by term and id.
@@ -64,11 +81,6 @@ class References extends AbstractPlugin
     protected $itemSetsByTitlesAndIds;
 
     /**
-     * @param bool
-     */
-    protected $supportAnyValue;
-
-    /**
      * @var array
      */
     protected $metadata;
@@ -83,22 +95,19 @@ class References extends AbstractPlugin
      */
     protected $options;
 
-    /**
-     * @param EntityManager $entityManager
-     * @param AdapterManager $adapterManager
-     * @param Api $api
-     * @param Translate $translate
-     * @param bool $supportAnyValue
-     */
     public function __construct(
         EntityManager $entityManager,
         AdapterManager $adapterManager,
+        Acl $acl,
+        ?User $user,
         Api $api,
         Translate $translate,
         $supportAnyValue
     ) {
         $this->entityManager = $entityManager;
         $this->adapterManager = $adapterManager;
+        $this->acl = $acl;
+        $this->user = $user;
         $this->api = $api;
         $this->translate = $translate;
         $this->supportAnyValue = $supportAnyValue;
@@ -1400,6 +1409,21 @@ class References extends AbstractPlugin
         // Managed separated properties.
         if (isset($this->query['property']) && is_array($this->query['property'])) {
             $this->buildPropertyQuery($subQb, $adapter);
+        }
+
+        // TODO Manage not only standard visibility, but modules ones.
+        // TODO Check the visibility for the main queries.
+        // Set visibility constraints for users without "view-all" privilege.
+        if (!$this->acl->userIsAllowed('Omeka\Entity\Resource', 'view-all')) {
+            $constraints = $expr->eq('omeka_root.isPublic', true);
+            if ($this->user) {
+                // Users can view all resources they own.
+                $constraints = $expr->orX(
+                    $constraints,
+                    $expr->eq('omeka_root.owner', $this->user->getId())
+                );
+            }
+            $subQb->andWhere($constraints);
         }
 
         // There is no colision: the adapter query uses alias "omeka_" + index.
