@@ -4,7 +4,7 @@ namespace Reference\Form;
 
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
-use Omeka\Form\Element\PropertySelect;
+use Omeka\Form\Element as OmekaElement;
 
 class ReferenceTreeFieldset extends Fieldset
 {
@@ -24,7 +24,7 @@ class ReferenceTreeFieldset extends Fieldset
             ])
             ->add([
                 'name' => 'o:block[__blockIndex__][o:data][term]',
-                'type' => PropertySelect::class,
+                'type' => OmekaElement\PropertySelect::class,
                 'options' => [
                     'label' => 'Property', // @translate
                     'term_as_value' => true,
@@ -87,15 +87,15 @@ Asia
             ])
             ->add([
                 'name' => 'o:block[__blockIndex__][o:data][query]',
-                'type' => Element\Text::class,
+                'type' => OmekaElement\Query::class,
                 'options' => [
-                    'label' => 'Query to limit resources', // @translate
-                    'info' => 'Limit the reference to a particular subset of resources, for example a site, via an advanced search query.', // @translate
-                    'documentation' => 'https://omeka.org/s/docs/user-manual/sites/site_pages/#browse-preview',
+                    'label' => 'Search pool query', // @translate
+                    'info' => 'Restrict references to a particular subset of resources, for example a site.', // @translate
+                    'query_resource_type' => null,
+                    'query_partial_excludelist' => ['common/advanced-search/site'],
                 ],
                 'attributes' => [
                     'id' => 'reference-tree-query',
-                    'class' => 'chosen-select',
                 ],
             ])
             ->add([

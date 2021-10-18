@@ -132,6 +132,10 @@ class Reference extends AbstractBlockLayout
         }
 
         $fieldset = $formElementManager->get($blockFieldset);
+        $fieldset
+            ->get('o:block[__blockIndex__][o:data][args]')
+            ->get('query')
+            ->setOption('query_resource_type', $data['resource_type'] ?? 'items');
         // TODO Fix set data for radio buttons.
         $fieldset->setData([
             'o:block[__blockIndex__][o:data][args]' => $data['args'],

@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
+
 namespace Reference\Form;
 
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 use Laminas\Form\Form;
-use Omeka\Form\Element\PropertySelect;
-use Omeka\Form\Element\ResourceClassSelect;
+use Omeka\Form\Element as OmekaElement;
 
 // FIXME Use a fieldset, not a form.
 class ReferenceIndexFieldset extends Form
@@ -22,7 +22,7 @@ class ReferenceIndexFieldset extends Form
         $argsFieldset
             ->add([
                 'name' => 'properties',
-                'type' => PropertySelect::class,
+                'type' => OmekaElement\PropertySelect::class,
                 'options' => [
                     'label' => 'Properties', // @translate
                     'empty_option' => '',
@@ -38,7 +38,7 @@ class ReferenceIndexFieldset extends Form
             ])
             ->add([
                 'name' => 'resource_classes',
-                'type' => ResourceClassSelect::class,
+                'type' => OmekaElement\ResourceClassSelect::class,
                 'options' => [
                     'label' => 'Resource classes', // @translate
                     'empty_option' => '',
