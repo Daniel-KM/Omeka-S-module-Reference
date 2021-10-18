@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Reference\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-09-06 00:00+0000\n"
-"PO-Revision-Date: 2021-09-06 00:00+0000\n"
+"POT-Creation-Date: 2021-10-18 00:00+0000\n"
+"PO-Revision-Date: 2021-10-18 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -44,7 +44,7 @@ msgstr ""
 "Le module « %s » a été automatiquement désactivé car ses dépendances ne sont "
 "plus disponibles."
 
-#: src/Site/BlockLayout/Reference.php:143
+#: src/Site/BlockLayout/Reference.php:147
 msgid "Choose a property or a resource class."
 msgstr "Choisir une propriété ou une classe de ressource."
 
@@ -78,11 +78,11 @@ msgstr "%s (%d)"
 msgid "Browse %s"
 msgstr "Parcourir %s"
 
-#: view/common/reference.phtml:49
+#: view/common/reference.phtml:50
 msgid "See all…"
 msgstr "Tout voir…"
 
-#: view/common/reference.phtml:50
+#: view/common/reference.phtml:51
 #, php-format
 msgid "And %d more."
 msgstr "Et %d de plus."
@@ -105,7 +105,7 @@ msgstr "Parcourir les documents par \"%s\" (%d index)"
 msgid "There is no references for \"%s\"."
 msgstr "Il n’y a aucune référence pour \"%s\"."
 
-#: data/scripts/upgrade.php:348
+#: data/scripts/upgrade.php:349
 msgid ""
 "It is possible now to limit the list of references, for example only the of "
 "subjects starting with \"a\" with argument \"filters[begin]=a\"."
@@ -114,7 +114,7 @@ msgstr ""
 "seulement la liste des sujets commençant avec un \"a\" avec l’argument "
 "\"filters[begin]=a\"."
 
-#: data/scripts/upgrade.php:353
+#: data/scripts/upgrade.php:354
 msgid ""
 "It is possible now to list not only references, but resources by reference, "
 "for example all documents of an author or all items with each subject."
@@ -132,8 +132,8 @@ msgid "Heading for the block, if any. The placeholder {total} can be used."
 msgstr ""
 "Ajouter un titre éventuel pour le bloc. Le joker {total} peut être utilisé."
 
-#: src/Form/ReferenceTreeFieldset.php:37 src/Form/ReferenceFieldset.php:33
-#: src/Form/ReferenceFieldset.php:192
+#: src/Form/ReferenceTreeFieldset.php:37 src/Form/ReferenceFieldset.php:34
+#: src/Form/ReferenceFieldset.php:218
 msgid "Select a property…"
 msgstr "Choisir une propriété…"
 
@@ -178,23 +178,20 @@ msgstr ""
 "- Japon\n"
 
 #: src/Form/ReferenceTreeFieldset.php:73 src/Form/ReferenceIndexFieldset.php:63
-#: src/Form/SiteSettingsFieldset.php:25 src/Form/ReferenceFieldset.php:58
+#: src/Form/SiteSettingsFieldset.php:25 src/Form/ReferenceFieldset.php:60
 msgid "value_options"
 msgstr "value_options"
 
-#: src/Form/ReferenceTreeFieldset.php:92 src/Form/ReferenceIndexFieldset.php:96
-#: src/Form/ReferenceFieldset.php:91
-msgid "Query to limit resources"
-msgstr "Requête pour limiter les ressources"
+#: src/Form/ReferenceTreeFieldset.php:92 src/Form/ReferenceFieldset.php:95
+msgid "Search pool query"
+msgstr "Requête de recherche"
 
-#: src/Form/ReferenceTreeFieldset.php:93 src/Form/ReferenceIndexFieldset.php:97
-#: src/Form/ReferenceFieldset.php:92
+#: src/Form/ReferenceTreeFieldset.php:93 src/Form/ReferenceFieldset.php:96
 msgid ""
-"Limit the reference to a particular subset of resources, for example a site, "
-"via an advanced search query."
+"Restrict references to a particular subset of resources, for example a site."
 msgstr ""
 "Limiter les références à un lot spécifique de ressources, par exemple un "
-"site, via une requête de type recherche avancée."
+"site."
 
 #: src/Form/ReferenceTreeFieldset.php:108
 msgid ""
@@ -213,11 +210,11 @@ msgid "Contains"
 msgstr "Contient"
 
 #: src/Form/ReferenceTreeFieldset.php:123 src/Form/SiteSettingsFieldset.php:48
-#: src/Form/ReferenceFieldset.php:132
+#: src/Form/ReferenceFieldset.php:143
 msgid "Link to single records"
 msgstr "Lien vers les documents isolés"
 
-#: src/Form/ReferenceTreeFieldset.php:124 src/Form/ReferenceFieldset.php:133
+#: src/Form/ReferenceTreeFieldset.php:124 src/Form/ReferenceFieldset.php:144
 msgid ""
 "When a reference has only one item, link to it directly instead of to the "
 "items/browse page."
@@ -225,11 +222,11 @@ msgstr ""
 "Quand une référence contient un seul document, faire le lien directement "
 "vers lui plutôt que vers la page items/browse."
 
-#: src/Form/ReferenceTreeFieldset.php:134 src/Form/ReferenceFieldset.php:140
+#: src/Form/ReferenceTreeFieldset.php:134 src/Form/ReferenceFieldset.php:154
 msgid "Custom url for single"
 msgstr "Url personnalisée pour les références uniques"
 
-#: src/Form/ReferenceTreeFieldset.php:135 src/Form/ReferenceFieldset.php:141
+#: src/Form/ReferenceTreeFieldset.php:135 src/Form/ReferenceFieldset.php:155
 msgid ""
 "May be set with modules such Clean Url or Ark. May slow the display when "
 "there are many single references."
@@ -238,7 +235,7 @@ msgstr ""
 "l'affichage quand les références uniques sont nombreuses."
 
 #: src/Form/ReferenceTreeFieldset.php:145
-#: src/Form/ReferenceIndexFieldset.php:143 src/Form/ReferenceFieldset.php:162
+#: src/Form/ReferenceIndexFieldset.php:143 src/Form/ReferenceFieldset.php:185
 msgid "Add the total of resources for each reference"
 msgstr "Indiquer le total de ressources pour chaque référence"
 
@@ -259,7 +256,7 @@ msgstr ""
 "chemin est enregistré avec \" :: \" entre chaque branche)."
 
 #: src/Form/ReferenceTreeFieldset.php:179
-#: src/Form/ReferenceIndexFieldset.php:156 src/Form/ReferenceFieldset.php:202
+#: src/Form/ReferenceIndexFieldset.php:156 src/Form/ReferenceFieldset.php:228
 msgid "Template to display"
 msgstr "Gabarit à afficher"
 
@@ -287,11 +284,23 @@ msgstr "Sélectionner des classes de ressource…"
 msgid "chosen-select"
 msgstr "chosen-select"
 
-#: src/Form/ReferenceIndexFieldset.php:108 src/Form/ReferenceFieldset.php:100
+#: src/Form/ReferenceIndexFieldset.php:96
+msgid "Query to limit resources"
+msgstr "Requête pour limiter les ressources"
+
+#: src/Form/ReferenceIndexFieldset.php:97
+msgid ""
+"Limit the reference to a particular subset of resources, for example a site, "
+"via an advanced search query."
+msgstr ""
+"Limiter les références à un lot spécifique de ressources, par exemple un "
+"site, via une requête de type recherche avancée."
+
+#: src/Form/ReferenceIndexFieldset.php:108 src/Form/ReferenceFieldset.php:108
 msgid "Filter by language"
 msgstr "Filtrer par langue"
 
-#: src/Form/ReferenceIndexFieldset.php:109 src/Form/ReferenceFieldset.php:101
+#: src/Form/ReferenceIndexFieldset.php:109 src/Form/ReferenceFieldset.php:109
 msgid ""
 "Limit the results to the specified languages. Use \"|\" to separate multiple "
 "languages. Use \"||\" for values without language."
@@ -300,7 +309,7 @@ msgstr ""
 "plusieurs langues. Utiliser \"||\" pour les valeurs sans langue."
 
 #: src/Form/ReferenceIndexFieldset.php:122 src/Form/SiteSettingsFieldset.php:43
-#: src/Form/ReferenceFieldset.php:114
+#: src/Form/ReferenceFieldset.php:122
 msgid "Display"
 msgstr "Affichage"
 
@@ -340,35 +349,35 @@ msgstr "Url personnalisée pour les références uniques"
 msgid "Reference pages for selected classes and properties"
 msgstr "Pages références pour les classes et les propriétés sélectionnées"
 
-#: src/Form/ReferenceFieldset.php:40
+#: src/Form/ReferenceFieldset.php:41
 msgid "Resource class"
 msgstr "Classe de ressource"
 
-#: src/Form/ReferenceFieldset.php:47
+#: src/Form/ReferenceFieldset.php:49
 msgid "Select a resource class…"
 msgstr "Choisir une classe de ressource…"
 
-#: src/Form/ReferenceFieldset.php:75
+#: src/Form/ReferenceFieldset.php:78
 msgid "Select order"
 msgstr "Choisir l’ordre"
 
-#: src/Form/ReferenceFieldset.php:77
+#: src/Form/ReferenceFieldset.php:80
 msgid "Alphabetic ascendant"
 msgstr "Alphabétique ascendant"
 
-#: src/Form/ReferenceFieldset.php:78
+#: src/Form/ReferenceFieldset.php:81
 msgid "Alphabetic descendant"
 msgstr "Alphabétique descendant"
 
-#: src/Form/ReferenceFieldset.php:79
+#: src/Form/ReferenceFieldset.php:82
 msgid "Total ascendant"
 msgstr "Par total croissant"
 
-#: src/Form/ReferenceFieldset.php:80
+#: src/Form/ReferenceFieldset.php:83
 msgid "Total descendant"
 msgstr "Par total décroissant"
 
-#: src/Form/ReferenceFieldset.php:125
+#: src/Form/ReferenceFieldset.php:133
 msgid ""
 "Translatable title above references, if any. The placeholder {total} can be "
 "used."
@@ -376,19 +385,19 @@ msgstr ""
 "Ajouter un titre traduisible au-dessus des références. Le joker {total} peut "
 "être utilisé."
 
-#: src/Form/ReferenceFieldset.php:148
+#: src/Form/ReferenceFieldset.php:165
 msgid "Add skiplinks above and below list"
 msgstr "Ajouter des raccourcis au dessus et en dessous de la liste"
 
-#: src/Form/ReferenceFieldset.php:155
+#: src/Form/ReferenceFieldset.php:175
 msgid "Add first letter as headings between references"
 msgstr "Ajouter l’initiale comme entête entre les références"
 
-#: src/Form/ReferenceFieldset.php:169
+#: src/Form/ReferenceFieldset.php:195
 msgid "Maximum resources to display by reference"
 msgstr "Nombre de ressources maximum à afficher par référence"
 
-#: src/Form/ReferenceFieldset.php:170
+#: src/Form/ReferenceFieldset.php:196
 msgid ""
 "For example, display the items by subject. Let 0 to display a simple list. "
 "Maximum is 1024."
@@ -396,11 +405,11 @@ msgstr ""
 "Par exemple, afficher les contenus par sujet. Laisser 0 pour afficher une "
 "liste simple. Le maximum est 1024."
 
-#: src/Form/ReferenceFieldset.php:183
+#: src/Form/ReferenceFieldset.php:209
 msgid "Subject values"
 msgstr "Valeurs sujet"
 
-#: src/Form/ReferenceFieldset.php:184
+#: src/Form/ReferenceFieldset.php:210
 msgid ""
 "Allow to list related resources. For example, in a library where there are "
 "items of types \"Authors\" and \"Documents\", and if the creator of the "
@@ -414,7 +423,7 @@ msgstr ""
 "voir la liste des documents par auteur. Cette option est ignorée quand "
 "l’option \"maximum par référence\" est utilisée."
 
-#: src/Form/ReferenceFieldset.php:203
+#: src/Form/ReferenceFieldset.php:229
 msgid ""
 "Templates are in folder \"common/block-layout\" of the theme and should "
 "start with \"reference\"."
@@ -434,7 +443,7 @@ msgstr "Références en arborescence"
 
 #: src/Site/BlockLayout/ReferenceIndex.php:36 config/module.config.php:185
 msgid "Reference index"
-msgstr "Index des références"
+msgstr "Références (index)"
 
 #: src/Site/BlockLayout/ReferenceIndex.php:65
 msgid ""
