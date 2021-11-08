@@ -2037,7 +2037,7 @@ class References extends AbstractPlugin
      */
     protected function prepareResourceClasses(): self
     {
-        if (is_null($this->propertiesByTermsAndIds)) {
+        if (is_null($this->resourceClassesByTermsAndIds)) {
             $connection = $this->entityManager->getConnection();
             $qb = $connection->createQueryBuilder();
             $qb
