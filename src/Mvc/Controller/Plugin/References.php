@@ -82,6 +82,15 @@ class References extends AbstractPlugin
     protected $itemSetsByTitlesAndIds;
 
     /**
+     * List of owners by name and id.
+     *
+     * Warning: only users with resources are owners.
+     *
+     * @var array
+     */
+    protected $ownersByNameAndIds;
+
+    /**
      * @var array
      */
     protected $metadata;
@@ -442,6 +451,18 @@ class References extends AbstractPlugin
                     } else {
                         foreach (array_filter($values) as $valueData) {
                             $meta = $this->getItemSet($valueData['val']);
+                            $result[$keyResult]['o:references'][] = $meta + $valueData;
+                        }
+                    }
+                    break;
+
+                case 'o:owner':
+                    $values = $this->listOwners();
+                    if ($isAssociative) {
+                        $result[$keyResult]['o:references'] = $values;
+                    } else {
+                        foreach (array_filter($values) as $valueData) {
+                            $meta = $this->getOwner($valueData['val']);
                             $result[$keyResult]['o:references'][] = $meta + $valueData;
                         }
                     }
@@ -904,6 +925,53 @@ class References extends AbstractPlugin
         return $this->outputMetadata($qb, 'o:item_set');
     }
 
+    /**
+     * Get the list of owners, the total for each one and the first item.
+     *
+     * @return array Associative list of references, with the total, the first
+     * record, and the first character, according to the parameters.
+     */
+    protected function listOwners()
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        // Count the number of items by owner.
+
+        // TODO Get all owners, even without items (or private items).
+        /*
+         SELECT DISTINCT user.name AS val, COUNT(resource.user_id) AS total
+         FROM resource resource
+         LEFT JOIN user user ON user.id = resource.user_id
+         GROUP BY val;
+         */
+
+        $qb
+            ->select(
+                'user.name as val',
+                'COUNT(resource.id) AS total'
+            )
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            // Check visibility automatically.
+            ->leftJoin(
+                \Omeka\Entity\User::class,
+                'user',
+                Join::WITH,
+                $expr->eq('user', 'resource.owner')
+            )
+            ->groupBy('val')
+        ;
+
+        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+            $qb
+                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+        }
+
+        $this->manageOptions($qb, 'o:owner');
+        return $this->outputMetadata($qb, 'o:owner');
+    }
+
     protected function limitItemSetsToSite(QueryBuilder $qb): void
     {
         // @see \Omeka\Api\Adapter\ItemSetAdapter::buildQuery()
@@ -1129,6 +1197,11 @@ class References extends AbstractPlugin
                 case 'o:item_set':
                     $qb
                         ->andWhere('item_set.id IN (:ids)')
+                        ->setParameter('ids', $this->options['values']);
+                    break;
+                case 'o:owner':
+                    $qb
+                        ->andWhere('user.id IN (:ids)')
                         ->setParameter('ids', $this->options['values']);
                     break;
                 default:
@@ -1859,6 +1932,8 @@ class References extends AbstractPlugin
             'o:resource_template' => 'resource_templates',
             // Item sets is only for items.
             'o:item_set' => 'item_sets',
+            // Owners is only for items.
+            'o:owner' => 'owners',
         ];
 
         $isSingle = !is_array($fields);
@@ -1878,6 +1953,7 @@ class References extends AbstractPlugin
                 'o:resource_class' => $translate('Classes'), // @translate
                 'o:resource_template' => $translate('Templates'), // @translate
                 'o:item_set' => $translate('Item sets'), // @translate
+                'o:owner' => $translate('Owners'), // @translate
             ];
             return [
                 'type' => $field,
@@ -2447,6 +2523,53 @@ class References extends AbstractPlugin
                 unset($result['id']);
                 $this->itemSetsByTitlesAndIds[$result['o:id']] = $result;
                 $this->itemSetsByTitlesAndIds[$result['o:label']] = $result;
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Get owner by user name or by numeric id.
+     */
+    protected function getOwner($nameOrId): ?array
+    {
+        if (is_null($this->ownersByNameAndIds)) {
+            $this->prepareOwners();
+        }
+        return $this->ownersByNameAndIds[$nameOrId] ?? null;
+    }
+
+    /**
+     * Prepare the list of owners (users with resources).
+     */
+    protected function prepareOwners(): self
+    {
+        if (is_null($this->ownersByNameAndIds)) {
+            $connection = $this->entityManager->getConnection();
+            // Here, the dbal query builder is used.
+            $qb = $connection->createQueryBuilder();
+            $qb
+                ->select(
+                    // Labels are not unique.
+                    'DISTINCT user.name AS "o:label"',
+                    '"o:User" AS "@type"',
+                    'user.id AS "o:id"',
+                    'NULL AS "@language"'
+                )
+                ->from('user', 'user')
+                ->innerJoin('user', 'resource', 'resource', 'resource.user_id = user.id')
+                // TODO Improve return of private resource for owners.
+                ->where('resource.is_public', '1')
+                ->orderBy('user.id', 'asc')
+                ->addGroupBy('user.id')
+            ;
+            $results= $connection->executeQuery($qb)->fetchAllAssociative();
+            $this->ownersByNameAndIds = [];
+            foreach ($results as $result) {
+                unset($result['id']);
+                $result['o:id'] = (int) $result['o:id'];
+                $this->ownersByNameAndIds[$result['o:id']] = $result;
+                $this->ownersByNameAndIds[$result['o:label']] = $result;
             }
         }
         return $this;
