@@ -79,6 +79,8 @@ class References extends AbstractHelper
      * TODO Check if the option include_without_meta is still needed with data types.
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
+     * - single_reference_format: false (default), or true to keep the old output
+     *   without the deprecated warning for single references without named key.
      * - output: "list" (default) or "associative" (possible only without added
      *   options: first, initial, distinct, datatype, or lang).
      * Some options and some combinations are not managed for some metadata.

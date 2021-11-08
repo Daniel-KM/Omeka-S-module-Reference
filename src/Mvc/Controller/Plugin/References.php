@@ -151,6 +151,8 @@ class References extends AbstractPlugin
      * TODO Check if the option include_without_meta is still needed with data types.
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
+     * - single_reference_format: false (default), or true to keep the old output
+     *   without the deprecated warning for single references without named key.
      * - output: "list" (default) or "associative" (possible only without added
      *   options: first, initial, distinct, datatype, or lang).
      * Some options and some combinations are not managed for some metadata.
@@ -254,6 +256,7 @@ class References extends AbstractPlugin
             'datatype' => false,
             'lang' => false,
             'include_without_meta' => false,
+            'single_reference_format' => false,
             'output' => 'list',
         ];
         if ($options) {
@@ -284,6 +287,7 @@ class References extends AbstractPlugin
                 'datatype' => $datatype,
                 'lang' => $lang,
                 'include_without_meta' => !empty($options['include_without_meta']),
+                'single_reference_format' => !empty($options['single_reference_format']),
                 'output' => @$options['output'] === 'associative' && !$first && !$listByMax && !$initial && !$distinct && !$datatype && !$lang
                     ? 'associative'
                     : 'list',
@@ -350,9 +354,18 @@ class References extends AbstractPlugin
 
             $keyResult = $dataFields['key_result'];
 
-            $result[$keyResult] = $dataFields['is_single']
-                ? reset($dataFields['output']['o:request']['o:field'])
-                : $dataFields['output'];
+            if ($dataFields['is_single']
+                && (empty($keyOrLabel) || is_numeric($keyOrLabel))
+                && !$isAssociative
+            ) {
+                $result[$keyResult] = reset($dataFields['output']['o:request']['o:field']);
+                if (!$this->options['single_reference_format']) {
+                    $result[$keyResult] = ['deprecated' => 'This output format is deprecated. Set a string key to metadata to use the new format or append option "single_reference_format" to remove this warning.'] // @translate
+                        + $result[$keyResult];
+                }
+            } else {
+                $result[$keyResult] = $dataFields['output'];
+            }
 
             if (in_array($dataFields['type'], ['properties', 'resource_classes', 'resource_templates', 'item_sets'])) {
                 $ids = array_column($dataFields['output']['o:request']['o:field'], 'o:id');
