@@ -65,10 +65,12 @@ class ApiController extends \Omeka\Controller\ApiController
             $options = $options['option'];
         }
 
-        unset($query['query']);
-        unset($query['option']);
-        unset($options['query']);
-        unset($options['option']);
+        unset(
+            $query['query'],
+            $query['option'],
+            $options['query'],
+            $options['option']
+        );
 
         // Text is full text, but full text doesn't work via api.
         if (array_key_exists('text', $query) && strlen($query['text'])) {
@@ -79,13 +81,15 @@ class ApiController extends \Omeka\Controller\ApiController
                 'text' => $query['text'],
             ];
         }
-        unset($query['text']);
-        unset($query['per_page']);
-        unset($query['page']);
-        unset($query['sort_by']);
-        unset($query['sort_order']);
-        unset($query['offset']);
-        unset($query['limit']);
+        unset(
+            $query['text'],
+            $query['per_page'],
+            $query['page'],
+            $query['sort_by'],
+            $query['sort_order'],
+            $query['offset'],
+            $query['limit']
+        );
 
         $result = $this->references($fields, $query, $options)->list();
         return new ApiJsonModel($result, $this->getViewOptions());

@@ -893,6 +893,7 @@ class References extends AbstractPlugin
             }
 
             $qb
+                // @see \Omeka\Api\Adapter\ItemSetAdapter::buildQuery()
                 ->innerJoin('item_set.siteItemSets', 'ref_site_item_set')
                 ->andWhere($expr->eq('ref_site_item_set.site', ':ref_site_item_set_site'))
                 ->setParameter(':ref_site_item_set_site', $this->query['site_id']);
@@ -902,15 +903,10 @@ class References extends AbstractPlugin
     protected function filterByDatatype(QueryBuilder $qb): void
     {
         if ($this->options['filters']['datatypes']) {
-            /* // TODO Fix doctrine IN for array of strings.
             $expr = $qb->expr();
             $qb
                 ->andWhere($expr->in('value.type', ':datatypes'))
-                ->setParameter('datatypes', $this->options['filters']['datatypes'], \Doctrine\DBAL\Types\Type::SIMPLE_ARRAY);
-            */
-            $connection = $this->entityManager->getConnection();
-            $qb
-                ->andWhere('value.type IN (' . implode(',', array_map([$connection, 'quote'], $this->options['filters']['datatypes'])) . ')');
+                ->setParameter('datatypes', $this->options['filters']['datatypes'], Connection::PARAM_STR_ARRAY);
         }
     }
 
@@ -918,20 +914,14 @@ class References extends AbstractPlugin
     {
         if ($this->options['filters']['languages']) {
             $expr = $qb->expr();
-            $hasEmptyLanguage = in_array('', $this->options['filters']['languages']);
             // Note: For an unknown reason, doctrine may crash with "IS NULL" in
             // some non-reproductible cases. Db version related?
-            /* // TODO Fix doctrine IN for array of strings.
+            $hasEmptyLanguage = in_array('', $this->options['filters']['languages']);
             $in = $expr->in('value.lang', ':languages');
             $filter = $hasEmptyLanguage ? $expr->orX($in, $expr->isNull('value.lang')) : $in;
             $qb
                 ->andWhere($filter)
-                ->setParameter('languages', $this->options['filters']['languages'], \Doctrine\DBAL\Types\Type::SIMPLE_ARRAY);
-            */
-            $connection = $this->entityManager->getConnection();
-            $in = 'value.lang IN (' . implode(',', array_map([$connection, 'quote'], $this->options['filters']['languages'])) . ')';
-            $qb
-                ->andWhere($hasEmptyLanguage ? $expr->orX($in, $expr->isNull('value.lang')) : $in);
+                ->setParameter('languages', $this->options['filters']['languages'], Connection::PARAM_STR_ARRAY);
         }
     }
 
@@ -1952,6 +1942,7 @@ class References extends AbstractPlugin
     {
         if (is_null($this->propertiesByTermsAndIds)) {
             $connection = $this->entityManager->getConnection();
+            // Here, the dbal query builder is used.
             $qb = $connection->createQueryBuilder();
             $qb
                 ->select([
@@ -2039,6 +2030,7 @@ class References extends AbstractPlugin
     {
         if (is_null($this->resourceClassesByTermsAndIds)) {
             $connection = $this->entityManager->getConnection();
+            // Here, the dbal query builder is used.
             $qb = $connection->createQueryBuilder();
             $qb
                 ->select([
@@ -2067,8 +2059,8 @@ class References extends AbstractPlugin
                 $this->resourceClassesByTermsAndIds[$result['o:id']] = $result;
                 $this->resourceClassesByTermsAndIds[$result['o:term']] = $result;
             }
-            return $this;
         }
+        return $this;
     }
 
     /**
@@ -2126,6 +2118,7 @@ class References extends AbstractPlugin
     {
         if (is_null($this->resourceTemplatesByLabelsAndIds)) {
             $connection = $this->entityManager->getConnection();
+            // Here, the dbal query builder is used.
             $qb = $connection->createQueryBuilder();
             $qb
                 ->select([
@@ -2150,8 +2143,8 @@ class References extends AbstractPlugin
                 $this->resourceTemplatesByLabelsAndIds[$result['o:id']] = $result;
                 $this->resourceTemplatesByLabelsAndIds[$result['o:label']] = $result;
             }
-            return $this;
         }
+        return $this;
     }
 
     /**
@@ -2219,6 +2212,7 @@ class References extends AbstractPlugin
     {
         if (is_null($this->itemSetsByTitlesAndIds)) {
             $connection = $this->entityManager->getConnection();
+            // Here, the dbal query builder is used.
             $qb = $connection->createQueryBuilder();
             $qb
                 ->select([
@@ -2231,7 +2225,7 @@ class References extends AbstractPlugin
                     'resource.id',
                 ])
                 ->from('resource', 'resource')
-                ->inner_join('item_set', 'item_set')
+                ->innerJoin('resource', 'item_set', 'item_set', 'resource.id = item_set.id')
                 // TODO Improve return of private item sets.
                 ->where('resource.is_public', '1')
                 ->orderBy('resource.id', 'asc')
@@ -2247,8 +2241,8 @@ class References extends AbstractPlugin
                 $this->itemSetsByTitlesAndIds[$result['o:id']] = $result;
                 $this->itemSetsByTitlesAndIds[$result['o:label']] = $result;
             }
-            return $this;
         }
+        return $this;
     }
 
     /**
