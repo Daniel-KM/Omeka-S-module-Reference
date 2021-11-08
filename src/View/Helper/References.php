@@ -33,11 +33,7 @@ class References extends AbstractHelper
     }
 
     /**
-     * Stringify to an empty string.
-     *
-     *  The default result force to specify another methods.
-     *
-     * @return string
+     * Stringify to an empty string to force to use a specific method.
      */
     public function __toString(): string
     {
@@ -49,8 +45,10 @@ class References extends AbstractHelper
      *
      * @uses \Reference\Mvc\Controller\Plugin\References::list()
      *
-     * @param array $metadata Classes, properties terms, template names, or
-     * other Omeka metadata names.
+     * @param array|string $metadata Classes, properties terms, template names, or
+     * other Omeka metadata names. Similar types of metadata may be grouped to
+     * get aggregated references, for example ['Dates' => ['dcterms:date', 'dcterms:issued']],
+     * with the key used as key and label in the result.
      * @param array $query An Omeka search query.
      * @param array $options Options for output.
      * - resource_name: items (default), "item_sets", "media", "resources".
@@ -84,7 +82,8 @@ class References extends AbstractHelper
      * - output: "list" (default) or "associative" (possible only without added
      *   options: first, initial, distinct, datatype, or lang).
      * Some options and some combinations are not managed for some metadata.
-     * @return array Associative array with total and first record ids.
+     * @return array Associative array with total and first record ids. When a
+     * string is set as metadata, only its references are returned.
      */
     public function list($metadata = null, array $query = null, array $options = null): array
     {

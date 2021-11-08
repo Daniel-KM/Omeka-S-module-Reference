@@ -2,6 +2,7 @@
 
 namespace Reference\Mvc\Controller\Plugin;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
@@ -117,7 +118,9 @@ class References extends AbstractPlugin
      * Get the references.
      *
      * @param array $metadata Classes, properties terms, template names, or
-     * other Omeka metadata names.
+     * other Omeka metadata names. Similar types of metadata may be grouped to
+     * get aggregated references, for example ['Dates' => ['dcterms:date', 'dcterms:issued']],
+     * with the key used as key and label in the result.
      * @param array $query An Omeka search query.
      * @param array $options Options for output.
      * - resource_name: items (default), "item_sets", "media", "resources".
@@ -162,12 +165,19 @@ class References extends AbstractPlugin
     }
 
     /**
+     * List of metadata to get references for.
+     *
+     * A metadata may be a single field, or an array of fields.
+
      * @param array $metadata
      * @return self
      */
     public function setMetadata(array $metadata = null)
     {
-        $this->metadata = $metadata ? array_unique($metadata) : [];
+        $this->metadata = $metadata
+            // array_unique() doesn't not work with arrays, so use serialize().
+            ? array_intersect_key($metadata, array_unique(array_map('serialize', $metadata)))
+            : [];
         return $this;
     }
 
@@ -329,64 +339,110 @@ class References extends AbstractPlugin
         // TODO Return all needed columns.
 
         $result = [];
-        foreach ($fields as $inputField) {
-            $field = $this->prepareField($inputField);
-            $result[$field['term']] = [
-                'o:label' => $field['label'],
+        foreach ($fields as $keyOrLabel => $inputField) {
+            $field = $this->prepareField($inputField, $keyOrLabel);
+            $keyResult = $field['term']
+                ?? $field['label']
+                // Normally never used.
+                ?? is_array($inputField) || !is_numeric($keyOrLabel)? $keyOrLabel : $inputField;
+
+            // Default result.
+            $result[$keyResult] = [
+                'o:label' => $field['label'] ?? $keyOrLabel,
                 'o:references' => [],
             ];
 
+            if (in_array($field['type'], ['properties', 'resource_classes', 'resource_templates', 'item_sets'])) {
+                $isList = isset($field['list']);
+                $ids = $isList ? array_column($field['list'], 'id') : [$field['id']];
+            }
+
             switch ($field['type']) {
                 case 'properties':
-                    $values = $this->listDataForProperty($field['id']);
-                    $result[$field['term']] = [
-                        '@type' => $field['@type'],
-                        'o:id' => $field['id'],
-                        'o:term' => $field['term'],
-                        'o:label' => $field['label'],
-                        'o:references' => $values,
-                    ];
+                    $values = $this->listDataForProperties($ids);
+                    if ($isList) {
+                        $result[$keyResult] = [
+                            '@type' => $field['@type'],
+                            'o:label' => $field['label'],
+                            'o:list' => $field['list'],
+                            'o:references' => $values,
+                        ];
+                    } else {
+                        $result[$keyResult] = [
+                            '@type' => $field['@type'],
+                            'o:label' => $field['label'],
+                            'o:id' => $field['id'],
+                            'o:term' => $field['term'],
+                            'o:references' => $values,
+                        ];
+                    }
+                    break;
+
+                case 'resource_classes':
+                    $values = $this->listDataForResourceClasses($ids);
+                    if ($isList) {
+                        $result[$keyResult] = [
+                            '@type' => $field['@type'],
+                            'o:label' => $field['label'],
+                            'o:list' => $field['list'],
+                            'o:references' => $values,
+                        ];
+                    } else {
+                        $result[$keyResult] = [
+                            '@type' => $field['@type'],
+                            'o:label' => $field['label'],
+                            'o:id' => $field['id'],
+                            'o:term' => $field['term'],
+                            'o:references' => $values,
+                        ];
+                    }
+                    break;
+
+                case 'resource_templates':
+                    $values = $this->listDataForResourceTemplates($ids);
+                    if ($isList) {
+                        $result[$keyResult] = [
+                            '@type' => $field['@type'],
+                            'o:label' => $field['label'],
+                            'o:list' => $field['list'],
+                            'o:references' => $values,
+                        ];
+                    } else {
+                        $result[$keyResult] = [
+                            '@type' => $field['@type'],
+                            'o:label' => $field['label'],
+                            'o:id' => $field['id'],
+                            'o:references' => $values,
+                        ];
+                    }
+                    break;
+
+                case 'item_sets':
+                    $values = $this->listDataForItemSets($ids);
+                    if ($isList) {
+                        $result[$keyResult] = [
+                            '@type' => $field['@type'],
+                            'o:label' => $field['label'],
+                            'o:list' => $field['list'],
+                            'o:references' => $values,
+                        ];
+                    } else {
+                        $result[$keyResult] = [
+                            '@type' => $field['@type'],
+                            'o:label' => $field['label'],
+                            'o:id' => $field['id'],
+                            'o:references' => $values,
+                        ];
+                    }
                     break;
 
                 case 'resource_titles':
                     $values = $this->listDataForResourceTitle();
-                    $result[$field['term']] = [
+                    $result[$keyResult] = [
                         '@type' => $field['@type'],
-                        'o:id' => '0',
+                        'o:label' => $field['label'],
+                        'o:id' => null,
                         'o:term' => $field['term'],
-                        'o:label' => $field['label'],
-                        'o:references' => $values,
-                    ];
-                    break;
-
-                case 'resource_classes':
-                    $values = $this->listDataForResourceClass($field['id']);
-                    $result[$field['term']] = [
-                        '@type' => $field['@type'],
-                        'o:id' => $field['id'],
-                        'o:term' => $field['term'],
-                        'o:label' => $field['label'],
-                        'o:references' => $values,
-                    ];
-                    break;
-
-                case 'resource_templates':
-                    $values = $this->listDataForResourceTemplate($field['id']);
-                    $result[$field['term']] = [
-                        '@type' => $field['@type'],
-                        'o:id' => $field['id'],
-                        'o:term' => $field['term'],
-                        'o:label' => $field['label'],
-                        'o:references' => $values,
-                    ];
-                    break;
-
-                case 'item_sets':
-                    $values = $this->listDataForItemSet($field['id']);
-                    $result[$field['term']] = [
-                        '@type' => $field['@type'],
-                        'o:id' => $field['id'],
-                        'o:label' => $field['label'],
                         'o:references' => $values,
                     ];
                     break;
@@ -394,12 +450,12 @@ class References extends AbstractPlugin
                 case 'o:property':
                     $values = $this->listProperties();
                     if ($isAssociative) {
-                        $result[$field['term']]['o:references'] = $values;
+                        $result[$keyResult]['o:references'] = $values;
                     } else {
                         foreach (array_filter($values) as $valueData) {
                             $property = $this->getProperty($valueData['val']);
                             $property['o:label'] = $this->translate->__invoke($property['o:label']);
-                            $result[$field['term']]['o:references'][] = $property + $valueData;
+                            $result[$keyResult]['o:references'][] = $property + $valueData;
                         }
                     }
                     break;
@@ -407,12 +463,12 @@ class References extends AbstractPlugin
                 case 'o:resource_class':
                     $values = $this->listResourceClasses();
                     if ($isAssociative) {
-                        $result[$field['term']]['o:references'] = $values;
+                        $result[$keyResult]['o:references'] = $values;
                     } else {
                         foreach (array_filter($values) as $valueData) {
                             $resourceClass = $this->getResourceClass($valueData['val']);
                             $resourceClass['o:label'] = $this->translate->__invoke($resourceClass->label());
-                            $result[$field['term']]['o:references'][] = $resourceClass + $valueData;
+                            $result[$keyResult]['o:references'][] = $resourceClass + $valueData;
                         }
                     }
                     break;
@@ -420,11 +476,11 @@ class References extends AbstractPlugin
                 case 'o:resource_template':
                     $values = $this->listResourceTemplates();
                     if ($isAssociative) {
-                        $result[$field['term']]['o:references'] = $values;
+                        $result[$keyResult]['o:references'] = $values;
                     } else {
                         foreach (array_filter($values) as $valueData) {
                             $resourceTemplate = $this->getResourceTemplates($valueData['val']);
-                            $result[$field['term']]['o:references'][] = $resourceTemplate + $valueData;
+                            $result[$keyResult]['o:references'][] = $resourceTemplate + $valueData;
                         }
                     }
                     break;
@@ -437,21 +493,18 @@ class References extends AbstractPlugin
                         $values = $this->listItemSets();
                     }
                     if ($isAssociative) {
-                        $result[$field['term']]['o:references'] = $values;
+                        $result[$keyResult]['o:references'] = $values;
                     } else {
                         foreach (array_filter($values) as $valueData) {
                             $meta = $this->getItemSet($valueData['val']);
-                            $result[$field['term']]['o:references'][] = $meta + $valueData;
+                            $result[$keyResult]['o:references'][] = $meta + $valueData;
                         }
                     }
                     break;
 
                 // Unknown.
                 default:
-                    $result[$field['term']][] = [
-                        'o:label' => $field['label'],
-                        'o:references' => [],
-                    ];
+                    // Keep default result.
                     break;
             }
         }
@@ -475,23 +528,34 @@ class References extends AbstractPlugin
         // @todo Manage multiple resource names (items, item sets, medias) at once.
 
         $result = [];
-        foreach ($fields as $inputField) {
-            $field = $this->prepareField($inputField);
+        foreach ($fields as $keyOrLabel => $inputField) {
+            $field = $this->prepareField($inputField, $keyOrLabel);
+
+            if (!in_array($field['type'], ['properties', 'resource_classes', 'resource_templates', 'item_sets'])) {
+                $keyResult = $field['term']
+                    ?? $field['label']
+                    // Normally never used.
+                    ?? is_array($inputField) || !is_numeric($keyOrLabel)? $keyOrLabel : $inputField;
+                $result[$keyResult] = null;
+                continue;
+            }
+
+            $ids = isset($field['list']) ? array_column($field['list'], 'id') : [$field['id']];
             switch ($field['type']) {
                 case 'properties':
-                    $result[$field['term']] = $this->countResourcesForProperty($field['id']);
+                    $result[$field['term']] = $this->countResourcesForProperties($ids);
                     break;
                 case 'resource_classes':
-                    $result[$field['term']] = $this->countResourcesForResourceClass($field['id']);
+                    $result[$field['term']] = $this->countResourcesForResourceClasses($ids);
                     break;
                 case 'resource_templates':
-                    $result[$field['term']] = $this->countResourcesForResourceTemplate($field['id']);
+                    $result[$field['term']] = $this->countResourcesForResourceTemplates($ids);
                     break;
                 case 'item_sets':
-                    $result[$field['term']] = $this->countResourcesForItemSet($field['id']);
+                    $result[$field['term']] = $this->countResourcesForItemSets($ids);
                     break;
                 default:
-                    $result[$field['term']] = null;
+                    // Nothing.
                     break;
             }
         }
@@ -500,15 +564,19 @@ class References extends AbstractPlugin
     }
 
     /**
-     * Get the list of used values for a property, the total for each one and
-     * the first item.
+     * Get the list of used values for a list of properties, the total for each
+     * one and the first item.
      *
-     * @param int $termId
+     * @param int[] $propertyIds
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listDataForProperty($termId)
+    protected function listDataForProperties(array $propertyIds)
     {
+        if (empty($propertyIds)) {
+            return [];
+        }
+
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
 
@@ -531,8 +599,8 @@ class References extends AbstractPlugin
             ->innerJoin($this->options['entity_class'], 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
             // The values should be distinct for each type.
             ->leftJoin($this->options['entity_class'], 'valueResource', Join::WITH, $expr->eq('value.valueResource', 'valueResource'))
-            ->andWhere($expr->eq('value.property', ':property'))
-            ->setParameter('property', $termId)
+            ->andWhere($expr->in('value.property', ':properties'))
+            ->setParameter('properties', array_map('intval', $propertyIds), Connection::PARAM_INT_ARRAY)
             ->groupBy('val')
         ;
 
@@ -541,6 +609,124 @@ class References extends AbstractPlugin
         $this->filterByBeginOrEnd($qb);
         $this->manageOptions($qb, 'properties');
         return $this->outputMetadata($qb, 'properties');
+    }
+
+    /**
+     * Get the list of used values for a list of resource classes, the total for
+     * each one and the first item.
+     *
+     * @param int[] $resourceClassIds
+     * @return array Associative list of references, with the total, the first
+     * record, and the first character, according to the parameters.
+     */
+    protected function listDataForResourceClasses(array $resourceClassIds)
+    {
+        if (empty($resourceClassIds)) {
+            return [];
+        }
+
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        $qb
+            ->select([
+                'DISTINCT resource.title AS val',
+                $expr->count('resource.id') . ' AS total',
+            ])
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            ->where($expr->in('resource.resourceClass', ':resource_classes'))
+            ->setParameter('resource_classes', array_map('intval', $resourceClassIds), Connection::PARAM_INT_ARRAY)
+            ->groupBy('val');
+
+        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+            $qb
+                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+        }
+
+        $this->manageOptions($qb, 'resource_classes');
+        return $this->outputMetadata($qb, 'resource_classes');
+    }
+
+    /**
+     * Get the list of used values for a list of resource templates, the total
+     * for each one and the first item.
+     *
+     * @param int[] $resourceTemplateIds
+     * @return array Associative list of references, with the total, the first
+     * record, and the first character, according to the parameters.
+     */
+    protected function listDataForResourceTemplates(array $resourceTemplateIds)
+    {
+        if (empty($resourceTemplateIds)) {
+            return [];
+        }
+
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        $qb
+            ->select([
+                'DISTINCT resource.title AS val',
+                $expr->count('resource.id') . ' AS total',
+            ])
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            ->where($expr->in('resource.resourceTemplate', ':resource_templates'))
+            ->setParameter('resource_templates', array_map('intval', $resourceTemplateIds), Connection::PARAM_INT_ARRAY)
+            ->groupBy('val');
+
+        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+            $qb
+                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+        }
+
+        $this->manageOptions($qb, 'resource_templates');
+        return $this->outputMetadata($qb, 'resource_templates');
+    }
+
+    /**
+     * Get the list of used values for a list of item sets, the total for each
+     * one and the first item.
+     *
+     * @param int[] $itemSetIds
+     * @return array Associative list of references, with the total, the first
+     * record, and the first character, according to the parameters.
+     */
+    protected function listDataForItemSets(array $itemSetIds)
+    {
+        if (empty($itemSetIds)) {
+            return [];
+        }
+
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        if ($this->options['entity_class'] !== \Omeka\Entity\Item::class) {
+            return [];
+        }
+
+        $qb
+            ->select([
+                'DISTINCT resource.title AS val',
+                $expr->count('resource.id') . ' AS total',
+            ])
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            // Always an item.
+            ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id')
+            ->innerJoin(
+                'res.itemSets',
+                'item_set',
+                Join::WITH,
+                $expr->in('item_set.id', ':item_sets')
+            )
+            ->setParameter('item_sets', array_map('intval', $itemSetIds), Connection::PARAM_INT_ARRAY)
+            ->groupBy('val')
+        ;
+
+        $this->manageOptions($qb, 'item_sets');
+        return $this->outputMetadata($qb, 'item_sets');
     }
 
     /**
@@ -561,8 +747,8 @@ class References extends AbstractPlugin
         $qb
             ->select([
                 $this->supportAnyValue
-                ? 'ANY_VALUE(resource.title) AS val'
-                : 'resource.title AS val',
+                    ? 'ANY_VALUE(resource.title) AS val'
+                    : 'resource.title AS val',
                 // "Distinct" avoids to count duplicate values in properties in
                 // a resource: we count resources, not properties.
                 $expr->countDistinct('resource.id') . ' AS total',
@@ -579,107 +765,6 @@ class References extends AbstractPlugin
         $this->filterByBeginOrEnd($qb, 'resource.title');
         $this->manageOptions($qb, 'resource_titles');
         return $this->outputMetadata($qb, 'properties');
-    }
-
-    /**
-     * Get the list of used values for a resource class, the total for each one
-     * and the first item.
-     *
-     * @param int $resourceClassId
-     * @return array Associative list of references, with the total, the first
-     * record, and the first character, according to the parameters.
-     */
-    protected function listDataForResourceClass($resourceClassId)
-    {
-        $qb = $this->entityManager->createQueryBuilder();
-        $expr = $qb->expr();
-
-        $qb
-            ->select([
-                'DISTINCT resource.title AS val',
-                $expr->count('resource.id') . ' AS total',
-            ])
-            // The use of resource checks visibility automatically.
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->where($expr->eq('resource.resourceClass', ':resource_class'))
-            ->setParameter('resource_class', (int) $resourceClassId)
-            ->groupBy('val');
-
-        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
-        }
-
-        $this->manageOptions($qb, 'resource_classes');
-        return $this->outputMetadata($qb, 'resource_classes');
-    }
-
-    /**
-     * Get the list of used values for a resource template, the total for each
-     * one and the first item.
-     *
-     * @param int $resourceTemplateId
-     * @return array Associative list of references, with the total, the first
-     * record, and the first character, according to the parameters.
-     */
-    protected function listDataForResourceTemplate($resourceTemplateId)
-    {
-        $qb = $this->entityManager->createQueryBuilder();
-        $expr = $qb->expr();
-
-        $qb
-            ->select([
-                'DISTINCT resource.title AS val',
-                $expr->count('resource.id') . ' AS total',
-            ])
-            // The use of resource checks visibility automatically.
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->where($expr->eq('resource.resourceTemplate', ':resource_template'))
-            ->setParameter('resource_template', (int) $resourceTemplateId)
-            ->groupBy('val');
-
-        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
-        }
-
-        $this->manageOptions($qb, 'resource_templates');
-        return $this->outputMetadata($qb, 'resource_templates');
-    }
-
-    /**
-     * Get the list of used values for an item set, the total for each one and
-     * the first item.
-     *
-     * @param int $itemSetId
-     * @return array Associative list of references, with the total, the first
-     * record, and the first character, according to the parameters.
-     */
-    protected function listDataForItemSet($itemSetId)
-    {
-        $qb = $this->entityManager->createQueryBuilder();
-        $expr = $qb->expr();
-
-        if ($this->options['entity_class'] !== \Omeka\Entity\Item::class) {
-            return [];
-        }
-
-        $qb
-            ->select([
-                'DISTINCT resource.title AS val',
-                $expr->count('resource.id') . ' AS total',
-            ])
-            // The use of resource checks visibility automatically.
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            // Always an item.
-            ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id')
-            ->innerJoin('res.itemSets', 'item_set', Join::WITH, 'item_set.id = :item_set')
-            ->setParameter('item_set', (int) $itemSetId)
-            ->groupBy('val')
-        ;
-
-        $this->manageOptions($qb, 'item_sets');
-        return $this->outputMetadata($qb, 'item_sets');
     }
 
     /**
@@ -1260,8 +1345,12 @@ class References extends AbstractPlugin
         });
     }
 
-    protected function countResourcesForProperty($termId)
+    protected function countResourcesForProperties(array $propertyIds): int
     {
+        if (empty($propertyIds)) {
+            return 0;
+        }
+
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
 
@@ -1273,8 +1362,8 @@ class References extends AbstractPlugin
             ->from(\Omeka\Entity\Value::class, 'value')
             // This join allow to check visibility automatically too.
             ->innerJoin(\Omeka\Entity\Resource::class, 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
-            ->andWhere($expr->eq('value.property', ':property'))
-            ->setParameter('property', (int) $termId)
+            ->andWhere($expr->in('value.property', ':properties'))
+            ->setParameter('properties', array_map('intval', $propertyIds), Connection::PARAM_INT_ARRAY)
             ->andWhere($expr->isNotNull('value.value'));
 
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
@@ -1284,11 +1373,15 @@ class References extends AbstractPlugin
 
         $this->searchQuery($qb);
 
-        return $qb->getQuery()->getSingleScalarResult();
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
-    protected function countResourcesForResourceClass($termId)
+    protected function countResourcesForResourceClasses(array $resourceClassIds): int
     {
+        if (empty($resourceClassIds)) {
+            return 0;
+        }
+
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
 
@@ -1297,8 +1390,8 @@ class References extends AbstractPlugin
                 $expr->countDistinct('resource.id'),
             ])
             ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->andWhere($expr->eq('resource.resourceClass', ':resource_class'))
-            ->setParameter('resource_class', (int) $termId);
+            ->andWhere($expr->in('resource.resourceClass', ':resource_classes'))
+            ->setParameter('resource_classes', array_map('intval', $resourceClassIds), Connection::PARAM_INT_ARRAY);
 
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
@@ -1307,11 +1400,15 @@ class References extends AbstractPlugin
 
         $this->searchQuery($qb);
 
-        return $qb->getQuery()->getSingleScalarResult();
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
-    protected function countResourcesForResourceTemplate($id)
+    protected function countResourcesForResourceTemplates(array $resourceTemplateIds): int
     {
+        if (empty($resourceTemplateIds)) {
+            return 0;
+        }
+
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
 
@@ -1320,8 +1417,8 @@ class References extends AbstractPlugin
                 $expr->countDistinct('resource.id'),
             ])
             ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->andWhere($expr->eq('resource.resourceTemplate', ':resource_template'))
-            ->setParameter('resource_template', (int) $id);
+            ->andWhere($expr->in('resource.resourceTemplate', ':resource_templates'))
+            ->setParameter('resource_templates', array_map('intval', $resourceTemplateIds), Connection::PARAM_INT_ARRAY);
 
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
@@ -1330,11 +1427,15 @@ class References extends AbstractPlugin
 
         $this->searchQuery($qb);
 
-        return $qb->getQuery()->getSingleScalarResult();
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
-    protected function countResourcesForItemSet($id)
+    protected function countResourcesForItemSets(array $itemSetIds): int
     {
+        if (empty($itemSetIds)) {
+            return 0;
+        }
+
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
 
@@ -1354,11 +1455,11 @@ class References extends AbstractPlugin
                 Join::WITH,
                 $expr->in('item_set.id', ':item_sets')
             )
-            ->setParameter('item_sets', (int) $id);
+            ->setParameter('item_sets', array_map('intval', $itemSetIds), Connection::PARAM_INT_ARRAY);
 
         $this->searchQuery($qb);
 
-        return $qb->getQuery()->getSingleScalarResult();
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
     /**
@@ -1794,12 +1895,21 @@ class References extends AbstractPlugin
     }
 
     /**
-     * Get field from a string: property, class, template, item set or specific.
+     * Get precise field from a string or a list of strings.
      *
-     * @param string|int $field
+     * A field is a property, a class, a template, an item set or a specific
+     * data, or a non-mixed list of them.
+     *
+     * When the field is a list of field, the check is done against the first
+     * field only.
+     *
+     * @todo Get item sets by ids, not only by title.
+     *
+     * @param string|array $field
+     * @param string $listLabel Set a label for lists only.
      * @return array
      */
-    protected function prepareField($field): array
+    protected function prepareField($field, $listLabel = null): array
     {
         static $labels;
 
@@ -1811,7 +1921,10 @@ class References extends AbstractPlugin
             'o:item_set' => 'item_sets',
         ];
 
-        if (isset($metaToTypes[$field])) {
+        $isList = is_array($field);
+
+        // Special fields.
+        if (!$isList && isset($metaToTypes[$field])) {
             if (is_null($labels)) {
                 $translate = $this->translate;
                 $labels = [
@@ -1846,6 +1959,92 @@ class References extends AbstractPlugin
                 'id' => null,
                 'term' => 'o:title',
                 'label' => 'Title', // @translate
+            ];
+        }
+
+        if ($isList) {
+            $listLabel = (string) $listLabel;
+            $meta = $this->getProperties($field);
+            if ($meta) {
+                foreach ($meta as &$metaValue) {
+                    $metaValue = [
+                        'id' => $metaValue['o:id'],
+                        'term' => $metaValue['o:term'],
+                        'label' => $metaValue['o:label'],
+                    ];
+                }
+                unset($metaValue);
+                return [
+                    '@type' => 'o:Property',
+                    'type' => 'properties',
+                    'list' => $meta,
+                    'term' => null,
+                    'label' => $listLabel,
+                ];
+            }
+
+            $meta = $this->getResourceClasses($field);
+            if ($meta) {
+                foreach ($meta as &$metaValue) {
+                    $metaValue = [
+                        'id' => $metaValue['o:id'],
+                        'term' => $metaValue['o:term'],
+                        'label' => $metaValue['o:label'],
+                    ];
+                }
+                unset($metaValue);
+                return [
+                    '@type' => 'o:ResourceClass',
+                    'type' => 'resource_classes',
+                    'list' => $meta,
+                    'term' => null,
+                    'label' => $listLabel,
+                ];
+            }
+
+            $meta = $this->getResourceTemplates($field);
+            if ($meta) {
+                foreach ($meta as &$metaValue) {
+                    $metaValue = [
+                        'id' => $metaValue['o:id'],
+                        'term' => null,
+                        'label' => $metaValue['o:label'],
+                    ];
+                }
+                unset($metaValue);
+                return [
+                    '@type' => 'o:ResourceTemplate',
+                    'type' => 'resource_templates',
+                    'list' => $meta,
+                    'term' => null,
+                    'label' => $listLabel,
+                ];
+            }
+
+            $meta = $this->getItemSets($field);
+            if ($meta) {
+                foreach ($meta as &$metaValue) {
+                    $metaValue = [
+                        'id' => $metaValue['o:id'],
+                        'term' => null,
+                        'label' => $metaValue['o:label'],
+                    ];
+                }
+                unset($metaValue);
+                return [
+                    '@type' => 'o:ItemSet',
+                    'type' => 'item_sets',
+                    'list' => $meta,
+                    'term' => null,
+                    'label' => $listLabel,
+                ];
+            }
+
+            return [
+                'type' => null,
+                'list' => $field,
+                'term' => null,
+                'label' => $listLabel,
             ];
         }
 
