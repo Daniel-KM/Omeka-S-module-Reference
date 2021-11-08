@@ -2302,29 +2302,27 @@ class References extends AbstractPlugin
             // Here, the dbal query builder is used.
             $qb = $connection->createQueryBuilder();
             $qb
-                ->select([
-                    'DISTINCT property.id AS "o:id"',
-                    'CONCAT(vocabulary.prefix, ":", property.local_name) AS "o:term"',
+                ->select(
+                    'DISTINCT CONCAT(vocabulary.prefix, ":", property.local_name) AS "o:term"',
                     'property.label AS "o:label"',
+                    'property.id AS "o:id"',
                     'NULL AS "@language"',
                     // Only the two first selects are needed, but some databases
                     // require "order by" or "group by" value to be in the select.
                     'vocabulary.id',
-                    'property.id',
-                ])
+                    'property.id'
+                )
                 ->from('property', 'property')
                 ->innerJoin('property', 'vocabulary', 'vocabulary', 'property.vocabulary_id = vocabulary.id')
                 ->orderBy('vocabulary.id', 'asc')
                 ->addOrderBy('property.id', 'asc')
                 ->addGroupBy('property.id')
             ;
-            $stmt = $connection->executeQuery($qb);
-            // Fetch by key pair is not supported by doctrine 2.0.
-            $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $results= $connection->executeQuery($qb)->fetchAllAssociative();
             $this->propertiesByTermsAndIds = [];
             foreach ($results as $result) {
-                $result['o:id'] = (int) $result['o:id'];
                 unset($result['id']);
+                $result['o:id'] = (int) $result['o:id'];
                 $this->propertiesByTermsAndIds[$result['o:id']] = $result;
                 $this->propertiesByTermsAndIds[$result['o:term']] = $result;
             }
@@ -2390,29 +2388,27 @@ class References extends AbstractPlugin
             // Here, the dbal query builder is used.
             $qb = $connection->createQueryBuilder();
             $qb
-                ->select([
-                    'DISTINCT resource_class.id AS "o:id"',
-                    'CONCAT(vocabulary.prefix, ":", resource_class.local_name) AS "o:term"',
+                ->select(
+                    'DISTINCT CONCAT(vocabulary.prefix, ":", resource_class.local_name) AS "o:term"',
                     'resource_class.label AS "o:label"',
+                    'resource_class.id AS "o:id"',
                     'NULL AS "@language"',
                     // Only the two first selects are needed, but some databases
                     // require "order by" or "group by" value to be in the select.
                     'vocabulary.id',
-                    'resource_class.id',
-                ])
+                    'resource_class.id'
+                )
                 ->from('resource_class', 'resource_class')
                 ->innerJoin('resource_class', 'vocabulary', 'vocabulary', 'resource_class.vocabulary_id = vocabulary.id')
                 ->orderBy('vocabulary.id', 'asc')
                 ->addOrderBy('resource_class.id', 'asc')
                 ->addGroupBy('resource_class.id')
             ;
-            $stmt = $connection->executeQuery($qb);
-            // Fetch by key pair is not supported by doctrine 2.0.
-            $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $results= $connection->executeQuery($qb)->fetchAllAssociative();
             $this->resourceClassesByTermsAndIds = [];
             foreach ($results as $result) {
-                $result['o:id'] = (int) $result['o:id'];
                 unset($result['id']);
+                $result['o:id'] = (int) $result['o:id'];
                 $this->resourceClassesByTermsAndIds[$result['o:id']] = $result;
                 $this->resourceClassesByTermsAndIds[$result['o:term']] = $result;
             }
@@ -2478,25 +2474,23 @@ class References extends AbstractPlugin
             // Here, the dbal query builder is used.
             $qb = $connection->createQueryBuilder();
             $qb
-                ->select([
-                    'DISTINCT resource_template.id AS "o:id"',
-                    'resource_template.label AS "o:label"',
+                ->select(
+                    'DISTINCT resource_template.label AS "o:label"',
+                    'resource_template.id AS "o:id"',
                     'NULL AS "@language"',
                     // Only the two first selects are needed, but some databases
                     // require "order by" or "group by" value to be in the select.
-                    'resource_template.id',
-                ])
+                    'resource_template.id'
+                )
                 ->from('resource_template', 'resource_template')
                 ->orderBy('resource_template.id', 'asc')
                 ->addGroupBy('resource_template.id')
             ;
-            $stmt = $connection->executeQuery($qb);
-            // Fetch by key pair is not supported by doctrine 2.0.
-            $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $results= $connection->executeQuery($qb)->fetchAllAssociative();
             $this->resourceTemplatesByLabelsAndIds = [];
             foreach ($results as $result) {
-                $result['o:id'] = (int) $result['o:id'];
                 unset($result['id']);
+                $result['o:id'] = (int) $result['o:id'];
                 $this->resourceTemplatesByLabelsAndIds[$result['o:id']] = $result;
                 $this->resourceTemplatesByLabelsAndIds[$result['o:label']] = $result;
             }
@@ -2572,15 +2566,16 @@ class References extends AbstractPlugin
             // Here, the dbal query builder is used.
             $qb = $connection->createQueryBuilder();
             $qb
-                ->select([
+                ->select(
+                    // Labels are not unique.
                     'DISTINCT resource.id AS "o:id"',
                     '"o:ItemSet" AS "@type"',
                     'resource.title AS "o:label"',
                     'NULL AS "@language"',
                     // Only the two first selects are needed, but some databases
                     // require "order by" or "group by" value to be in the select.
-                    'resource.id',
-                ])
+                    'resource.id'
+                )
                 ->from('resource', 'resource')
                 ->innerJoin('resource', 'item_set', 'item_set', 'resource.id = item_set.id')
                 // TODO Improve return of private item sets.
@@ -2588,13 +2583,11 @@ class References extends AbstractPlugin
                 ->orderBy('resource.id', 'asc')
                 ->addGroupBy('resource.id')
             ;
-            $stmt = $connection->executeQuery($qb);
-            // Fetch by key pair is not supported by doctrine 2.0.
-            $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $results= $connection->executeQuery($qb)->fetchAllAssociative();
             $this->itemSetsByTitlesAndIds = [];
             foreach ($results as $result) {
-                $result['o:id'] = (int) $result['o:id'];
                 unset($result['id']);
+                $result['o:id'] = (int) $result['o:id'];
                 $this->itemSetsByTitlesAndIds[$result['o:id']] = $result;
                 $this->itemSetsByTitlesAndIds[$result['o:label']] = $result;
             }
