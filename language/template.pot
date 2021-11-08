@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-10-18 00:00+0000\n"
+"POT-Creation-Date: 2021-11-01 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/Controller/ApiController.php:135
+#: src/Controller/ApiController.php:136
 msgid "Method Not Allowed"
 msgstr ""
 
@@ -101,13 +101,13 @@ msgstr ""
 msgid "There is no references for \"%s\"."
 msgstr ""
 
-#: data/scripts/upgrade.php:349
+#: data/scripts/upgrade.php:357
 msgid ""
 "It is possible now to limit the list of references, for example only the of "
 "subjects starting with \"a\" with argument \"filters[begin]=a\"."
 msgstr ""
 
-#: data/scripts/upgrade.php:354
+#: data/scripts/upgrade.php:362
 msgid ""
 "It is possible now to list not only references, but resources by reference, "
 "for example all documents of an author or all items with each subject."
@@ -117,20 +117,20 @@ msgstr ""
 msgid "Block title"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:19
+#: src/Form/ReferenceTreeFieldset.php:20
 msgid "Heading for the block, if any. The placeholder {total} can be used."
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:37 src/Form/ReferenceFieldset.php:34
+#: src/Form/ReferenceTreeFieldset.php:38 src/Form/ReferenceFieldset.php:34
 #: src/Form/ReferenceFieldset.php:218
 msgid "Select a property…"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:44
+#: src/Form/ReferenceTreeFieldset.php:45
 msgid "Static tree of references"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:45
+#: src/Form/ReferenceTreeFieldset.php:46
 msgid ""
 "Format is: one reference by line, preceded by zero, one or more \"-\" to "
 "indicate the hierarchy level.\n"
@@ -140,7 +140,7 @@ msgid ""
 "insensitively unique."
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:54
+#: src/Form/ReferenceTreeFieldset.php:55
 msgid ""
 "Europe\n"
 "- France\n"
@@ -152,80 +152,80 @@ msgid ""
 "- Japan\n"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:73 src/Form/ReferenceIndexFieldset.php:63
+#: src/Form/ReferenceTreeFieldset.php:74 src/Form/ReferenceIndexFieldset.php:63
 #: src/Form/SiteSettingsFieldset.php:25 src/Form/ReferenceFieldset.php:60
 msgid "value_options"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:92 src/Form/ReferenceFieldset.php:95
+#: src/Form/ReferenceTreeFieldset.php:93 src/Form/ReferenceFieldset.php:95
 msgid "Search pool query"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:93 src/Form/ReferenceFieldset.php:96
+#: src/Form/ReferenceTreeFieldset.php:94 src/Form/ReferenceFieldset.php:96
 msgid ""
 "Restrict references to a particular subset of resources, for example a site."
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:108
+#: src/Form/ReferenceTreeFieldset.php:109
 msgid ""
 "The type of query defines how elements are regrouped (see the advanced "
 "search)."
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:110
+#: src/Form/ReferenceTreeFieldset.php:111
 msgid "Is Exactly"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:111
+#: src/Form/ReferenceTreeFieldset.php:112
 msgid "Contains"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:123 src/Form/SiteSettingsFieldset.php:48
+#: src/Form/ReferenceTreeFieldset.php:124 src/Form/SiteSettingsFieldset.php:48
 #: src/Form/ReferenceFieldset.php:143
 msgid "Link to single records"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:124 src/Form/ReferenceFieldset.php:144
+#: src/Form/ReferenceTreeFieldset.php:125 src/Form/ReferenceFieldset.php:144
 msgid ""
 "When a reference has only one item, link to it directly instead of to the "
 "items/browse page."
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:134 src/Form/ReferenceFieldset.php:154
+#: src/Form/ReferenceTreeFieldset.php:135 src/Form/ReferenceFieldset.php:154
 msgid "Custom url for single"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:135 src/Form/ReferenceFieldset.php:155
+#: src/Form/ReferenceTreeFieldset.php:136 src/Form/ReferenceFieldset.php:155
 msgid ""
 "May be set with modules such Clean Url or Ark. May slow the display when "
 "there are many single references."
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:145
+#: src/Form/ReferenceTreeFieldset.php:146
 #: src/Form/ReferenceIndexFieldset.php:143 src/Form/ReferenceFieldset.php:185
 msgid "Add the total of resources for each reference"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:155
+#: src/Form/ReferenceTreeFieldset.php:156
 msgid "Expand the tree"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:165
+#: src/Form/ReferenceTreeFieldset.php:166
 msgid "Managed as branch"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:166
+#: src/Form/ReferenceTreeFieldset.php:167
 msgid ""
 "Check this box if the tree is managed as branch (the path is saved with "
 "\" :: \" between each branch)."
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:179
+#: src/Form/ReferenceTreeFieldset.php:180
 #: src/Form/ReferenceIndexFieldset.php:156 src/Form/ReferenceFieldset.php:228
 msgid "Template to display"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:180
+#: src/Form/ReferenceTreeFieldset.php:181
 msgid ""
 "Templates are in folder \"common/block-layout\" of the theme and should "
 "start with \"reference-tree\"."
