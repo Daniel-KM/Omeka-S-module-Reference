@@ -91,6 +91,13 @@ class References extends AbstractPlugin
     protected $ownersByNameAndIds;
 
     /**
+     * List of sites by slug and id.
+     *
+     * @var array
+     */
+    protected $sitesBySlugAndIds;
+
+    /**
      * @var array
      */
     protected $metadata;
@@ -463,6 +470,18 @@ class References extends AbstractPlugin
                     } else {
                         foreach (array_filter($values) as $valueData) {
                             $meta = $this->getOwner($valueData['val']);
+                            $result[$keyResult]['o:references'][] = $meta + $valueData;
+                        }
+                    }
+                    break;
+
+                case 'o:site':
+                    $values = $this->listSites();
+                    if ($isAssociative) {
+                        $result[$keyResult]['o:references'] = $values;
+                    } else {
+                        foreach (array_filter($values) as $valueData) {
+                            $meta = $this->getSite($valueData['val']);
                             $result[$keyResult]['o:references'][] = $meta + $valueData;
                         }
                     }
@@ -972,6 +991,47 @@ class References extends AbstractPlugin
         return $this->outputMetadata($qb, 'o:owner');
     }
 
+    /**
+     * Get the list of sites, the total for each one and the first item.
+     *
+     * @return array Associative list of references, with the total, the first
+     * record, and the first character, according to the parameters.
+     */
+    protected function listSites()
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $expr = $qb->expr();
+
+        // Count the number of items by site.
+
+        // TODO Get all sites, even without items (or private items).
+
+        $qb
+            ->select(
+                'site.slug as val',
+                'COUNT(resource.id) AS total'
+            )
+            // The use of resource checks visibility automatically.
+            ->from(\Omeka\Entity\Resource::class, 'resource')
+            ->innerJoin(
+                \Omeka\Entity\Item::class,
+                'res',
+                Join::WITH,
+                $expr->eq('res.id', 'resource.id')
+            )
+            ->leftJoin(
+                'res.sites',
+                'site'
+            )
+            ->groupBy('val')
+        ;
+
+        // TODO Count item sets and media by site.
+
+        $this->manageOptions($qb, 'o:site');
+        return $this->outputMetadata($qb, 'o:site');
+    }
+
     protected function limitItemSetsToSite(QueryBuilder $qb): void
     {
         // @see \Omeka\Api\Adapter\ItemSetAdapter::buildQuery()
@@ -1204,12 +1264,17 @@ class References extends AbstractPlugin
                         ->andWhere('user.id IN (:ids)')
                         ->setParameter('ids', $this->options['values']);
                     break;
+                case 'o:site':
+                    $qb
+                        ->andWhere('site.id IN (:ids)')
+                        ->setParameter('ids', $this->options['values']);
+                    break;
                 default:
                     break;
             }
         }
 
-        $this->searchQuery($qb);
+        $this->searchQuery($qb, $type);
 
         // Don't add useless order by resource id, since value are unique.
         // Furthermore, it may break mySql 5.7.5 and later, where ONLY_FULL_GROUP_BY
@@ -1479,10 +1544,8 @@ class References extends AbstractPlugin
 
     /**
      * Limit the results with a query (generally the site query).
-     *
-     * @param QueryBuilder $qb
      */
-    protected function searchQuery(QueryBuilder $qb): void
+    protected function searchQuery(QueryBuilder $qb, ?string $type = null): void
     {
         if (empty($this->query)) {
             return;
@@ -1498,6 +1561,14 @@ class References extends AbstractPlugin
         // So, the properties part of the query is managed separately.
         $mainQuery = $this->query;
         unset($mainQuery['property']);
+
+        // When searching by item set or site, remove the matching query filter.
+        if ($type === 'o:item_set') {
+            unset($mainQuery['item_set_id']);
+        }
+        if ($type === 'o:site') {
+            unset($mainQuery['site_id']);
+        }
 
         /**
          * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::search()
@@ -1934,6 +2005,8 @@ class References extends AbstractPlugin
             'o:item_set' => 'item_sets',
             // Owners is only for items.
             'o:owner' => 'owners',
+            // Sites is only for items.
+            'o:site' => 'sites',
         ];
 
         $isSingle = !is_array($fields);
@@ -1954,6 +2027,7 @@ class References extends AbstractPlugin
                 'o:resource_template' => $translate('Templates'), // @translate
                 'o:item_set' => $translate('Item sets'), // @translate
                 'o:owner' => $translate('Owners'), // @translate
+                'o:site' => $translate('Sites'), // @translate
             ];
             return [
                 'type' => $field,
@@ -2570,6 +2644,53 @@ class References extends AbstractPlugin
                 $result['o:id'] = (int) $result['o:id'];
                 $this->ownersByNameAndIds[$result['o:id']] = $result;
                 $this->ownersByNameAndIds[$result['o:label']] = $result;
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Get site by slug or by numeric id.
+     */
+    protected function getSite($slugOrId): ?array
+    {
+        if (is_null($this->sitesBySlugAndIds)) {
+            $this->prepareSites();
+        }
+        return $this->sitesBySlugAndIds[$slugOrId] ?? null;
+    }
+
+    /**
+     * Prepare the list of sites.
+     */
+    protected function prepareSites(): self
+    {
+        if (is_null($this->sitesBySlugAndIds)) {
+            $connection = $this->entityManager->getConnection();
+            // Here, the dbal query builder is used.
+            $qb = $connection->createQueryBuilder();
+            $qb
+                ->select(
+                    // Labels are not unique.
+                    'DISTINCT site.slug AS "o:slug"',
+                    'site.title AS "o:label"',
+                    '"o:Site" AS "@type"',
+                    'site.id AS "o:id"',
+                    'NULL AS "@language"'
+                )
+                ->from('site', 'site')
+                // TODO Improve return of private sites.
+                ->where('site.is_public', '1')
+                ->orderBy('site.id', 'asc')
+                ->addGroupBy('site.id')
+            ;
+            $results= $connection->executeQuery($qb)->fetchAllAssociative();
+            $this->sitesBySlugAndIds = [];
+            foreach ($results as $result) {
+                unset($result['id']);
+                $result['o:id'] = (int) $result['o:id'];
+                $this->sitesBySlugAndIds[$result['o:id']] = $result;
+                $this->sitesBySlugAndIds[$result['o:label']] = $result;
             }
         }
         return $this;
