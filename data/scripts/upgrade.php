@@ -356,10 +356,18 @@ if (version_compare($oldVersion, '3.4.24.3', '<')) {
     $message = new Message(
         'It is possible now to limit the list of references, for example only the of subjects starting with "a" with argument "filters[begin]=a".' // @translate
     );
-    $messenger->addWarning($message);
+    $messenger->addSuccess($message);
 
     $message = new Message(
         'It is possible now to list not only references, but resources by reference, for example all documents of an author or all items with each subject.' // @translate
     );
-    $messenger->addWarning($message);
+    $messenger->addSuccess($message);
+}
+
+if (version_compare($oldVersion, '3.4.32.3', '<')) {
+    $messenger = new Messenger();
+    $message = new Message(
+        'It is possible now to aggregate properties (api and helper).' // @translate
+    );
+    $messenger->addSuccess($message);
 }
