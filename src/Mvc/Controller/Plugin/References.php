@@ -174,10 +174,16 @@ class References extends AbstractPlugin
      */
     public function setMetadata(array $metadata = null)
     {
-        $this->metadata = $metadata
-            // array_unique() doesn't not work with arrays, so use serialize().
-            ? array_intersect_key($metadata, array_unique(array_map('serialize', $metadata)))
-            : [];
+        $this->metadata = $metadata ?: [];
+
+        // Check if one of the metadata fields is a short aggregated one.
+        foreach ($this->metadata as &$fieldElement) {
+            if (!is_array($fieldElement) && strpos($fieldElement, ',') !== false) {
+                $fieldElement = array_filter(array_map('trim', explode(',', $fieldElement)));
+            }
+        }
+        unset($fieldElement);
+
         return $this;
     }
 

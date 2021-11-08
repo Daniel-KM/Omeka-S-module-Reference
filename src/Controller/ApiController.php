@@ -47,7 +47,6 @@ class ApiController extends \Omeka\Controller\ApiController
         // Empty string field means meta results.
         $field = $query['metadata'] ?? [];
         $fields = is_array($field) ? $field : [$field];
-        $fields = array_unique($fields);
 
         unset($query['metadata']);
 

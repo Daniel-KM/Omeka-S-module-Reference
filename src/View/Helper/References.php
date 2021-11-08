@@ -88,9 +88,14 @@ class References extends AbstractHelper
     public function list($metadata = null, array $query = null, array $options = null): array
     {
         $ref = $this->references;
-        $isSingle = is_string($metadata);
-        if ($isSingle) {
-            $metadata = [$metadata];
+        if (is_string($metadata)) {
+            // Check if it is a short metadata list.
+            $isSingle = strpos($metadata, ',') === false;
+            $metadata = $isSingle
+                ? [$metadata]
+                : array_filter(array_map('trim', explode(',', $metadata)));
+        } else {
+            $isSingle = false;
         }
         $list = $ref($metadata, $query, $options)->list();
         return $isSingle ? reset($list) : $list;
