@@ -1485,7 +1485,7 @@ class References extends AbstractPlugin
      *
      * Query format:
      *
-     * - property[{index}][joiner]: "and" OR "or" joiner with previous query
+     * - property[{index}][joiner]: "and" OR "or" OR "not" joiner with previous query
      * - property[{index}][property]: property ID
      * - property[{index}][text]: search text
      * - property[{index}][type]: search type
@@ -1501,8 +1501,8 @@ class References extends AbstractPlugin
      *   - nsw: does not start with
      *   - ew: ends with
      *   - new: does not end with
-     *   - res: has resource
-     *   - nres: has no resource
+     *   - res: has resource (core)
+     *   - nres: has no resource (core)
      *   For date time only for now (a check is done to have a meaningful answer):
      *   TODO Remove the check for valid date time? Add another key (before/after)?
      *   Of course, it's better to use Numeric Data Types.
@@ -1528,6 +1528,27 @@ class References extends AbstractPlugin
             return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], (string) $string);
         };
 
+        $reciprocalQueryTypes = [
+            'eq' => 'neq',
+            'neq' => 'eq',
+            'in' => 'nin',
+            'nin' => 'in',
+            'ex' => 'nex',
+            'nex' => 'ex',
+            'list' => 'nlist',
+            'nlist' => 'list',
+            'sw' => 'nsw',
+            'nsw' => 'sw',
+            'ew' => 'new',
+            'new' => 'ew',
+            'res' => 'nres',
+            'nres' => 'res',
+            'gt' => 'lte',
+            'gte' => 'lt',
+            'lte' => 'gt',
+            'lt' => 'gte',
+        ];
+
         foreach ($this->query['property'] as $queryRow) {
             if (!(
                 is_array($queryRow)
@@ -1548,6 +1569,12 @@ class References extends AbstractPlugin
                 && $queryType !== 'ex'
             ) {
                 continue;
+            }
+
+            // Invert the query type for joiner "not".
+            if ($joiner === 'not') {
+                $joiner = 'and';
+                $queryType = $reciprocalQueryTypes[$queryType];
             }
 
             $propertyId = $queryRow['property'];
