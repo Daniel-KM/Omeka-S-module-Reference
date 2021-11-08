@@ -340,111 +340,37 @@ class References extends AbstractPlugin
 
         $result = [];
         foreach ($fields as $keyOrLabel => $inputField) {
-            $field = $this->prepareField($inputField, $keyOrLabel);
-            $keyResult = $field['term']
-                ?? $field['label']
-                // Normally never used.
-                ?? is_array($inputField) || !is_numeric($keyOrLabel)? $keyOrLabel : $inputField;
+            $dataFields = $this->prepareFields($inputField, $keyOrLabel);
 
-            // Default result.
-            $result[$keyResult] = [
-                'o:label' => $field['label'] ?? $keyOrLabel,
-                'o:references' => [],
-            ];
+            $keyResult = $dataFields['key_result'];
 
-            if (in_array($field['type'], ['properties', 'resource_classes', 'resource_templates', 'item_sets'])) {
-                $isList = isset($field['list']);
-                $ids = $isList ? array_column($field['list'], 'id') : [$field['id']];
+            $result[$keyResult] = $dataFields['is_single']
+                ? reset($dataFields['output']['o:request']['o:field'])
+                : $dataFields['output'];
+
+            if (in_array($dataFields['type'], ['properties', 'resource_classes', 'resource_templates', 'item_sets'])) {
+                $ids = array_column($dataFields['output']['o:request']['o:field'], 'o:id');
             }
 
-            switch ($field['type']) {
+            switch ($dataFields['type']) {
                 case 'properties':
-                    $values = $this->listDataForProperties($ids);
-                    if ($isList) {
-                        $result[$keyResult] = [
-                            '@type' => $field['@type'],
-                            'o:label' => $field['label'],
-                            'o:list' => $field['list'],
-                            'o:references' => $values,
-                        ];
-                    } else {
-                        $result[$keyResult] = [
-                            '@type' => $field['@type'],
-                            'o:label' => $field['label'],
-                            'o:id' => $field['id'],
-                            'o:term' => $field['term'],
-                            'o:references' => $values,
-                        ];
-                    }
+                    $result[$keyResult]['o:references'] = $this->listDataForProperties($ids);
                     break;
 
                 case 'resource_classes':
-                    $values = $this->listDataForResourceClasses($ids);
-                    if ($isList) {
-                        $result[$keyResult] = [
-                            '@type' => $field['@type'],
-                            'o:label' => $field['label'],
-                            'o:list' => $field['list'],
-                            'o:references' => $values,
-                        ];
-                    } else {
-                        $result[$keyResult] = [
-                            '@type' => $field['@type'],
-                            'o:label' => $field['label'],
-                            'o:id' => $field['id'],
-                            'o:term' => $field['term'],
-                            'o:references' => $values,
-                        ];
-                    }
+                    $result[$keyResult]['o:references'] = $this->listDataForResourceClasses($ids);
                     break;
 
                 case 'resource_templates':
-                    $values = $this->listDataForResourceTemplates($ids);
-                    if ($isList) {
-                        $result[$keyResult] = [
-                            '@type' => $field['@type'],
-                            'o:label' => $field['label'],
-                            'o:list' => $field['list'],
-                            'o:references' => $values,
-                        ];
-                    } else {
-                        $result[$keyResult] = [
-                            '@type' => $field['@type'],
-                            'o:label' => $field['label'],
-                            'o:id' => $field['id'],
-                            'o:references' => $values,
-                        ];
-                    }
+                    $result[$keyResult]['o:references'] = $this->listDataForResourceTemplates($ids);
                     break;
 
                 case 'item_sets':
-                    $values = $this->listDataForItemSets($ids);
-                    if ($isList) {
-                        $result[$keyResult] = [
-                            '@type' => $field['@type'],
-                            'o:label' => $field['label'],
-                            'o:list' => $field['list'],
-                            'o:references' => $values,
-                        ];
-                    } else {
-                        $result[$keyResult] = [
-                            '@type' => $field['@type'],
-                            'o:label' => $field['label'],
-                            'o:id' => $field['id'],
-                            'o:references' => $values,
-                        ];
-                    }
+                    $result[$keyResult]['o:references'] = $this->listDataForItemSets($ids);
                     break;
 
                 case 'resource_titles':
-                    $values = $this->listDataForResourceTitle();
-                    $result[$keyResult] = [
-                        '@type' => $field['@type'],
-                        'o:label' => $field['label'],
-                        'o:id' => null,
-                        'o:term' => $field['term'],
-                        'o:references' => $values,
-                    ];
+                    $result[$keyResult]['o:references'] = $this->listDataForResourceTitle();
                     break;
 
                 case 'o:property':
@@ -487,7 +413,7 @@ class References extends AbstractPlugin
 
                 case 'o:item_set':
                     // Manage an exception for the resource "items".
-                    if ($field['type'] === 'o:item_set' && $this->options['resource_name'] !== 'items') {
+                    if ($dataFields['type'] === 'o:item_set' && $this->options['resource_name'] !== 'items') {
                         $values = [];
                     } else {
                         $values = $this->listItemSets();
@@ -504,7 +430,7 @@ class References extends AbstractPlugin
 
                 // Unknown.
                 default:
-                    // Keep default result.
+                    $result[$keyResult]['o:references'] = [];
                     break;
             }
         }
@@ -524,35 +450,32 @@ class References extends AbstractPlugin
             return [];
         }
 
-        // @todo Manage multiple type at once.
+        // @todo Manage multiple types at once.
         // @todo Manage multiple resource names (items, item sets, medias) at once.
 
         $result = [];
         foreach ($fields as $keyOrLabel => $inputField) {
-            $field = $this->prepareField($inputField, $keyOrLabel);
+            $dataFields = $this->prepareFields($inputField, $keyOrLabel);
 
-            if (!in_array($field['type'], ['properties', 'resource_classes', 'resource_templates', 'item_sets'])) {
-                $keyResult = $field['term']
-                    ?? $field['label']
-                    // Normally never used.
-                    ?? is_array($inputField) || !is_numeric($keyOrLabel)? $keyOrLabel : $inputField;
+            $keyResult = $dataFields['key_result'] ?: $keyOrLabel;
+            if (!in_array($dataFields['type'], ['properties', 'resource_classes', 'resource_templates', 'item_sets'])) {
                 $result[$keyResult] = null;
                 continue;
             }
 
-            $ids = isset($field['list']) ? array_column($field['list'], 'id') : [$field['id']];
-            switch ($field['type']) {
+            $ids = array_column($dataFields['output']['o:request']['o:field'], 'o:id');
+            switch ($dataFields['type']) {
                 case 'properties':
-                    $result[$field['term']] = $this->countResourcesForProperties($ids);
+                    $result[$keyResult] = $this->countResourcesForProperties($ids);
                     break;
                 case 'resource_classes':
-                    $result[$field['term']] = $this->countResourcesForResourceClasses($ids);
+                    $result[$keyResult] = $this->countResourcesForResourceClasses($ids);
                     break;
                 case 'resource_templates':
-                    $result[$field['term']] = $this->countResourcesForResourceTemplates($ids);
+                    $result[$keyResult] = $this->countResourcesForResourceTemplates($ids);
                     break;
                 case 'item_sets':
-                    $result[$field['term']] = $this->countResourcesForItemSets($ids);
+                    $result[$keyResult] = $this->countResourcesForItemSets($ids);
                     break;
                 default:
                     // Nothing.
@@ -1905,14 +1828,12 @@ class References extends AbstractPlugin
      *
      * @todo Get item sets by ids, not only by title.
      *
-     * @param string|array $field
-     * @param string $listLabel Set a label for lists only.
+     * @param array|string $fields
+     * @param string $keyOrLabelRequest Set a label for lists only.
      * @return array
      */
-    protected function prepareField($field, $listLabel = null): array
+    protected function prepareFields($fields, $keyOrLabelRequest = null): array
     {
-        static $labels;
-
         $metaToTypes = [
             'o:property' => 'properties',
             'o:resource_class' => 'resource_classes',
@@ -1921,181 +1842,218 @@ class References extends AbstractPlugin
             'o:item_set' => 'item_sets',
         ];
 
-        $isList = is_array($field);
+        $isSingle = !is_array($fields);
+        $fields = $isSingle ? [$fields] : $fields;
+        $field = reset($fields);
+
+        $translate = $this->translate;
+
+        $labelRequested = empty($keyOrLabelRequest) || is_numeric($keyOrLabelRequest)
+            ? null
+            : $keyOrLabelRequest;
 
         // Special fields.
-        if (!$isList && isset($metaToTypes[$field])) {
-            if (is_null($labels)) {
-                $translate = $this->translate;
-                $labels = [
-                    'o:property' => $translate('Properties'), // @translate
-                    'o:resource_class' => $translate('Classes'), // @translate
-                    'o:resource_template' => $translate('Templates'), // @translate
-                    'o:item_set' => $translate('Item sets'), // @translate
-                ];
-            }
-
+        if (isset($metaToTypes[$field])) {
+            $labels = [
+                'o:property' => $translate('Properties'), // @translate
+                'o:resource_class' => $translate('Classes'), // @translate
+                'o:resource_template' => $translate('Templates'), // @translate
+                'o:item_set' => $translate('Item sets'), // @translate
+            ];
             return [
                 'type' => $field,
-                'metatype' => $metaToTypes[$field],
-                'term' => $field,
-                'label' => $labels[$field],
+                'output' => [
+                    'o:label' => $labelRequested ?? $labels[$field],
+                    'o:request' => [
+                        'o:field' => [[
+                            '@type' => null,
+                            'o:term' => $field,
+                            'o:label' => $labels[$field],
+                        ]],
+                    ],
+                ],
+                'is_single' => $isSingle,
+                'label_requested' => $labelRequested,
+                'label_first' => $labels[$field],
+                'key_result' => $labelRequested
+                    // For compatibility with old format.
+                    ?? ($isSingle ? $field : $keyOrLabelRequest),
             ];
         }
 
         // It's not possible to determine what is a numeric value.
         if (is_numeric($field)) {
+            $meta = [];
+            foreach ($fields as $fieldElement) {
+                $meta[] = [
+                    '@type' => null,
+                    'o:label' => $fieldElement,
+                ];
+            }
             return [
                 'type' => null,
-                'term' => $field,
-                'label' => $field,
+                'output' => [
+                    'o:label' => $labelRequested ?? $translate('[Unknown]'), // @translate
+                    'o:request' => [
+                        'o:field' => $meta,
+                    ],
+                ],
+                'is_single' => $isSingle,
+                'label_requested' => $labelRequested,
+                'label_first' => $field,
+                'key_result' => $keyOrLabelRequest,
             ];
         }
 
+        // Cannot be mixed currently.
         if ($field === 'o:title') {
+            $label = $translate('Title'); // @translate
             return [
-                '@type' => 'o:Property',
                 'type' => 'resource_titles',
-                'id' => null,
-                'term' => 'o:title',
-                'label' => 'Title', // @translate
+                'output' => [
+                    'o:label' => $labelRequested ?? $label,
+                    'o:request' => [
+                        'o:field' => [[
+                            '@type' => null,
+                            'o:term' => 'o:title',
+                            'o:label' => $label,
+                        ]],
+                    ],
+                ],
+                'is_single' => $isSingle,
+                'label_requested' => $labelRequested,
+                'label_first' => $label,
+                'key_result' => $labelRequested
+                    // For compatibility with old format.
+                    ?? ($isSingle ? 'o:title' : $keyOrLabelRequest),
             ];
         }
 
-        if ($isList) {
-            $listLabel = (string) $listLabel;
-            $meta = $this->getProperties($field);
-            if ($meta) {
-                foreach ($meta as &$metaValue) {
-                    $metaValue = [
-                        'id' => $metaValue['o:id'],
-                        'term' => $metaValue['o:term'],
-                        'label' => $metaValue['o:label'],
-                    ];
-                }
-                unset($metaValue);
-                return [
+        $meta = $this->getProperties($fields);
+        if ($meta) {
+            foreach ($meta as &$metaElement) {
+                unset($metaElement['@language']);
+                $metaElement = [
                     '@type' => 'o:Property',
-                    'type' => 'properties',
-                    'list' => $meta,
-                    'term' => null,
-                    'label' => $listLabel,
-                ];
+                ] + $metaElement;
             }
-
-            $meta = $this->getResourceClasses($field);
-            if ($meta) {
-                foreach ($meta as &$metaValue) {
-                    $metaValue = [
-                        'id' => $metaValue['o:id'],
-                        'term' => $metaValue['o:term'],
-                        'label' => $metaValue['o:label'],
-                    ];
-                }
-                unset($metaValue);
-                return [
-                    '@type' => 'o:ResourceClass',
-                    'type' => 'resource_classes',
-                    'list' => $meta,
-                    'term' => null,
-                    'label' => $listLabel,
-                ];
-            }
-
-            $meta = $this->getResourceTemplates($field);
-            if ($meta) {
-                foreach ($meta as &$metaValue) {
-                    $metaValue = [
-                        'id' => $metaValue['o:id'],
-                        'term' => null,
-                        'label' => $metaValue['o:label'],
-                    ];
-                }
-                unset($metaValue);
-                return [
-                    '@type' => 'o:ResourceTemplate',
-                    'type' => 'resource_templates',
-                    'list' => $meta,
-                    'term' => null,
-                    'label' => $listLabel,
-                ];
-            }
-
-            $meta = $this->getItemSets($field);
-            if ($meta) {
-                foreach ($meta as &$metaValue) {
-                    $metaValue = [
-                        'id' => $metaValue['o:id'],
-                        'term' => null,
-                        'label' => $metaValue['o:label'],
-                    ];
-                }
-                unset($metaValue);
-                return [
-                    '@type' => 'o:ItemSet',
-                    'type' => 'item_sets',
-                    'list' => $meta,
-                    'term' => null,
-                    'label' => $listLabel,
-                ];
-            }
-
+            unset($metaElement);
+            $labelFirst = $translate(reset($meta)['o:label']);
             return [
-                'type' => null,
-                'list' => $field,
-                'term' => null,
-                'label' => $listLabel,
-            ];
-        }
-
-        $meta = $this->getProperty($field);
-        if ($meta) {
-            return [
-                '@type' => 'o:Property',
                 'type' => 'properties',
-                'id' => $meta['o:id'],
-                'term' => $meta['o:term'],
-                'label' => $meta['o:label'],
+                'output' => [
+                    'o:label' => $labelRequested ?? $labelFirst,
+                    'o:request' => [
+                        'o:field' => $meta,
+                    ],
+                ],
+                'is_single' => $isSingle,
+                'label_requested' => $labelRequested,
+                'label_first' => $labelFirst,
+                'key_result' => $labelRequested
+                    // For compatibility with old format.
+                    ?? ($isSingle ? reset($meta)['o:term'] : $keyOrLabelRequest),
             ];
         }
 
-        $meta = $this->getResourceClass($field);
+        $meta = $this->getResourceClasses($fields);
         if ($meta) {
+            foreach ($meta as &$metaElement) {
+                unset($metaElement['@language']);
+                $metaElement = [
+                    '@type' => 'o:ResourceClass',
+                ] + $metaElement;
+            }
+            unset($metaElement);
+            $labelFirst = $translate(reset($meta)['o:label']);
             return [
-                '@type' => 'o:ResourceClass',
                 'type' => 'resource_classes',
-                'id' => $meta['o:id'],
-                'term' => $meta['o:term'],
-                'label' => $meta['o:label'],
+                'output' => [
+                    'o:label' => $labelRequested ?? $labelFirst,
+                    'o:request' => [
+                        'o:field' => $meta,
+                    ],
+                ],
+                'is_single' => $isSingle,
+                'label_requested' => $labelRequested,
+                'label_first' => $labelFirst,
+                'key_result' => $labelRequested
+                    // For compatibility with old format.
+                    ?? ($isSingle ? reset($meta)['o:term'] : $keyOrLabelRequest),
             ];
         }
 
-        $meta = $this->getResourceTemplate($field);
+        $meta = $this->getResourceTemplates($fields);
         if ($meta) {
+            foreach ($meta as &$metaElement) {
+                unset($metaElement['@language']);
+                $metaElement = [
+                    '@type' => 'o:ResourceTemplate',
+                ] + $metaElement;
+            }
+            unset($metaElement);
+            $labelFirst = $translate(reset($meta)['o:label']);
             return [
-                '@type' => 'o:ResourceTemplate',
                 'type' => 'resource_templates',
-                'id' => $meta['o:id'],
-                'term' => null,
-                'label' => $meta['o:label'],
+                'output' => [
+                    'o:label' => $labelRequested ?? $labelFirst,
+                    'o:request' => [
+                        'o:field' => $meta,
+                    ],
+                ],
+                'is_single' => $isSingle,
+                'label_requested' => $labelRequested,
+                'label_first' => $labelFirst,
+                'key_result' => $keyOrLabelRequest,
             ];
         }
 
-        $meta = $this->getItemSet($field);
+        $meta = $this->getItemSets($fields);
         if ($meta) {
+            foreach ($meta as &$metaElement) {
+                unset($metaElement['@language']);
+                $metaElement = [
+                    '@type' => 'o:ItemSet',
+                ] + $metaElement;
+            }
+            unset($metaElement);
+            $labelFirst = $translate(reset($meta)['o:label']);
             return [
-                '@type' => 'o:ItemSet',
                 'type' => 'item_sets',
-                'id' => $meta['o:id'],
-                'term' => null,
-                'label' => $meta['o:label'],
+                'output' => [
+                    'o:label' => $labelRequested ?? $labelFirst,
+                    'o:request' => [
+                        'o:field' => $meta,
+                    ],
+                ],
+                'is_single' => $isSingle,
+                'label_requested' => $labelRequested,
+                'label_first' => $labelFirst,
+                'key_result' => $keyOrLabelRequest,
             ];
         }
 
+        // Undetermined.
+        $meta = [];
+        foreach ($fields as $fieldElement) {
+            $meta[] = [
+                '@type' => null,
+                'o:label' => $fieldElement,
+            ];
+        }
+        unset($metaElement);
         return [
             'type' => null,
-            'term' => $field,
-            'label' => $field,
+            'output' => [
+                'o:label' => $labelRequested ?? $field,
+                'o:request' => [
+                    'o:field' => $meta,
+                ],
+            ],
+            'is_single' => $isSingle,
+            'label_requested' => $labelRequested,
+            'label_first' => $field,
+            'key_result' => $keyOrLabelRequest,
         ];
     }
 
