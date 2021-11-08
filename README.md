@@ -8,7 +8,8 @@ Reference (module for Omeka S)
 [Reference] is a module for [Omeka S] that allows to serve a glossary (an
 alphabetized index) of links to records or to searches for all resources classes
 (item types) and properties (metadata fields) of all resources of an Omeka S
-instance.
+instance. The references can be aggregated, for example to get all dates from
+"dcterms:date" and "dcterms:issued" together.
 
 These lists can be displayed in any page via a helper or a block. References can
 be limited by site or any other pool, and ordered alphabetically or by count.
@@ -228,6 +229,12 @@ simplify url request, for example:
 or
 - `filters[begin][]=w&filters[begin][]=x&filters[begin][]=y&filters[begin][]=z`
 - `filters[begin]=w,x,y,z`
+
+To get results for aggregated metadata, use an array for the fields:
+- `metadata[Dates][]=dcterms:date&metadata[Dates][]=dcterms:issued`
+- `metadata[Dates]=dcterms:date,dcterms:issued`.
+The key of the metadata ("Dates" here) is used as the key and the label in the
+result.
 
 **Important**:
 The response is for all sites by default. Add argument `site_id={##}` or `site_slug={slug}`
