@@ -16,6 +16,7 @@ class ReferenceTreeFieldset extends Fieldset
                 'type' => Element\Text::class,
                 'options' => [
                     'label' => 'Block title', // @translate
+                    // TODO Use shortcode.
                     'info' => 'Heading for the block, if any. The placeholder {total} can be used.', // @translate
                 ],
                 'attributes' => [
