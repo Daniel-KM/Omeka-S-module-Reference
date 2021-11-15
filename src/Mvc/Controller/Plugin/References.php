@@ -1243,7 +1243,7 @@ class References extends AbstractPlugin
                 )
                 ->addSelect(
                     // Note: for doctrine, separators must be set as parameters.
-                    'GROUP_CONCAT(ress.id, :unit_separator, ress.title SEPARATOR :group_separator) AS resources',
+                    'GROUP_CONCAT(ress.id, :unit_separator, ress.title SEPARATOR :group_separator) AS resources'
                 )
                 ->setParameter('unit_separator', chr(0x1F))
                 ->setParameter('group_separator', chr(0x1D))
