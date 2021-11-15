@@ -569,7 +569,7 @@ class References extends AbstractPlugin
 
         $qb
             ->select(
-                $this->supportAnyValue
+                $val = $this->supportAnyValue
                     ? 'ANY_VALUE(COALESCE(value.value, valueResource.title, value.uri)) AS val'
                     : 'COALESCE(value.value, valueResource.title, value.uri) AS val',
                 // "Distinct" avoids to count duplicate values in properties in
@@ -589,7 +589,7 @@ class References extends AbstractPlugin
         return $this
             ->filterByDatatype($qb)
             ->filterByLanguage($qb)
-            ->filterByBeginOrEnd($qb)
+            ->filterByBeginOrEnd($qb, substr($val, 0, -7))
             ->manageOptions($qb, 'properties')
             ->outputMetadata($qb, 'properties');
     }
@@ -1096,7 +1096,8 @@ class References extends AbstractPlugin
     /**
      * Filter the list of references with a column.
      *
-     *  @param string The column to filter, for example "value.value" or "resource.title".
+     *  @param string The column to filter, for example "value.value" (default),
+     *  "val", or "resource.title".
      */
     protected function filterByBeginOrEnd(QueryBuilder $qb, $column = 'value.value'): self
     {
