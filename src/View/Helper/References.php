@@ -56,7 +56,9 @@ class References extends AbstractHelper
      * - sort_order: "asc" (default) or "desc".
      * - filters: array Limit values to the specified data. Currently managed:
      *   - "languages": list of languages. Values without language are returned
-     *     with the empty value "". This option is used only for properties.
+     *     with a null, the string "null", or an empty string "" (deprecated).
+     *     It is recommended to append it when a language is set. This option is
+     *     used only for properties.
      *   - "datatypes": array Filter property values according to the data types.
      *     Default datatypes are "literal", "resource", "resource:item", "resource:itemset",
      *     "resource:media" and "uri".

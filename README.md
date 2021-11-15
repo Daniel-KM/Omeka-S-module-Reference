@@ -173,10 +173,11 @@ fields. The fields can be a comma separated list of an array, for example:
 references for the specified text in the specified field.
 
 To get the facets for the search result page, you can use this query:
-`text=xxx&site_id=1&option[resource_name]=items&option[sort_by]=total&option[sort_order]=desc&option[filters][languages][]=fra&option[filters][languages][]=&option[filters][languages]=&option[lang]=1&metadata[]=dcterms:subject`
+`text=xxx&site_id=1&option[resource_name]=items&option[sort_by]=total&option[sort_order]=desc&option[filters][languages][]=fra&option[filters][languages][]=null&option[filters][languages]=&option[lang]=1&metadata[]=dcterms:subject`
 Note: if you use the filters for the language, it may be needed to add an
-empty language `&option[filters][languages][]=` or, for string format, `&option[filters][languages]=fra,`
+empty language `&option[filters][languages][]=null` or, for string format, `&option[filters][languages]=fra,null`
 because many metadata have no language (date, names, etc.).
+The empty language can be an empty string too (deprecated).
 
 Options can be appended to the query. If you don't want to mix them, you can use
 the keys `query` and `option`.

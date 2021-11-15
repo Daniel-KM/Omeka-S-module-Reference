@@ -144,7 +144,9 @@ class References extends AbstractPlugin
      * - sort_order: "asc" (default) or "desc".
      * - filters: array Limit values to the specified data. Currently managed:
      *   - "languages": list of languages. Values without language are returned
-     *     with the empty value "". This option is used only for properties.
+     *     with a null, the string "null", or an empty string "" (deprecated).
+     *     It is recommended to append it when a language is set. This option is
+     *     used only for properties.
      *   - "datatypes": array Filter property values according to the data types.
      *     Default datatypes are "literal", "resource", "resource:item", "resource:itemset",
      *     "resource:media" and "uri".
@@ -311,10 +313,18 @@ class References extends AbstractPlugin
 
             // The check for length avoids to add a filter on values without any
             // language. It should be specified as "||" (or leading/trailing "|").
+            // The value "null" can be used too and is recommended instead of an
+            // empty string.
             if (!is_array($this->options['filters']['languages'])) {
                 $this->options['filters']['languages'] = explode('|', str_replace(',', '|', $this->options['filters']['languages'] ?: ''));
             }
+            $noEmptyLanguages = array_diff($this->options['filters']['languages'], ['null', null, '', 0, '0']);
+            if (count($noEmptyLanguages) !== count($this->options['filters']['languages'])) {
+                $this->options['filters']['languages'] = $noEmptyLanguages;
+                $this->options['filters']['languages'][] = '';
+            }
             $this->options['filters']['languages'] = array_unique(array_map('trim', $this->options['filters']['languages']));
+
             if (!is_array($this->options['filters']['datatypes'])) {
                 $this->options['filters']['datatypes'] = explode('|', str_replace(',', '|', $this->options['filters']['datatypes'] ?: ''));
             }
