@@ -553,7 +553,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listDataForProperties(array $propertyIds)
+    protected function listDataForProperties(array $propertyIds): array
     {
         if (empty($propertyIds)) {
             return [];
@@ -568,14 +568,14 @@ class References extends AbstractPlugin
         // "o:label" is not possible, neither "count".
 
         $qb
-            ->select([
+            ->select(
                 $this->supportAnyValue
                     ? 'ANY_VALUE(COALESCE(value.value, valueResource.title, value.uri)) AS val'
                     : 'COALESCE(value.value, valueResource.title, value.uri) AS val',
                 // "Distinct" avoids to count duplicate values in properties in
                 // a resource: we count resources, not properties.
-                $expr->countDistinct('resource.id') . ' AS total',
-            ])
+                $expr->countDistinct('resource.id') . ' AS total'
+            )
             ->from(\Omeka\Entity\Value::class, 'value')
             // This join allow to check visibility automatically too.
             ->innerJoin($this->options['entity_class'], 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
@@ -586,11 +586,12 @@ class References extends AbstractPlugin
             ->groupBy('val')
         ;
 
-        $this->filterByDatatype($qb);
-        $this->filterByLanguage($qb);
-        $this->filterByBeginOrEnd($qb);
-        $this->manageOptions($qb, 'properties');
-        return $this->outputMetadata($qb, 'properties');
+        return $this
+            ->filterByDatatype($qb)
+            ->filterByLanguage($qb)
+            ->filterByBeginOrEnd($qb)
+            ->manageOptions($qb, 'properties')
+            ->outputMetadata($qb, 'properties');
     }
 
     /**
@@ -601,7 +602,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listDataForResourceClasses(array $resourceClassIds)
+    protected function listDataForResourceClasses(array $resourceClassIds): array
     {
         if (empty($resourceClassIds)) {
             return [];
@@ -611,10 +612,10 @@ class References extends AbstractPlugin
         $expr = $qb->expr();
 
         $qb
-            ->select([
+            ->select(
                 'DISTINCT resource.title AS val',
-                $expr->count('resource.id') . ' AS total',
-            ])
+                $expr->count('resource.id') . ' AS total'
+            )
             // The use of resource checks visibility automatically.
             ->from(\Omeka\Entity\Resource::class, 'resource')
             ->where($expr->in('resource.resourceClass', ':resource_classes'))
@@ -626,8 +627,9 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
         }
 
-        $this->manageOptions($qb, 'resource_classes');
-        return $this->outputMetadata($qb, 'resource_classes');
+        return $this
+            ->manageOptions($qb, 'resource_classes')
+            ->outputMetadata($qb, 'resource_classes');
     }
 
     /**
@@ -648,10 +650,10 @@ class References extends AbstractPlugin
         $expr = $qb->expr();
 
         $qb
-            ->select([
+            ->select(
                 'DISTINCT resource.title AS val',
-                $expr->count('resource.id') . ' AS total',
-            ])
+                $expr->count('resource.id') . ' AS total'
+            )
             // The use of resource checks visibility automatically.
             ->from(\Omeka\Entity\Resource::class, 'resource')
             ->where($expr->in('resource.resourceTemplate', ':resource_templates'))
@@ -663,8 +665,9 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
         }
 
-        $this->manageOptions($qb, 'resource_templates');
-        return $this->outputMetadata($qb, 'resource_templates');
+        return $this
+            ->manageOptions($qb, 'resource_templates')
+            ->outputMetadata($qb, 'resource_templates');
     }
 
     /**
@@ -675,7 +678,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listDataForItemSets(array $itemSetIds)
+    protected function listDataForItemSets(array $itemSetIds): array
     {
         if (empty($itemSetIds)) {
             return [];
@@ -689,10 +692,10 @@ class References extends AbstractPlugin
         }
 
         $qb
-            ->select([
+            ->select(
                 'DISTINCT resource.title AS val',
-                $expr->count('resource.id') . ' AS total',
-            ])
+                $expr->count('resource.id') . ' AS total'
+            )
             // The use of resource checks visibility automatically.
             ->from(\Omeka\Entity\Resource::class, 'resource')
             // Always an item.
@@ -707,8 +710,9 @@ class References extends AbstractPlugin
             ->groupBy('val')
         ;
 
-        $this->manageOptions($qb, 'item_sets');
-        return $this->outputMetadata($qb, 'item_sets');
+        return $this
+            ->manageOptions($qb, 'item_sets')
+            ->outputMetadata($qb, 'item_sets');
     }
 
     /**
@@ -727,26 +731,27 @@ class References extends AbstractPlugin
         // "o:label" is not possible, neither "count".
 
         $qb
-            ->select([
+            ->select(
                 $this->supportAnyValue
                     ? 'ANY_VALUE(resource.title) AS val'
                     : 'resource.title AS val',
                 // "Distinct" avoids to count duplicate values in properties in
                 // a resource: we count resources, not properties.
-                $expr->countDistinct('resource.id') . ' AS total',
-            ])
+                $expr->countDistinct('resource.id') . ' AS total'
+            )
             ->from(\Omeka\Entity\Resource::class, 'resource')
             // This join allow to check visibility automatically too.
             ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res', 'resource'))
             ->groupBy('val')
         ;
 
-        // TODO Improve filter for "o:title".
-        // $this->filterByDatatype($qb);
-        // $this->filterByLanguage($qb);
-        $this->filterByBeginOrEnd($qb, 'resource.title');
-        $this->manageOptions($qb, 'resource_titles');
-        return $this->outputMetadata($qb, 'properties');
+        return $this
+            // TODO Improve filter for "o:title".
+            // ->filterByDatatype($qb)
+            // ->filterByLanguage($qb)
+            ->filterByBeginOrEnd($qb, 'resource.title')
+            ->manageOptions($qb, 'resource_titles')
+            ->outputMetadata($qb, 'properties');
     }
 
     /**
@@ -756,7 +761,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listProperties()
+    protected function listProperties(): array
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
@@ -795,9 +800,10 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
         }
 
-        $this->filterByLanguage($qb);
-        $this->manageOptions($qb, 'o:property');
-        return $this->outputMetadata($qb, 'o:property');
+        return $this
+            ->filterByLanguage($qb)
+            ->manageOptions($qb, 'o:property')
+            ->outputMetadata($qb, 'o:property');
     }
 
     /**
@@ -807,7 +813,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listResourceClasses()
+    protected function listResourceClasses():array
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
@@ -850,8 +856,9 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
         }
 
-        $this->manageOptions($qb, 'o:resource_class');
-        return $this->outputMetadata($qb, 'o:resource_class');
+        return $this
+            ->manageOptions($qb, 'o:resource_class')
+            ->outputMetadata($qb, 'o:resource_class');
     }
 
     /**
@@ -861,7 +868,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listResourceTemplates()
+    protected function listResourceTemplates(): array
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
@@ -888,8 +895,9 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
         }
 
-        $this->manageOptions($qb, 'o:resource_template');
-        return $this->outputMetadata($qb, 'o:resource_template');
+        return $this
+            ->manageOptions($qb, 'o:resource_template')
+            ->outputMetadata($qb, 'o:resource_template');
     }
 
     /**
@@ -898,7 +906,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listItemSets()
+    protected function listItemSets(): array
     {
         $qb = $this->entityManager->createQueryBuilder();
         $expr = $qb->expr();
@@ -936,12 +944,12 @@ class References extends AbstractPlugin
             ->groupBy('val')
         ;
 
-        // By exeption, the query for item sets should add public site, because
-        // item sets are limited by sites.
-        $this->limitItemSetsToSite($qb);
-
-        $this->manageOptions($qb, 'o:item_set');
-        return $this->outputMetadata($qb, 'o:item_set');
+        return $this
+            // By exeption, the query for item sets should add public site,
+            // because item sets are limited by sites.
+            ->limitItemSetsToSite($qb)
+            ->manageOptions($qb, 'o:item_set')
+            ->outputMetadata($qb, 'o:item_set');
     }
 
     /**
@@ -987,8 +995,9 @@ class References extends AbstractPlugin
                 ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
         }
 
-        $this->manageOptions($qb, 'o:owner');
-        return $this->outputMetadata($qb, 'o:owner');
+        return $this
+            ->manageOptions($qb, 'o:owner')
+            ->outputMetadata($qb, 'o:owner');
     }
 
     /**
@@ -1028,11 +1037,12 @@ class References extends AbstractPlugin
 
         // TODO Count item sets and media by site.
 
-        $this->manageOptions($qb, 'o:site');
-        return $this->outputMetadata($qb, 'o:site');
+        return $this
+            ->manageOptions($qb, 'o:site')
+            ->outputMetadata($qb, 'o:site');
     }
 
-    protected function limitItemSetsToSite(QueryBuilder $qb): void
+    protected function limitItemSetsToSite(QueryBuilder $qb): self
     {
         // @see \Omeka\Api\Adapter\ItemSetAdapter::buildQuery()
         if (isset($this->query['site_id']) && is_numeric($this->query['site_id'])) {
@@ -1053,9 +1063,10 @@ class References extends AbstractPlugin
                 ->andWhere($expr->eq('ref_site_item_set.site', ':ref_site_item_set_site'))
                 ->setParameter(':ref_site_item_set_site', $this->query['site_id']);
         }
+        return $this;
     }
 
-    protected function filterByDatatype(QueryBuilder $qb): void
+    protected function filterByDatatype(QueryBuilder $qb): self
     {
         if ($this->options['filters']['datatypes']) {
             $expr = $qb->expr();
@@ -1063,9 +1074,10 @@ class References extends AbstractPlugin
                 ->andWhere($expr->in('value.type', ':datatypes'))
                 ->setParameter('datatypes', $this->options['filters']['datatypes'], Connection::PARAM_STR_ARRAY);
         }
+        return $this;
     }
 
-    protected function filterByLanguage(QueryBuilder $qb): void
+    protected function filterByLanguage(QueryBuilder $qb): self
     {
         if ($this->options['filters']['languages']) {
             $expr = $qb->expr();
@@ -1078,9 +1090,15 @@ class References extends AbstractPlugin
                 ->andWhere($filter)
                 ->setParameter('languages', $this->options['filters']['languages'], Connection::PARAM_STR_ARRAY);
         }
+        return $this;
     }
 
-    protected function filterByBeginOrEnd(QueryBuilder $qb, $column = 'value.value'): void
+    /**
+     * Filter the list of references with a column.
+     *
+     *  @param string The column to filter, for example "value.value" or "resource.title".
+     */
+    protected function filterByBeginOrEnd(QueryBuilder $qb, $column = 'value.value'): self
     {
         $expr = $qb->expr();
         // This is a and by default.
@@ -1123,9 +1141,10 @@ class References extends AbstractPlugin
                 }
             }
         }
+        return $this;
     }
 
-    protected function manageOptions(QueryBuilder $qb, $type): void
+    protected function manageOptions(QueryBuilder $qb, $type): self
     {
         $expr = $qb->expr();
         if (in_array($type, ['resource_classes', 'resource_templates', 'item_sets', 'resource_titles'])
@@ -1205,11 +1224,16 @@ class References extends AbstractPlugin
                 // that should not exist in Omeka data. The unit separator is
                 // not used but tabulation in order to check results simpler.
                 // Mysql max length: 1024.
-                ->leftJoin(\Omeka\Entity\Resource::class, 'ress', Join::WITH, $expr->eq($type === 'resource_titles' ? 'resource' : 'value.resource', 'ress'))
-                ->addSelect([
+                ->leftJoin(
+                    \Omeka\Entity\Resource::class,
+                    'ress',
+                    Join::WITH,
+                    $expr->eq($type === 'resource_titles' ? 'resource' : 'value.resource', 'ress')
+                )
+                ->addSelect(
                     // Note: for doctrine, separators must be set as parameters.
                     'GROUP_CONCAT(ress.id, :unit_separator, ress.title SEPARATOR :group_separator) AS resources',
-                ])
+                )
                 ->setParameter('unit_separator', chr(0x1F))
                 ->setParameter('group_separator', chr(0x1D))
             ;
@@ -1305,9 +1329,11 @@ class References extends AbstractPlugin
                 $qb->setFirstResult($offset);
             }
         }
+
+        return $this;
     }
 
-    protected function outputMetadata(QueryBuilder $qb, $type)
+    protected function outputMetadata(QueryBuilder $qb, $type): array
     {
         $result = $qb->getQuery()->getScalarResult();
         if (!count($result)) {
@@ -1435,10 +1461,10 @@ class References extends AbstractPlugin
         $expr = $qb->expr();
 
         $qb
-            ->select([
+            ->select(
                 // Here, this is the count of references, not resources.
-                $expr->countDistinct('value.value'),
-            ])
+                $expr->countDistinct('value.value')
+            )
             ->from(\Omeka\Entity\Value::class, 'value')
             // This join allow to check visibility automatically too.
             ->innerJoin(\Omeka\Entity\Resource::class, 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
@@ -1466,9 +1492,9 @@ class References extends AbstractPlugin
         $expr = $qb->expr();
 
         $qb
-            ->select([
-                $expr->countDistinct('resource.id'),
-            ])
+            ->select(
+                $expr->countDistinct('resource.id')
+            )
             ->from(\Omeka\Entity\Resource::class, 'resource')
             ->andWhere($expr->in('resource.resourceClass', ':resource_classes'))
             ->setParameter('resource_classes', array_map('intval', $resourceClassIds), Connection::PARAM_INT_ARRAY);
@@ -1493,9 +1519,9 @@ class References extends AbstractPlugin
         $expr = $qb->expr();
 
         $qb
-            ->select([
-                $expr->countDistinct('resource.id'),
-            ])
+            ->select(
+                $expr->countDistinct('resource.id')
+            )
             ->from(\Omeka\Entity\Resource::class, 'resource')
             ->andWhere($expr->in('resource.resourceTemplate', ':resource_templates'))
             ->setParameter('resource_templates', array_map('intval', $resourceTemplateIds), Connection::PARAM_INT_ARRAY);
@@ -1523,9 +1549,9 @@ class References extends AbstractPlugin
             return 0;
         }
         $qb
-            ->select([
-                $expr->countDistinct('resource.id'),
-            ])
+            ->select(
+                $expr->countDistinct('resource.id')
+            )
             ->from(\Omeka\Entity\Resource::class, 'resource')
             ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id')
             // See \Omeka\Api\Adapter\ItemAdapter::buildQuery()
@@ -1545,10 +1571,10 @@ class References extends AbstractPlugin
     /**
      * Limit the results with a query (generally the site query).
      */
-    protected function searchQuery(QueryBuilder $qb, ?string $type = null): void
+    protected function searchQuery(QueryBuilder $qb, ?string $type = null): self
     {
         if (empty($this->query)) {
-            return;
+            return $this;
         }
 
         $subQb = $this->entityManager->createQueryBuilder()
@@ -1615,6 +1641,8 @@ class References extends AbstractPlugin
                 $parameter->getType()
             );
         }
+
+        return $this;
     }
 
     /**
@@ -1625,14 +1653,14 @@ class References extends AbstractPlugin
      * This is an adaptation of the core method, except rights check.
      * @see \Omeka\Module::searchFulltext()
      */
-    protected function buildFullTextSearchQuery(QueryBuilder $qb, AbstractResourceEntityAdapter $adapter): void
+    protected function buildFullTextSearchQuery(QueryBuilder $qb, AbstractResourceEntityAdapter $adapter): self
     {
         if (!($adapter instanceof \Omeka\Api\Adapter\FulltextSearchableInterface)) {
-            return;
+            return $this;
         }
 
         if (!isset($this->query['fulltext_search']) || ('' === trim($this->query['fulltext_search']))) {
-            return;
+            return $this;
         }
 
         $searchAlias = $adapter->createAlias();
@@ -1658,6 +1686,8 @@ class References extends AbstractPlugin
             // addOrderBy(). This should ensure that ordering by relevance
             // is the first thing being ordered.
             ->orderBy($match, 'DESC');
+
+        return $this;
     }
 
     /**
@@ -1701,10 +1731,10 @@ class References extends AbstractPlugin
      * @param QueryBuilder $qb
      * @param AbstractResourceEntityAdapter $adapter
      */
-    protected function buildPropertyQuery(QueryBuilder $qb, AbstractResourceEntityAdapter $adapter): void
+    protected function buildPropertyQuery(QueryBuilder $qb, AbstractResourceEntityAdapter $adapter): self
     {
         if (empty($this->query['property']) || !is_array($this->query['property'])) {
-            return;
+            return $this;
         }
 
         $valuesJoin = 'omeka_root.values';
@@ -1978,6 +2008,8 @@ class References extends AbstractPlugin
         if ($where) {
             $qb->andWhere($where);
         }
+
+        return $this;
     }
 
     /**
@@ -2708,7 +2740,7 @@ class References extends AbstractPlugin
      * @param bool $defaultFirst
      * @return array|null
      */
-    protected function getDateTimeFromValue($value, $defaultFirst = true)
+    protected function getDateTimeFromValue($value, $defaultFirst = true): ?array
     {
         $yearMin = -292277022656;
         $yearMax = 292277026595;
