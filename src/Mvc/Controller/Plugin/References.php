@@ -1263,31 +1263,22 @@ class References extends AbstractPlugin
                     // TODO Nothing to filter for resource titles?
                     break;
                 case 'o:property':
-                    $values = $this->getPropertyIds($this->options['values']);
-                    if (!$values) {
-                        $values = [0];
-                    }
+                    $values = $this->getPropertyIds($this->options['values']) ?: [0];
                     $qb
                         ->andWhere('property' . '.id IN (:ids)')
                         ->setParameter('ids', $values);
                     break;
                 case 'o:resource_class':
-                    $values = $this->getResourceClassIds($this->options['values']);
-                    if (!$values) {
-                        $values = [0];
-                    }
+                    $values = $this->getResourceClassIds($this->options['values']) ?: [0];
                     $qb
                         ->andWhere('resource_class' . '.id IN (:ids)')
                         ->setParameter('ids', $values);
                     break;
                 case 'o:resource_template':
-                    $values = $this->getResourceTemplateIds($this->options['values']);
-                    if (!$values) {
-                        $values = [0];
-                    }
+                    $values = $this->getResourceTemplateIds($this->options['values']) ?: [0];
                     $qb
                         ->andWhere('resource_template' . '.id IN (:ids)')
-                        ->setParameter('ids', $this->options['values']);
+                        ->setParameter('ids', $values);
                     break;
                 case 'o:item_set':
                     $qb
