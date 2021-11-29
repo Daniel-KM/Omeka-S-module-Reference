@@ -1163,53 +1163,53 @@ class References extends AbstractPlugin
         ) {
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
             $qb
-                ->addSelect([
+                ->addSelect(
                     // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
                     $this->supportAnyValue
                         ? 'ANY_VALUE(' . $expr->upper($expr->substring('resource.title', 1, 1)) . ') AS initial'
                         : $expr->upper($expr->substring('resource.title', 1, 1)) . ' AS initial',
-                ]);
+                );
         }
 
         if ($type === 'properties' && $this->options['initial']) {
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
             $qb
-                ->addSelect([
+                ->addSelect(
                     // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
                         ? 'ANY_VALUE(' . $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, 1)) . ') AS initial'
                         : $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, 1)) . ' AS initial',
-                ]);
+                );
         }
 
         if ($type === 'properties' && $this->options['distinct']) {
             $qb
-                ->addSelect([
+                ->addSelect(
                     // TODO Warning with type "resource", that may be the same than "resource:item", etc.
                     'valueResource.id AS res',
-                    'value.uri AS uri',
-                ])
+                    'value.uri AS uri'
+                )
                 ->addGroupBy('res')
                 ->addGroupBy('uri');
         }
 
         if ($type === 'properties' && $this->options['datatype']) {
             $qb
-                ->addSelect([
+                ->addSelect(
                     $this->supportAnyValue
                         ? 'ANY_VALUE(value.type) AS type'
                         : 'value.type AS type',
-                ]);
+                );
             // No need to group by type: it is already managed with group by distinct "val,res,uri".
         }
 
         if ($type === 'properties' && $this->options['lang']) {
             $qb
-                ->addSelect([
+                ->addSelect(
                     $this->supportAnyValue
                         ? 'ANY_VALUE(value.lang) AS lang'
                         : 'value.lang AS lang',
-                ]);
+                );
             if ($this->options['distinct']) {
                 $qb
                     ->addGroupBy('lang');
@@ -1219,22 +1219,21 @@ class References extends AbstractPlugin
         // Add the first resource id.
         if ($this->options['first']) {
             $qb
-                ->addSelect([
+                ->addSelect(
                     'MIN(resource.id) AS first',
-                ]);
+                );
         }
 
         if ($this->options['list_by_max']
             // TODO May be simplified for "resource_titles".
             && ($type === 'properties' || $type === 'resource_titles')
         ) {
+            // Add and order by title, because it's the most common and
+            // simple. Use a single select to avoid issue with null and
+            // that should not exist in Omeka data. The unit separator is
+            // not used but tabulation in order to check results simpler.
+            // Mysql max length: 1024.
             $qb
-                // Add and order by title, because it's the most common and
-                // simple. Use a single select to avoid issue with null and
-                // duplicate titles.
-                // that should not exist in Omeka data. The unit separator is
-                // not used but tabulation in order to check results simpler.
-                // Mysql max length: 1024.
                 ->leftJoin(
                     \Omeka\Entity\Resource::class,
                     'ress',
@@ -1359,27 +1358,29 @@ class References extends AbstractPlugin
         }
 
         $first = reset($result);
-        if (extension_loaded('intl') && $this->options['initial']) {
-            $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
-            $result = array_map(function ($v) use ($transliterator) {
-                $v['total'] = (int) $v['total'];
-                $v['initial'] = $transliterator->transliterate((string) $v['initial']);
-                return $v;
-            }, $result);
-        } elseif (extension_loaded('iconv') && $this->options['initial']) {
-            $result = array_map(function ($v) {
-                $v['total'] = (int) $v['total'];
-                $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', (string) $v['initial']);
-                $v['initial'] = $trans === false ? (string) $v['initial'] : $trans;
-                return $v;
-            }, $result);
-        } elseif ($this->options['initial']) {
-            // Convert null into empty string.
-            $result = array_map(function ($v) {
-                $v['total'] = (int) $v['total'];
-                $v['initial'] = (string) $v['initial'];
-                return $v;
-            }, $result);
+        if ($this->options['initial']) {
+            if (extension_loaded('intl')) {
+                $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+                $result = array_map(function ($v) use ($transliterator) {
+                    $v['total'] = (int) $v['total'];
+                    $v['initial'] = $transliterator->transliterate((string) $v['initial']);
+                    return $v;
+                }, $result);
+            } elseif (extension_loaded('iconv')) {
+                $result = array_map(function ($v) {
+                    $v['total'] = (int) $v['total'];
+                    $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', (string) $v['initial']);
+                    $v['initial'] = $trans === false ? (string) $v['initial'] : $trans;
+                    return $v;
+                }, $result);
+            } else {
+                // Convert null into empty string.
+                $result = array_map(function ($v) {
+                    $v['total'] = (int) $v['total'];
+                    $v['initial'] = (string) $v['initial'];
+                    return $v;
+                }, $result);
+            }
         } else {
             $result = array_map(function ($v) {
                 $v['total'] = (int) $v['total'];
@@ -1397,13 +1398,16 @@ class References extends AbstractPlugin
 
         $hasListBy = array_key_exists('resources', $first);
         if ($hasListBy) {
-            $result = array_map(function ($v) {
-                $list = array_map(function ($vv) {
-                    return explode(chr(0x1F), $vv, 2);
-                }, explode(chr(0x1D), (string) $v['resources']));
-                $v['resources'] = array_column($list, 1, 0);
-                return $v;
-            }, $result);
+            $explodeResources = function (array $result) {
+                return array_map(function ($v) {
+                    $list = array_map(function ($vv) {
+                        return explode(chr(0x1F), $vv, 2);
+                    }, explode(chr(0x1D), (string) $v['resources']));
+                    $v['resources'] = array_column($list, 1, 0);
+                    return $v;
+                }, $result);
+            };
+            $result = $explodeResources($result);
 
             if ($this->options['fields']) {
                 $fields = array_fill_keys($this->options['fields'], true);
@@ -1934,7 +1938,7 @@ class References extends AbstractPlugin
                 case 'ndtp':
                     if (is_array($value)) {
                         $dataTypeAlias = $adapter->createAlias();
-                        $qb->setParameter($dataTypeAlias, $value, \Doctrine\DBAL\Connection::PARAM_STR_ARRAY);
+                        $qb->setParameter($dataTypeAlias, $value, Connection::PARAM_STR_ARRAY);
                         $predicateExpr = $expr->in("$valuesAlias.type", $dataTypeAlias);
                     } else {
                         $dataTypeAlias = $adapter->createNamedParameter($qb, $value);
@@ -2012,7 +2016,7 @@ class References extends AbstractPlugin
             if ($dataType) {
                 if (is_array($dataType)) {
                     $dataTypeAlias = $adapter->createAlias();
-                    $qb->setParameter($dataTypeAlias, $dataType, \Doctrine\DBAL\Connection::PARAM_STR_ARRAY);
+                    $qb->setParameter($dataTypeAlias, $dataType, Connection::PARAM_STR_ARRAY);
                     $predicateExpr = $expr->andX(
                         $predicateExpr,
                         $expr->in("$valuesAlias.type", ':' . $dataTypeAlias)
