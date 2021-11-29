@@ -371,3 +371,11 @@ if (version_compare($oldVersion, '3.4.32.3', '<')) {
     );
     $messenger->addSuccess($message);
 }
+
+if (version_compare($oldVersion, '3.4.33.3', '<')) {
+    $messenger = new Messenger();
+    $message = new Message(
+        'It is possible now to filter references by data types.' // @translate
+    );
+    $messenger->addSuccess($message);
+}
