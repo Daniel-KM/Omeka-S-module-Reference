@@ -1409,6 +1409,10 @@ class References extends AbstractPlugin
                 $fields = array_fill_keys($this->options['fields'], true);
                 // FIXME Api call inside a loop.
                 $result = array_map(function ($v) use ($fields) {
+                    // Check required at least for debug.
+                    if (empty($v['resources'])) {
+                        return $v;
+                    }
                     // Search resources is not available.
                     if ($this->options['resource_name'] === 'resource') {
                         $v['resources'] = array_map(function ($title, $id) use ($fields) {
