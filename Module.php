@@ -13,7 +13,6 @@ use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\Mvc\MvcEvent;
 use Omeka\Settings\SettingsInterface;
-use Reference\Entity\Metadata;
 
 /**
  * Reference
@@ -111,12 +110,14 @@ class Module extends AbstractModule
     {
         /** @var \Omeka\Entity\Resource $resource */
         $resource = $event->getParam('response')->getContent();
-        $referenceMetadatas = $this->updateReferenceMetadataResource($resource, $event->getName());
+
+        $services = $this->getServiceLocator();
+        $currentReferenceMetadata = $services->get('ControllerPluginManager')->get('currentReferenceMetadata');
+        $referenceMetadatas = $currentReferenceMetadata($resource);
         if (!count($referenceMetadatas)) {
             return;
         }
 
-        $services = $this->getServiceLocator();
         $entityManager = $services->get('Omeka\EntityManager');
         foreach ($referenceMetadatas as $metadata) {
             $entityManager->persist($metadata);
@@ -128,7 +129,12 @@ class Module extends AbstractModule
     {
         /** @var \Omeka\Entity\Resource $resource */
         $resource = $event->getTarget();
-        $referenceMetadatas = $this->updateReferenceMetadataResource($resource, $event->getName());
+
+        $this->deleteReferenceMetadataResource($resource);
+
+        $services = $this->getServiceLocator();
+        $currentReferenceMetadata = $services->get('ControllerPluginManager')->get('currentReferenceMetadata');
+        $referenceMetadatas = $currentReferenceMetadata($resource);
         if (!count($referenceMetadatas)) {
             return;
         }
@@ -150,189 +156,14 @@ class Module extends AbstractModule
         $this->getServiceLocator()->get('Omeka\Connection')->executeStatement($sql, $parameters);
     }
 
-    protected function updateReferenceMetadataResource(\Omeka\Entity\Resource $resource, string $eventName): array
-    {
-        // Remove all existing reference metadata of the resource.
-        if (!in_array($eventName, ['api.create.post', 'api.persist.post'])) {
-            $this->getServiceLocator()->get('Omeka\Connection')->executeStatement(
-                'DELETE FROM `reference_metadata` WHERE `resource_id` = :resource',
-                ['resource' => $resource->getId()]
-            );
-        }
-
-        // Create new reference metadata.
-
-        $referenceMetadatas = [];
-
-        // Add the core main fields (title and description).
-        $template = $resource->getResourceTemplate();
-        if ($template) {
-            $titlePropertyId = $template->getTitleProperty();
-            $titlePropertyId = $titlePropertyId ? $titlePropertyId->getId() : 1;
-            $descriptionPropertyId = $template->getDescriptionProperty();
-            $descriptionPropertyId = $descriptionPropertyId ? $descriptionPropertyId->getId() : 4;
-        } else {
-            $titlePropertyId = 1;
-            $descriptionPropertyId = 4;
-        }
-        $coreFields = [
-            ['field' => 'display_title', 'property_id' => $titlePropertyId],
-            ['field' => 'display_description', 'property_id' => $descriptionPropertyId],
-        ];
-        // Unlike standard values, only first value in each language is
-        // stored, but a value resource can have multiple languages.
-        foreach ($coreFields as $fieldData) {
-            $languages = [];
-            $privateLanguages = [];
-            foreach ($resource->getValues() as $value) {
-                if ($value->getProperty()->getId() !== $fieldData['property_id']) {
-                    continue;
-                }
-                $isPublic = $value->getIsPublic();
-                $langTexts = $this->getValueResourceLangTexts($value, $isPublic);
-                $langTexts = $isPublic
-                    ? array_diff_key($langTexts['public'], $languages)
-                    : array_diff_key($langTexts['private'], $privateLanguages);
-                foreach ($langTexts as $lang => $text) {
-                    $metadata = new \Reference\Entity\Metadata();
-                    $metadata
-                        ->setResource($resource)
-                        ->setValue($value)
-                        ->setField($fieldData['field'])
-                        ->setLang($lang)
-                        ->setIsPublic($isPublic)
-                        ->setText($text);
-                    $referenceMetadatas[] = $metadata;
-                    if ($isPublic) {
-                        $languages[$lang] = true;
-                    }
-                    $privateLanguages[$lang] = true;
-                }
-            }
-        }
-
-        foreach ($resource->getValues() as $value) {
-            $property = $value->getProperty();
-            $field = $property->getVocabulary()->getPrefix() . ':' . $property->getLocalName();
-            $isPublic = $value->getIsPublic();
-            $langTexts = $this->getValueResourceLangTexts($value, $isPublic);
-            $langTexts = $isPublic ? $langTexts['public'] : $langTexts['private'];
-            foreach ($langTexts as $lang => $text) {
-                $metadata = new \Reference\Entity\Metadata();
-                $metadata
-                    ->setResource($resource)
-                    ->setValue($value)
-                    ->setField($field)
-                    ->setLang($lang)
-                    ->setIsPublic($isPublic)
-                    ->setText($text);
-                $referenceMetadatas[] = $metadata;
-            }
-        }
-
-        return $referenceMetadatas;
-    }
-
     /**
-     * Get the text to use for a value for the value language or multiple languages.
-     *
-     * If the source value is public, only public content will be returned.
-     *
-     * The function is recursive to get the translated title of linked resource.
+     * Remove all existing reference metadata of a resource.
      */
-    protected function getValueResourceLangTexts(
-        \Omeka\Entity\Value $value,
-        bool $isPublic,
-        int $count = 0,
-        array $langTexts = ['public' => [], 'private' => []]
-    ): array {
-        $isPublicValue = $value->getIsPublic();
-        if ($isPublic && !$isPublicValue) {
-            return $langTexts;
-        }
-
-        $valueResource = $value->getValueResource();
-        if (!$valueResource) {
-            // The value can be a translated literal or a uri, but only
-            // the label is stored in that case.
-            // TODO Add a trigger to manage translated uris.
-            $text = (string) $value->getValue();
-            if (!strlen($text)) {
-                $text = $value->getUri();
-                // Normally never here.
-                if (!strlen($text)) {
-                    return $langTexts;
-                }
-            }
-
-            // Keep the first translation.
-            $lang = (string) $value->getLang();
-            if ($isPublic && $isPublicValue) {
-                if (!isset($langTexts['public'][$lang])) {
-                    $langTexts['public'][$lang] = $text;
-                }
-                if (!isset($langTexts['private'][$lang])) {
-                    $langTexts['private'][$lang] = $text;
-                }
-            } elseif (!$isPublic) {
-                if (!isset($langTexts['private'][$lang])) {
-                    $langTexts['private'][$lang] = $text;
-                }
-            }
-
-            return $langTexts;
-        }
-
-        if ($isPublic && !$valueResource->isPublic()) {
-            return $langTexts;
-        }
-
-        ++$count;
-
-        // Get the property title of the valueResource.
-        $template = $valueResource->getResourceTemplate();
-        $titlePropertyId = $template && ($property = $template->getTitleProperty())
-            ? $property->getId()
-            : 1;
-        foreach ($valueResource->getValues() as $subValue) {
-            if ($subValue->getProperty()->getId() !== $titlePropertyId) {
-                continue;
-            }
-            $isPublicSubValue = $subValue->getIsPublic();
-            if ($isPublic && !$isPublicSubValue) {
-                continue;
-            }
-            $subValueResource = $subValue->getValueResource();
-            if ($subValueResource && $count > 10) {
-                $this->getServiceLocator()->get('Omeka\Logger')->warn(sprintf(
-                    'Resource #%d has a recursive title.', // @translate
-                    // TODO Ideally, get initial source value id. Probably very rare anyway above one or two levels.
-                    $value->getResource()->getId()
-                ));
-                $lang = '';
-                $text = $subValueResource->getTitle();
-                $isPublicSubValueResource = $isPublicSubValue && $subValueResource->isPublic();
-                if ($isPublic && $isPublicSubValueResource) {
-                    if (!isset($langTexts['public'][$lang])) {
-                        $langTexts['public'][$lang] = $text;
-                    }
-                    if (!isset($langTexts['private'][$lang])) {
-                        $langTexts['private'][$lang] = $text;
-                    }
-                } elseif (!$isPublic) {
-                    if (!isset($langTexts['private'][$lang])) {
-                        $langTexts['private'][$lang] = $text;
-                    }
-                }
-            } else {
-                $subLangTexts = $this->getValueResourceLangTexts($subValue, $isPublic, $count, $langTexts);
-                $langTexts = [
-                    'public' => $langTexts['public'] + $subLangTexts['public'],
-                    'private' => $langTexts['private'] + $subLangTexts['private'],
-                ];
-            }
-        }
-
-        return $langTexts;
+    protected function deleteReferenceMetadataResource(\Omeka\Entity\Resource $resource): void
+    {
+        $this->getServiceLocator()->get('Omeka\Connection')->executeStatement(
+            'DELETE FROM `reference_metadata` WHERE `resource_id` = :resource',
+            ['resource' => $resource->getId()]
+        );
     }
 }
