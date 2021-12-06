@@ -171,6 +171,11 @@ class References extends AbstractPlugin
      *   resources with no metadata).
      * - single_reference_format: false (default), or true to keep the old output
      *   without the deprecated warning for single references without named key.
+     * - locale: empty (default) or a string or an ordered array Allow to get the
+     *   returned values in the first specified language when a property has
+     *   translated values. Unlike Omeka core, it get the translated title of
+     *   linked resources.
+     * TODO Use locale first or any locale (so all results preferably in the specified locale).
      * - output: "list" (default) or "associative" (possible only without added
      *   options: first, initial, distinct, datatype, or lang).
      * Some options and some combinations are not managed for some metadata.
@@ -275,6 +280,7 @@ class References extends AbstractPlugin
             'lang' => false,
             'include_without_meta' => false,
             'single_reference_format' => false,
+            'locale' => [],
             'output' => 'list',
         ];
         if ($options) {
@@ -288,6 +294,16 @@ class References extends AbstractPlugin
             $distinct = !empty($options['distinct']);
             $datatype = !empty($options['datatype']);
             $lang = !empty($options['lang']);
+            // Currently, only one locale can be used, but it is managed as
+            // array internally.
+            if (empty($options['locale'])) {
+                $locales = [];
+            } else {
+                $locales = is_array($options['locale']) ? $options['locale'] : [$options['locale']];
+                $locales = array_filter(array_unique(array_map('trim', array_map('strval', $locales))), function($v) {
+                    return ctype_alnum(str_replace(['-', '_'], ['', ''], $v));
+                });
+            }
             $this->options = [
                 'resource_name' => $resourceName,
                 'entity_class' => $this->mapResourceNameToEntity($resourceName),
@@ -306,6 +322,7 @@ class References extends AbstractPlugin
                 'lang' => $lang,
                 'include_without_meta' => !empty($options['include_without_meta']),
                 'single_reference_format' => !empty($options['single_reference_format']),
+                'locale' => $locales,
                 'output' => @$options['output'] === 'associative' && !$first && !$listByMax && !$initial && !$distinct && !$datatype && !$lang
                     ? 'associative'
                     : 'list',
@@ -578,14 +595,6 @@ class References extends AbstractPlugin
         // "o:label" is not possible, neither "count".
 
         $qb
-            ->select(
-                $val = $this->supportAnyValue
-                    ? 'ANY_VALUE(COALESCE(value.value, valueResource.title, value.uri)) AS val'
-                    : 'COALESCE(value.value, valueResource.title, value.uri) AS val',
-                // "Distinct" avoids to count duplicate values in properties in
-                // a resource: we count resources, not properties.
-                $expr->countDistinct('resource.id') . ' AS total'
-            )
             ->from(\Omeka\Entity\Value::class, 'value')
             // This join allow to check visibility automatically too.
             ->innerJoin($this->options['entity_class'], 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
@@ -595,6 +604,37 @@ class References extends AbstractPlugin
             ->setParameter('properties', array_map('intval', $propertyIds), Connection::PARAM_INT_ARRAY)
             ->groupBy('val')
         ;
+
+        if ($this->options['locale']) {
+            $qb
+                // Select either the
+                ->select(
+                    $val = 'refmeta.text AS val',
+                    // "Distinct" avoids to count duplicate values in properties in
+                    // a resource: we count resources, not properties.
+                    $expr->countDistinct('resource.id') . ' AS total'
+                )
+                ->innerJoin(
+                    \Reference\Entity\Metadata::class,
+                    'refmeta',
+                    Join::WITH,
+                    $expr->eq('refmeta.value', 'value.id')
+                )
+                ->andWhere($expr->in('refmeta.lang', ':locales'))
+                ->setParameter('locales', $this->options['locale'], Connection::PARAM_STR_ARRAY)
+            ;
+        } else {
+            $qb
+                ->select(
+                    $val = $this->supportAnyValue
+                        ? 'ANY_VALUE(COALESCE(value.value, valueResource.title, value.uri)) AS val'
+                        : 'COALESCE(value.value, valueResource.title, value.uri) AS val',
+                    // "Distinct" avoids to count duplicate values in properties in
+                    // a resource: we count resources, not properties.
+                    $expr->countDistinct('resource.id') . ' AS total'
+                )
+            ;
+        }
 
         return $this
             ->filterByDatatype($qb)
@@ -1228,25 +1268,81 @@ class References extends AbstractPlugin
             // TODO May be simplified for "resource_titles".
             && ($type === 'properties' || $type === 'resource_titles')
         ) {
-            // Add and order by title, because it's the most common and
-            // simple. Use a single select to avoid issue with null and
-            // that should not exist in Omeka data. The unit separator is
-            // not used but tabulation in order to check results simpler.
+            // Add and order by title, because it is the most common and simple.
+            // Use a single select to avoid issue with null, that should not
+            // exist in Omeka values. The unit separator is used in order to
+            // check results simpler.
             // Mysql max length: 1024.
-            $qb
-                ->leftJoin(
-                    \Omeka\Entity\Resource::class,
-                    'ress',
-                    Join::WITH,
-                    $expr->eq($type === 'resource_titles' ? 'resource' : 'value.resource', 'ress')
-                )
-                ->addSelect(
-                    // Note: for doctrine, separators must be set as parameters.
-                    'GROUP_CONCAT(ress.id, :unit_separator, ress.title SEPARATOR :group_separator) AS resources'
-                )
-                ->setParameter('unit_separator', chr(0x1F))
-                ->setParameter('group_separator', chr(0x1D))
-            ;
+
+            // Get the title by locale. Because title depends on template and
+            // the resource stores only the first title, whatever the language,
+            // the table reference metadata is used.
+            // In order to manage ordered multiple languages, one join is added
+            // to get the first title available. Furthermore, here, all linked
+            // resources should be returned, even when the resource has no title
+            // in the specified language. So a join is added without language,
+            // that could be a join with the table of the resources.
+            // Most of the times, there are only one language anyway, and
+            // rarely more than one fallback anyway.
+            if ($this->options['locale'] && $type !== 'resource_titles') {
+                $coalesce = [];
+                foreach ($this->options['locale'] as $locale) {
+                    $strLocale = str_replace('-', '_', $locale);
+                    $coalesce[] = "ress_$strLocale.text";
+                    $qb
+                        ->leftJoin(
+                            \Reference\Entity\Metadata::class,
+                            // The join is different than in listDataForProperties().
+                            "ress_$strLocale",
+                            Join::WITH,
+                            $expr->andX(
+                                $expr->eq('value.resource', "ress_$strLocale.resource"),
+                                $expr->eq("ress_$strLocale.field", ':display_title'),
+                                $expr->eq("ress_$strLocale.lang", ':locale_' . $strLocale)
+                            )
+                        )
+                        ->setParameter('locale_' . $strLocale, $locale)
+                    ;
+                }
+                $coalesce[] = 'ress.text';
+                $ressText = $this->supportAnyValue
+                    ? 'ANY_VALUE(COALESCE(' . implode(', ', $coalesce) . '))'
+                    : 'COALESCE(' . implode(', ', $coalesce) . ')';
+                $qb
+                    ->leftJoin(
+                        \Reference\Entity\Metadata::class,
+                        // The join is different than in listDataForProperties().
+                        'ress',
+                        Join::WITH,
+                        $expr->andX(
+                            $expr->eq('value.resource', 'ress.resource'),
+                            $expr->eq('ress.field', ':display_title')
+                        )
+                    )
+                    ->setParameter('display_title', 'display_title')
+                    ->addSelect(
+                        // Note: for doctrine, separators must be set as parameters.
+                        "GROUP_CONCAT(IDENTITY(ress.resource), :unit_separator, $ressText SEPARATOR :group_separator) AS resources"
+                    )
+                    ->setParameter('unit_separator', chr(0x1F))
+                    ->setParameter('group_separator', chr(0x1D))
+                ;
+            } else {
+                $qb
+                    ->leftJoin(
+                        \Omeka\Entity\Resource::class,
+                        'ress',
+                        Join::WITH,
+                        $expr->eq($type === 'resource_titles' ? 'resource' : 'value.resource', 'ress')
+                    )
+                    ->addSelect(
+                        // Note: for doctrine, separators must be set as parameters.
+                        'GROUP_CONCAT(ress.id, :unit_separator, ress.title SEPARATOR :group_separator) AS resources'
+                    )
+                    ->setParameter('unit_separator', chr(0x1F))
+                    ->setParameter('group_separator', chr(0x1D))
+                ;
+            }
         }
 
         if ($this->options['values']) {
@@ -1411,9 +1507,9 @@ class References extends AbstractPlugin
 
             if ($this->options['fields']) {
                 $fields = array_fill_keys($this->options['fields'], true);
-                // FIXME Api call inside a loop.
+                // FIXME Api call inside a loop. Use the new table reference_metadata.
                 $result = array_map(function ($v) use ($fields) {
-                    // Check required at least for debug.
+                    // Check required when a locale is used or for debug.
                     if (empty($v['resources'])) {
                         return $v;
                     }
