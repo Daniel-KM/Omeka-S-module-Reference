@@ -166,16 +166,16 @@ class References extends AbstractPlugin
      * - distinct: false (default), or true (distinct values by type).
      * - datatype: false (default), or true (include datatype of values).
      * - lang: false (default), or true (include language of value to result).
+     * - locale: empty (default) or a string or an ordered array Allow to get the
+     *   returned values in the first specified language when a property has
+     *   translated values. Use "null" to get a value without language.
+     *   Unlike Omeka core, it get the translated title of linked resources.
+     * TODO Use locale first or any locale (so all results preferably in the specified locale).
      * TODO Check if the option include_without_meta is still needed with data types.
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
      * - single_reference_format: false (default), or true to keep the old output
      *   without the deprecated warning for single references without named key.
-     * - locale: empty (default) or a string or an ordered array Allow to get the
-     *   returned values in the first specified language when a property has
-     *   translated values. Unlike Omeka core, it get the translated title of
-     *   linked resources.
-     * TODO Use locale first or any locale (so all results preferably in the specified locale).
      * - output: "list" (default) or "associative" (possible only without added
      *   options: first, initial, distinct, datatype, or lang).
      * Some options and some combinations are not managed for some metadata.
@@ -303,6 +303,9 @@ class References extends AbstractPlugin
                 $locales = array_filter(array_unique(array_map('trim', array_map('strval', $locales))), function($v) {
                     return ctype_alnum(str_replace(['-', '_'], ['', ''], $v));
                 });
+                if (($pos = array_search('null', $locales)) !== false) {
+                    $locales[$pos] = '';
+                }
             }
             $this->options = [
                 'resource_name' => $resourceName,

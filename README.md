@@ -189,7 +189,7 @@ Options are the same than the view helper:
 - sort_order: "asc" (default) or "desc".
 - filters: array Limit values to the specified data. Currently managed:
   - "languages": list of languages. Values without language are returned with
-    the empty value "". This option is used only for properties.
+    the value "null". This option is used only for properties.
   - "datatypes": array Filter property values according to the data types.
     Default datatypes are "literal", "resource", "resource:item", "resource:itemset",
     "resource:media" and "uri".
@@ -209,8 +209,14 @@ Options are the same than the view helper:
 - distinct: false (default), or true (distinct values by type).
 - datatype: false (default), or true (include datatype of values).
 - lang: false (default), or true (include language of value to result).
+- locale: empty (default) or a string or an ordered array Allow to get the
+  returned values in the first specified language when a property has translated
+  values. Use "null" to get a value without language.
+  Unlike Omeka core, it gets the translated title of linked resources.
 - include_without_meta: false (default), or true (include total of resources
   with no metadata) (TODO Check if this option is still needed).
+- single_reference_format: false (default), or true to keep the old output
+  without the deprecated warning for single references without named key.
 - output: "list" (default) or "associative" (possible only without added
   options: first, initial, distinct, datatype, or lang).
 
@@ -265,6 +271,7 @@ TODO
 - [ ] Get the second levels via a single sql, not via api.
 - [ ] Check if the option "include_without_meta" is still needed with data types.
 - [ ] Include the fields in the main request or get them via a second request, not via api.
+- [ ] Use the new table `reference_metadata` when possible.
 
 
 Warning

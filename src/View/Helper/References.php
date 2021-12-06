@@ -78,6 +78,10 @@ class References extends AbstractHelper
      * - distinct: false (default), or true (distinct values by type).
      * - datatype: false (default), or true (include datatype of values).
      * - lang: false (default), or true (include language of value to result).
+     * - locale: empty (default) or a string or an ordered array Allow to get the
+     *   returned values in the first specified language when a property has
+     *   translated values. Use "null" to get a value without language.
+     *   Unlike Omeka core, it get the translated title of linked resources.
      * TODO Check if the option include_without_meta is still needed with data types.
      * - include_without_meta: false (default), or true (include total of
      *   resources with no metadata).
