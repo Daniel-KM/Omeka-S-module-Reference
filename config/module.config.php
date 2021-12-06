@@ -4,6 +4,12 @@ namespace Reference;
 
 return [
     'entity_manager' => [
+        'mapping_classes_paths' => [
+            dirname(__DIR__) . '/src/Entity',
+        ],
+        'proxy_paths' => [
+            dirname(__DIR__) . '/data/doctrine-proxies',
+        ],
         'functions' => [
             'string' => [
                 'any_value' => \DoctrineExtensions\Query\Mysql\AnyValue::class,

@@ -379,3 +379,13 @@ if (version_compare($oldVersion, '3.4.33.3', '<')) {
     );
     $messenger->addSuccess($message);
 }
+
+if (version_compare($oldVersion, '3.4.34.3', '<')) {
+    $this->execSqlFromFile($this->modulePath() . '/data/install/schema.sql');
+
+    $messenger = new Messenger();
+    $message = new Message(
+        'It is possible now to get translated linked resource.' // @translate
+    );
+    $messenger->addSuccess($message);
+}
