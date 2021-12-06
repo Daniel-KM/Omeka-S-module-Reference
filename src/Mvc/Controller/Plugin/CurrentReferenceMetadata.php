@@ -16,15 +16,22 @@ class CurrentReferenceMetadata extends AbstractPlugin
      */
     public function __invoke(Resource $resource): array
     {
+        static $templateDataIds = [];
+
         $referenceMetadatas = [];
 
         // Add the core main fields (title and description).
         $template = $resource->getResourceTemplate();
         if ($template) {
-            $titlePropertyId = $template->getTitleProperty();
-            $titlePropertyId = $titlePropertyId ? $titlePropertyId->getId() : 1;
-            $descriptionPropertyId = $template->getDescriptionProperty();
-            $descriptionPropertyId = $descriptionPropertyId ? $descriptionPropertyId->getId() : 4;
+            $templateId = $template->getId();
+            if (!isset($templateDataIds[$templateId])) {
+                $propertyId = $template->getTitleProperty();
+                $templateDataIds[$templateId]['title'] = $propertyId ? $propertyId->getId() : 1;
+                $propertyId = $template->getDescriptionProperty();
+                $templateDataIds[$templateId]['description'] = $propertyId ? $propertyId->getId() : 4;
+            }
+            $titlePropertyId = $templateDataIds[$templateId]['title'];
+            $descriptionPropertyId = $templateDataIds[$templateId]['description'];
         } else {
             $titlePropertyId = 1;
             $descriptionPropertyId = 4;

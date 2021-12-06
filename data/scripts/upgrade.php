@@ -387,5 +387,10 @@ if (version_compare($oldVersion, '3.4.34.3', '<')) {
     $message = new Message(
         'It is possible now to get translated linked resource.' // @translate
     );
+    // Job is not available during upgrade.
     $messenger->addSuccess($message);
+    $message = new Message(
+        'Translated linked resource metadata should be indexed in main settings.' // @translate
+    );
+    $messenger->addWarning($message);
 }
