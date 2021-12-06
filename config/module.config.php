@@ -41,6 +41,7 @@ return [
         'invokables' => [
             Form\Element\DoubleArrayTextarea::class => Form\Element\DoubleArrayTextarea::class,
             Form\Element\OptionalMultiCheckbox::class => Form\Element\OptionalMultiCheckbox::class,
+            Form\SettingsFieldset::class => Form\SettingsFieldset::class,
             Form\SiteSettingsFieldset::class => Form\SiteSettingsFieldset::class,
             Form\ReferenceFieldset::class => Form\ReferenceFieldset::class,
             Form\ReferenceIndexFieldset::class => Form\ReferenceIndexFieldset::class,

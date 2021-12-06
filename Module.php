@@ -43,8 +43,32 @@ class Module extends AbstractModule
             );
     }
 
+    protected function postInstall(): void
+    {
+        $services = $this->getServiceLocator();
+        $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
+        try {
+            $services->get(\Omeka\Job\Dispatcher::class)
+                ->dispatch(\Reference\Job\UpdateReferenceMetadata::class);
+            $message = new \Omeka\Stdlib\Message(
+                'The translated and linked resource metadata are currently indexing.' // @translate
+            );
+        } catch (\Exception $e) {
+            $message = new \Omeka\Stdlib\Message(
+                'Translated linked resource metadata should be indexed in main settings.' // @translate
+            );
+        }
+        $messenger->addWarning($message);
+    }
+
     public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
+        $sharedEventManager->attach(
+            \Omeka\Form\SettingForm::class,
+            'form.add_elements',
+            [$this, 'handleMainSettings']
+        );
+
         $sharedEventManager->attach(
             \Omeka\Form\SiteSettingsForm::class,
             'form.add_elements',
@@ -93,7 +117,7 @@ class Module extends AbstractModule
 
     protected function initDataToPopulate(SettingsInterface $settings, string $settingsType, $id = null, iterable $values = []): bool
     {
-        // Check site settings , because array options cannot be set by default
+        // Check site settings, because array options cannot be set by default
         // automatically.
         if ($settingsType === 'site_settings') {
             $exist = $settings->get('reference_resource_name');
@@ -104,6 +128,76 @@ class Module extends AbstractModule
             }
         }
         return parent::initDataToPopulate($settings, $settingsType, $id, $values);
+    }
+
+    public function handleMainSettings(Event $event): void
+    {
+        /**
+         * @var \Laminas\Form\Fieldset $fieldset
+         * @var \Laminas\Form\Form $form
+         */
+        $services = $this->getServiceLocator();
+        $fieldset = $services->get('FormElementManager')->get(\Reference\Form\SettingsFieldset::class);
+        $fieldset->setName('reference');
+        $form = $event->getTarget();
+        $form->add($fieldset);
+
+        $settings = $services->get('Omeka\Settings');
+        $job = $settings->get('reference_metadata_job');
+        $settings->delete('reference_metadata_job');
+        if (!$job) {
+            return;
+        }
+
+        $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
+        $urlHelper = $services->get('ViewHelperManager')->get('url');
+
+        // Check if a zip job is already running before running a new one.
+        $jobId = $this->checkJob(\Reference\Job\UpdateReferenceMetadata::class);
+        if ($jobId) {
+            $message = new \Omeka\Stdlib\Message(
+                'Another job is running for the same process (job %1$s#%2$d%3$s, %4$slogs%3$s).', // @translate
+                sprintf(
+                    '<a href="%s">',
+                    htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $jobId]))
+                ),
+                $jobId,
+                '</a>',
+                sprintf(
+                    '<a href="%s">',
+                    // Check if module Log is enabled (avoid issue when disabled).
+                    htmlspecialchars(class_exists(\Log\Stdlib\PsrMessage::class)
+                        ? $urlHelper('admin/log/default', [], ['query' => ['job_id' => $jobId]])
+                        : $urlHelper('admin/id', ['controller' => 'job', 'id' => $jobId, 'action' => 'log'])
+                ))
+            );
+            $message->setEscapeHtml(false);
+            $messenger->addWarning($message);
+            return;
+        }
+
+        $job = $services->get(\Omeka\Job\Dispatcher::class)
+            ->dispatch(\Reference\Job\UpdateReferenceMetadata::class);
+        $jobId = $job->getId();
+
+        $message = new \Omeka\Stdlib\Message(
+            'Indexing translated and linked resource metadata in background (job %1$s#%2$d%3$s, %4$slogs%3$s).', // @translate
+            sprintf(
+                '<a href="%s">',
+                htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $jobId]))
+            ),
+            $jobId,
+            '</a>',
+            sprintf(
+                '<a href="%s">',
+                // Check if module Log is enabled (avoid issue when disabled).
+                htmlspecialchars(class_exists(\Log\Stdlib\PsrMessage::class)
+                    ? $urlHelper('admin/log/default', [], ['query' => ['job_id' => $jobId]])
+                    : $urlHelper('admin/id', ['controller' => 'job', 'id' => $jobId, 'action' => 'log'])
+            ))
+        );
+        $message->setEscapeHtml(false);
+        $messenger->addSuccess($message);
     }
 
     public function updateReferenceMetadataApiPost(Event $event): void
@@ -165,5 +259,37 @@ class Module extends AbstractModule
             'DELETE FROM `reference_metadata` WHERE `resource_id` = :resource',
             ['resource' => $resource->getId()]
         );
+    }
+
+    /**
+     * Check if a job is running for a class and return the first running job id.
+     */
+    protected function checkJob(string $class): int
+    {
+        $sql = <<<SQL
+SELECT id, pid, status
+FROM job
+WHERE status IN ("starting", "stopping", "in_progress")
+    AND class = :class
+ORDER BY id ASC;
+SQL;
+
+        $connection = $this->getServiceLocator()->get('Omeka\EntityManager')->getConnection();
+        $result = $connection->executeQuery($sql, ['class' => $class])->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Unselect processes without pid.
+        foreach ($result as $id => $row) {
+            // TODO The check of the pid works only with Linux.
+            if (!$row['pid'] || !file_exists('/proc/' . $row['pid'])) {
+                unset($result[$id]);
+            }
+        }
+
+        if (count($result)) {
+            reset($result);
+            return key($result);
+        }
+
+        return 0;
     }
 }
