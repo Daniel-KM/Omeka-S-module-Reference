@@ -54,6 +54,8 @@ $options['link_to_single'] = $options['link_to_single'] && !$listByMax;
 $isRecursive = $listByMax || $hasSubjectProperty;
 $options['raw_sub'] = $options['raw_sub'] || !$isRecursive;
 
+$querySource = $query;
+
 $queryKeys = [
     'o:ResourceClass' => 'resource_class_id',
     'o:ResourceTemplate' => 'resource_template_id',
@@ -62,7 +64,7 @@ $queryKeys = [
     'resource_templates' => 'resource_template_id',
     'item_sets' => 'item_set_id',
 ];
-$queryKey = @$queryKeys[$field['@type']];
+$queryKey = $queryKeys[$field['@type']] ?? null;
 
 // Set default templates according to options for improved performance.
 $template = '';
@@ -102,38 +104,35 @@ if ($options['raw']) {
         $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}</a>{recursive}</div>' . PHP_EOL;
     }
     if (!$options['custom_url']) {
-        $query = [];
+        // Use the original query as the base of the url, avoiding overriding with the reference value.
+        // The default url helper doesn't encode "&" as "&amp;", so append it manually.
+        $query = $querySource;
         if ($queryKey) {
-            // The default url helper doesn't encode "&" as "&amp;".
-            // $query['resource_class_id'] = $termId;
-            // $query['property'] = [['property' => $propertyTitle, 'type' => 'nex']];
-            // $templateUrlEmpty = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
-            // $query['property'] = [['property' => $propertyTitle, 'type' => 'eq', 'text' => $tempPlaceholder]];
-            // $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
-            $templateUrlEmpty = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false)
-                . '?' . $queryKey . '=' . rawurlencode($termId) . '&amp;property%5B0%5D%5Bproperty%5D=' . rawurlencode($propertyTitle) . '&amp;property%5B0%5D%5Btype%5D=nex';
-            $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false)
-                . '?' . $queryKey . '=' . rawurlencode($termId) . '&amp;property%5B0%5D%5Bproperty%5D=' . rawurlencode($propertyTitle) . '&amp;property%5B0%5D%5Btype%5D=eq&amp;property%5B0%5D%5Btext%5D={reference}';
+            $query[$queryKey][] = $termId;
+            $queryEmpty = $query;
+            $queryEmpty['property'][] = ['property' => $propertyTitle, 'type' => 'nex'];
+            $templateUrlEmpty = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986);
+            $query['property'][] = ['property' => $propertyTitle, 'type' => 'eq', 'text' => '__temp_placeholder__'];
+            $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986);
         } else {
-            // $query['property'] = [['property' => $term, 'type' => 'eq', 'text' => $tempPlaceholder]];
-            // $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
-            // $templateUrl = str_replace($tempPlaceholder, '{reference}', $templateUrl);
-            $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false)
-                . '?property%5B0%5D%5Bproperty%5D=' . rawurlencode($term) . '&amp;property%5B0%5D%5Btype%5D=eq&amp;property%5B0%5D%5Btext%5D={reference}';
+            $query['property'][] = ['property' => $term, 'type' => 'eq', 'text' => '__temp_placeholder__'];
+            $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986);
         }
+        $templateUrl = str_replace('__temp_placeholder__', '{reference}', $templateUrl);
     }
 }
 
-$querier = function ($reference, $emptyReferenceValue, $limit = null) use ($term, $termId, $queryKey, $propertyTitle) {
+$querier = function ($reference, $emptyReferenceValue, $limit = null) use ($term, $termId, $querySource, $queryKey, $propertyTitle) {
+    $query = $querySource;
     if ($queryKey) {
-        $query = [];
-        $query[$queryKey] = $termId;
-        $query['property'] = $emptyReferenceValue
-            ? [['property' => $propertyTitle, 'type' => 'nex'], 'limit' => $limit]
-            : [['property' => $propertyTitle, 'type' => 'eq', 'text' => $reference], 'limit' => $limit];
+        $query[$queryKey][] = $termId;
+        $query['property'][] = $emptyReferenceValue
+            ? ['property' => $propertyTitle, 'type' => 'nex']
+            : ['property' => $propertyTitle, 'type' => 'eq', 'text' => $reference];
     } else {
-        $query = ['property' => [['property' => $term, 'type' => 'eq', 'text' => $reference]], 'limit' => $limit];
+        $query['property'][] = ['property' => $term, 'type' => 'eq', 'text' => $reference];
     }
+    $query['limit'] = $limit;
     return $query;
 };
 ?>
