@@ -203,7 +203,9 @@ return [
             ],
             'referenceTree' => [
                 'heading' => 'Tree of subjects', // @translate
-                'term' => 'dcterms:subject',
+                'fields' => [
+                    'dcterms:subject',
+                ],
                 'tree' => [],
                 'resource_name' => 'items',
                 'query' => [],

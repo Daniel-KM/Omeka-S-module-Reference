@@ -148,7 +148,9 @@ class ReferenceTree extends AbstractPlugin
         }
 
         $default = [
-            'term' => 'dcterms:subject',
+            'fields' => [
+                'dcterms:subject',
+            ],
             'type' => 'properties',
             'resource_name' => 'items',
             'branch' => false,
@@ -184,9 +186,8 @@ class ReferenceTree extends AbstractPlugin
             }, $referenceLevels);
             $options['values'] = $lowerReferences;
         }
-        $ref = $this->references;
-        $totals = $ref([$options['term']], $query, $options)->list();
-        $totals = isset($totals[$options['term']]) ? $totals[$options['term']]['o:references'] : [];
+        $totals = $this->references->__invoke(['tree' => $options['fields']], $query, $options)->list();
+        $totals = isset($totals['tree']) ? $totals['tree']['o:references'] : [];
 
         $lowerValues = [];
         foreach ($totals as $value) {

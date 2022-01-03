@@ -24,18 +24,18 @@ class ReferenceTreeFieldset extends Fieldset
                 ],
             ])
             ->add([
-                'name' => 'o:block[__blockIndex__][o:data][term]',
+                'name' => 'o:block[__blockIndex__][o:data][fields]',
                 'type' => OmekaElement\PropertySelect::class,
                 'options' => [
-                    'label' => 'Property', // @translate
+                    'label' => 'Properties', // @translate
                     'term_as_value' => true,
                     'empty_option' => '',
                 ],
                 'attributes' => [
-                    'id' => 'reference-tree-term',
+                    'id' => 'reference-tree-fields',
                     'required' => true,
                     'class' => 'chosen-select',
-                    'data-placeholder' => 'Select a property…', // @translate
+                    'data-placeholder' => 'Select properties…', // @translate
                 ],
             ])
             ->add([

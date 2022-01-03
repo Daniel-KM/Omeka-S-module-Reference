@@ -296,7 +296,9 @@ class References extends AbstractHelper
     public function displayTree($referenceLevels, ?array $query = [], ?array $options = []): string
     {
         $default = [
-            'term' => 'dcterms:subject',
+            'fields' => [
+                'dcterms:subject',
+            ],
             'type' => 'properties',
             'resource_name' => 'items',
             'branch' => null,
