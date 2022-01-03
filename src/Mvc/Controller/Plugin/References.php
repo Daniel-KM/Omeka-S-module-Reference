@@ -1418,6 +1418,9 @@ class References extends AbstractPlugin
     /**
      * Filter the list of references with a column.
      *
+     * The special key "0-9" allows to get any non-alphabetic characters.
+     * @todo The special "0-9" cannot be mixed currently.
+     *
      *  @param string The column to filter, for example "value.value" (default),
      *  "val", or "resource.title".
      */
@@ -1442,12 +1445,19 @@ class References extends AbstractPlugin
                 // Use "or like" in most of the cases, else a regex (slower).
                 // TODO Add more checks and a php unit.
                 if (count($this->options['filters'][$filter]) === 1) {
-                    $qb
-                        ->andWhere($expr->like($column, ":filter_$filter"))
-                        ->setParameter(
-                            "filter_$filter",
-                            $filterB . str_replace(['%', '_'], ['\%', '\_'], reset($this->options['filters'][$filter])) . $filterE
-                        );
+                    $firstFilter = reset($this->options['filters'][$filter]);
+                    if ($firstFilter === '0-9') {
+                        $qb
+                            ->andWhere("REGEXP($column, :filter_09) = false")
+                            ->setParameter('filter_09', $filter === 'begin' ? '^[[:alpha:]]' :  '[[:alpha:]]$');
+                    } else {
+                        $qb
+                            ->andWhere($expr->like($column, ":filter_$filter"))
+                            ->setParameter(
+                                "filter_$filter",
+                                $filterB . str_replace(['%', '_'], ['\%', '\_'], $firstFilter) . $filterE
+                            );
+                    }
                 } elseif (count($this->options['filters'][$filter]) <= 20) {
                     $orX = [];
                     foreach (array_values($this->options['filters'][$filter]) as $key => $string) {
