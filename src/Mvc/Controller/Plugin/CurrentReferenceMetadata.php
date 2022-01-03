@@ -2,12 +2,23 @@
 
 namespace Reference\Mvc\Controller\Plugin;
 
+use Laminas\Log\Logger;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Entity\Resource;
 use Reference\Entity\Metadata as ReferenceMetadata;
 
 class CurrentReferenceMetadata extends AbstractPlugin
 {
+    /**
+     * @var \Laminas\Log\Logger
+     */
+    protected $logger;
+
+    public function __construct(Logger $logger)
+    {
+        $this->logger = $logger;
+    }
+
     /**
      * Get the references metadata of a resource from it.
      *
@@ -155,7 +166,7 @@ class CurrentReferenceMetadata extends AbstractPlugin
             }
             $subValueResource = $subValue->getValueResource();
             if ($subValueResource && $count > 10) {
-                $this->getController()->logger()->warn(sprintf(
+                $this->logger->warn(sprintf(
                     'Resource #%d has a recursive title.', // @translate
                     // TODO Ideally, get initial source value id. Probably very rare anyway above one or two levels.
                     $value->getResource()->getId()

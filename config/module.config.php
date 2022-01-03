@@ -61,10 +61,8 @@ return [
         ],
     ],
     'controller_plugins' => [
-        'invokables' => [
-            'currentReferenceMetadata' => Mvc\Controller\Plugin\CurrentReferenceMetadata::class,
-        ],
         'factories' => [
+            'currentReferenceMetadata' => Service\ControllerPlugin\CurrentReferenceMetadataFactory::class,
             'references' => Service\ControllerPlugin\ReferencesFactory::class,
             'referenceTree' => Service\ControllerPlugin\ReferenceTreeFactory::class,
         ],
