@@ -102,17 +102,17 @@ class References extends AbstractPlugin
     /**
      * @var array
      */
-    protected $metadata;
+    protected $metadata = [];
 
     /**
      * @var array
      */
-    protected $query;
+    protected $query = [];
 
     /**
      * @var array
      */
-    protected $options;
+    protected $options = [];
 
     public function __construct(
         EntityManager $entityManager,
@@ -183,7 +183,7 @@ class References extends AbstractPlugin
      * Some options and some combinations are not managed for some metadata.
      * @return self
      */
-    public function __invoke(array $metadata = null, array $query = null, array $options = null)
+    public function __invoke(?array $metadata = [], ?array $query = [], ?array $options = [])
     {
         return $this
             ->setMetadata($metadata)
@@ -195,11 +195,8 @@ class References extends AbstractPlugin
      * List of metadata to get references for.
      *
      * A metadata may be a single field, or an array of fields.
-
-     * @param array $metadata
-     * @return self
      */
-    public function setMetadata(array $metadata = null)
+    public function setMetadata(?array $metadata = [])
     {
         $this->metadata = $metadata ?: [];
 
@@ -218,47 +215,37 @@ class References extends AbstractPlugin
         return $this;
     }
 
-    /**
-     * @return array
-     */
-    public function getMetadata()
+    public function getMetadata(): array
     {
         return $this->metadata;
     }
 
-    /**
-     * @param array $query
-     * @return self
-     */
-    public function setQuery(array $query = null)
+    public function setQuery(?array $query = []): self
     {
         // Remove useless keys.
         $filter = function ($v) {
             return is_string($v) ? (bool) strlen($v) : (bool) $v;
         };
-        unset($query['sort_by']);
-        unset($query['sort_order']);
-        unset($query['per_page']);
-        unset($query['page']);
-        unset($query['offset']);
-        unset($query['limit']);
-        $this->query = $query ? array_filter($query, $filter) : [];
+        if ($query) {
+            unset($query['sort_by']);
+            unset($query['sort_order']);
+            unset($query['per_page']);
+            unset($query['page']);
+            unset($query['offset']);
+            unset($query['limit']);
+            $this->query = array_filter($query, $filter);
+        } else {
+            $this->query = [];
+        }
         return $this;
     }
 
-    /**
-     * @return array
-     */
-    public function getQuery()
+    public function getQuery(): array
     {
         return $this->query;
     }
 
-    /**
-     * @param array $options
-     * @return self
-     */
-    public function setOptions(array $options = null)
+    public function setOptions(?array $options = []): self
     {
         $defaults = [
             'resource_name' => 'items',
@@ -377,10 +364,7 @@ class References extends AbstractPlugin
         return $this;
     }
 
-    /**
-     * @return array
-     */
-    public function getOptions()
+    public function getOptions(): array
     {
         return $this->options;
     }

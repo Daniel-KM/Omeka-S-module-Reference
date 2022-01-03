@@ -93,20 +93,14 @@ class References extends AbstractHelper
      * @return array Associative array with total and first record ids. When a
      * string is set as metadata, only its references are returned.
      */
-    public function list($metadata = null, array $query = null, array $options = null): array
+    public function list($metadata = null, ?array $query = [], ?array $options = []): array
     {
-        $ref = $this->references;
-        if (is_string($metadata)) {
-            // Check if it is a short metadata list.
-            $isSingle = strpos($metadata, ',') === false;
-            $metadata = $isSingle
-                ? [$metadata]
-                : array_filter(array_map('trim', explode(',', $metadata)));
-        } else {
-            $isSingle = false;
+        $isSingle = !is_array($metadata);
+        if ($isSingle) {
+            $metadata = ['fields' => $metadata];
         }
-        $list = $ref($metadata, $query, $options)->list();
-        return $isSingle ? reset($list) : $list;
+        $result = $this->references->__invoke($metadata, $query, $options)->list();
+        return $isSingle ? reset($result) : $result;
     }
 
     /**
@@ -119,15 +113,14 @@ class References extends AbstractHelper
      * @param array $options
      * @return int|array The total or an associative array with the metadata and the total.
      */
-    public function count($metadata = null, array $query = null, array $options = null)
+    public function count($metadata = null, ?array $query = [], ?array $options = [])
     {
-        $ref = $this->references;
         $isSingle = !is_array($metadata);
         if ($isSingle) {
-            $metadata = [$metadata];
+            $metadata = ['fields' => $metadata];
         }
-        $count = $ref($metadata, $query, $options)->count();
-        return $isSingle ? reset($count) : $count;
+        $result = $this->references->__invoke($metadata, $query, $options)->count();
+        return $isSingle ? reset($result) : $result;
     }
 
     /**
