@@ -151,8 +151,8 @@ if ($options['skiplinks']):
     <?php
 
     $referenceUrl = '';
-    $current_heading = '';
-    $current_heading_id = '';
+    $currentHeading = '';
+    $currentHeadingId = '';
     foreach ($references as $referenceData):
         $emptyReferenceValue = is_null($referenceData['val']);
         $referenceValue = $emptyReferenceValue ? $emptyTitle : $referenceData['val'];
@@ -163,23 +163,23 @@ if ($options['skiplinks']):
         // Add the first character as header if wanted.
         if ($options['headings']) {
             if ($hasInitial) {
-                $first_char = $referenceData['initial'];
+                $firstChar = $referenceData['initial'];
             } else {
-                $first_char = mb_strtoupper(mb_substr($reference, 0, 1));
-                if (!strlen($first_char)) {
-                    $first_char = '#0-9';
+                $firstChar = mb_strtoupper(mb_substr($reference, 0, 1));
+                if (!strlen($firstChar)) {
+                    $firstChar = '#0-9';
                 }
             }
-            if (preg_match('/\W|\d/u', $first_char)) {
-                $first_char = '#0-9';
+            if (preg_match('/\W|\d/u', $firstChar)) {
+                $firstChar = '#0-9';
             }
-            $current_first_char = $first_char;
-            if ($current_heading !== $current_first_char) {
-                $current_heading = $current_first_char;
-                $current_heading_id = $current_heading === '#0-9' ? 'number' : $current_heading;
+            $currentFirstChar = $firstChar;
+            if ($currentHeading !== $currentFirstChar) {
+                $currentHeading = $currentFirstChar;
+                $currentHeadingId = $currentHeading === '#0-9' ? 'number' : $currentHeading;
                 $heading = [
-                    '{heading_id}' => $current_heading_id,
-                    '{heading_text}' => $current_heading,
+                    '{heading_id}' => $currentHeadingId,
+                    '{heading_text}' => $currentHeading,
                 ];
                 $heading = str_replace(array_keys($heading), array_values($heading), $templateHeading);
                 $replace['{heading}'] = $heading;

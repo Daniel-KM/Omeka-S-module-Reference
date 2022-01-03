@@ -612,7 +612,6 @@ class References extends AbstractPlugin
 
         if ($this->options['locale']) {
             $qb
-                // Select either the
                 ->select(
                     $val = 'refmeta.text AS val',
                     // "Distinct" avoids to count duplicate values in properties in
@@ -823,7 +822,7 @@ class References extends AbstractPlugin
 
         $qb
             ->select(
-                // 'property.label as val',
+                // 'property.label AS val',
                 // Important: use single quote for string ":", else doctrine fails.
                 "CONCAT(vocabulary.prefix, ':', property.localName) AS val",
                 // "Distinct" avoids to count resources with multiple
@@ -883,7 +882,7 @@ class References extends AbstractPlugin
 
         $qb
             ->select(
-                // 'resource_class.label as val',
+                // 'resource_class.label AS val',
                 // Important: use single quote for string ":", else doctrine fails.
                 "CONCAT(vocabulary.prefix, ':', resource_class.localName) AS val",
                 'COUNT(resource.id) AS total'
@@ -930,7 +929,7 @@ class References extends AbstractPlugin
 
         $qb
             ->select(
-                'resource_template.label as val',
+                'resource_template.label AS val',
                 'COUNT(resource.id) AS total'
             )
             // The use of resource checks visibility automatically.
@@ -980,7 +979,7 @@ class References extends AbstractPlugin
 
         $qb
             ->select(
-                'item_set.id as val',
+                'item_set.id AS val',
                 'COUNT(resource.id) AS total'
             )
             // The use of resource checks visibility automatically.
@@ -1030,7 +1029,7 @@ class References extends AbstractPlugin
 
         $qb
             ->select(
-                'user.name as val',
+                'user.name AS val',
                 'COUNT(resource.id) AS total'
             )
             // The use of resource checks visibility automatically.
@@ -1072,7 +1071,7 @@ class References extends AbstractPlugin
 
         $qb
             ->select(
-                'site.slug as val',
+                'site.slug AS val',
                 'COUNT(resource.id) AS total'
             )
             // The use of resource checks visibility automatically.
@@ -1207,6 +1206,8 @@ class References extends AbstractPlugin
             && $this->options['initial']
         ) {
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
+            // "initial" is a reserved word from the version 8.0.27 of Mysql,
+            // but doctrine renames all aliases before and after querying.
             $qb
                 ->addSelect(
                     // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
@@ -1564,6 +1565,11 @@ class References extends AbstractPlugin
         });
     }
 
+    /**
+     * Count the total of distinct values for a list of properties.
+     *
+     * @return int The number of references for each type, according to query.
+     */
     protected function countResourcesForProperties(array $propertyIds): int
     {
         if (empty($propertyIds)) {
@@ -1595,6 +1601,11 @@ class References extends AbstractPlugin
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
+    /**
+     * Count the total of distinct values for a list of resource classes.
+     *
+     * @return int The number of references for each type, according to query.
+     */
     protected function countResourcesForResourceClasses(array $resourceClassIds): int
     {
         if (empty($resourceClassIds)) {
@@ -1622,6 +1633,11 @@ class References extends AbstractPlugin
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
+    /**
+     * Count the total of distinct values for a list of resource templates.
+     *
+     * @return int The number of references for each type, according to query.
+     */
     protected function countResourcesForResourceTemplates(array $resourceTemplateIds): int
     {
         if (empty($resourceTemplateIds)) {
@@ -1649,6 +1665,11 @@ class References extends AbstractPlugin
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
+    /**
+     * Count the total of distinct values for a list of item sets.
+     *
+     * @return int The number of references for each type, according to query.
+     */
     protected function countResourcesForItemSets(array $itemSetIds): int
     {
         if (empty($itemSetIds)) {

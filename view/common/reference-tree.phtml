@@ -33,7 +33,7 @@ $options += [
     'custom_url' => false,
 ];
 $options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
-if (!$options['custom_url']):
+if (!$options['custom_url']) {
     $tempPlaceholder = '00999999990999999001';
     $templateUrlSingle = str_replace($tempPlaceholder, '{reference}',
         $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $tempPlaceholder], false));
@@ -45,7 +45,7 @@ if (!$options['custom_url']):
     ];
     $templateUrl = str_replace($tempPlaceholder, '{reference}',
         $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false));
-endif;
+}
 ?>
 
 <div id="reference-headings">
@@ -82,35 +82,35 @@ endif;
                     echo '<li>';
                 endif;
 
-                if ($options['raw']):
+                if ($options['raw']) {
                     $referenceText = $reference;
                     $referenceNumber = true;
-                else:
+                } else {
                     $referenceNumber = !$options['link_to_single'] || $referenceData['total'] > 1;
-                    if (empty($referenceData['total'])):
+                    if (empty($referenceData['total'])) {
                         $referenceText = '<span class="no-resource">' . $reference . '</span>';
-                    else:
-                        if ($referenceNumber):
+                    } else {
+                        if ($referenceNumber) {
                             $referenceOrBranch = $options['branch'] ? $referenceData['branch'] : $reference;
-                            if ($options['custom_url']):
+                            if ($options['custom_url']) {
                                 $query = ['property' => [['property' => $term, 'type' => $options['query_type'], 'text' => $referenceOrBranch]]];
                                 $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false);
-                            else:
+                            } else {
                                 $referenceUrl = str_replace('{reference}', rawurlencode($referenceOrBranch), $templateUrl);
-                            endif;
-                        else:
-                            if ($options['custom_url']):
+                            }
+                        } else {
+                            if ($options['custom_url']) {
                                 // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
                                 // $resource = $api()->read($resourceName, $referenceData['first'])->getContent();
                                 // $referenceUrl = $resource->siteUrl();
                                 $referenceUrl = $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $referenceData['first']], false);
-                            else:
+                            } else {
                                 $referenceUrl = str_replace('{reference}', rawurldecode($referenceData['first']), $templateUrlSingle);
-                            endif;
-                        endif;
+                            }
+                        }
                         $referenceText = $hyperlink($reference, $referenceUrl);
-                    endif;
-                endif;
+                    }
+                }
 
                 echo $referenceText;
                 // Can be null when references are set directly.
