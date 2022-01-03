@@ -1570,14 +1570,14 @@ class References extends AbstractPlugin
         $qb
             ->select(
                 // Here, this is the count of references, not resources.
-                $expr->countDistinct('value.value')
+                $expr->countDistinct('refmeta.text')
             )
-            ->from(\Omeka\Entity\Value::class, 'value')
+            ->from(\Reference\Entity\Metadata::class, 'refmeta')
             // This join allow to check visibility automatically too.
-            ->innerJoin(\Omeka\Entity\Resource::class, 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
-            ->andWhere($expr->in('value.property', ':properties'))
-            ->setParameter('properties', array_map('intval', $propertyIds), Connection::PARAM_INT_ARRAY)
-            ->andWhere($expr->isNotNull('value.value'));
+            ->innerJoin(\Omeka\Entity\Resource::class, 'resource', Join::WITH, $expr->eq('refmeta.resource', 'resource'))
+            ->andWhere($expr->in('refmeta.field', ':properties'))
+            ->setParameter('properties', $this->getPropertyTerms($propertyIds), Connection::PARAM_STR_ARRAY)
+        ;
 
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
