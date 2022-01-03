@@ -49,8 +49,8 @@ $initials = array_merge($alphabet, $initials);
 if (empty($initials['0-9'])) unset($initials['0-9']);
 
 if (!empty($options['by_initial'])) {
-    $baseUrl = $this->url(null, [], true) . '?initial=';
-    $initial = $this->params()->fromQuery('initial');
+    $baseUrl = $this->url(null, [], true) . '?begin=';
+    $initial = $this->params()->fromQuery('begin');
     $active = $initial ? mb_strtolower($initial) : 'a';
 } else {
     $baseUrl = '#';

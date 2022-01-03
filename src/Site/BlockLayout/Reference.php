@@ -179,7 +179,7 @@ class Reference extends AbstractBlockLayout
 
         $byInitial = !empty($options['by_initial']);
         if ($byInitial) {
-            $options['filters']['begin'] = $view->params()->fromQuery('initial') ?: 'a';
+            $options['filters']['begin'] = $view->params()->fromQuery('begin') ?: 'a';
         }
 
         $options['sort_order'] = reset($args['order']);
