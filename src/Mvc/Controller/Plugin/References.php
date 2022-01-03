@@ -2114,6 +2114,19 @@ class References extends AbstractPlugin
     }
 
     /**
+     * Get property terms by JSON-LD terms or by numeric ids.
+     *
+     * @return string[]
+     */
+    protected function getPropertyTerms(array $termsOrIds): array
+    {
+        if (is_null($this->propertiesByTermsAndIds)) {
+            $this->prepareProperties();
+        }
+        return array_column(array_intersect_key($this->propertiesByTermsAndIds, array_flip($termsOrIds)), 'o:term');
+    }
+
+    /**
      * Get a property id by JSON-LD term or by numeric id.
      */
     protected function getPropertyId($termOrId): ?int
@@ -2197,6 +2210,19 @@ class References extends AbstractPlugin
             $this->prepareResourceClasses();
         }
         return array_column(array_intersect_key($this->resourceClassesByTermsAndIds, array_flip($termsOrIds)), 'o:id');
+    }
+
+    /**
+     * Get resource class terms by JSON-LD terms or by numeric ids.
+     *
+     * @return string[]
+     */
+    protected function getResourceClassTerms(array $termsOrIds): array
+    {
+        if (is_null($this->resourceClassesByTermsAndIds)) {
+            $this->prepareResourceClasses();
+        }
+        return array_column(array_intersect_key($this->resourceClassesByTermsAndIds, array_flip($termsOrIds)), 'o:term');
     }
 
     /**
@@ -2286,6 +2312,19 @@ class References extends AbstractPlugin
     }
 
     /**
+     * Get resource template labels by labels or by numeric ids.
+     *
+     * @return string[]
+     */
+    protected function getResourceTemplateLabels(array $labelsOrIds): array
+    {
+        if (is_null($this->resourceTemplatesByLabelsAndIds)) {
+            $this->prepareResourceTemplates();
+        }
+        return array_column(array_intersect_key($this->resourceTemplatesByLabelsAndIds, array_flip($labelsOrIds)), 'o:label');
+    }
+
+    /**
      * Get resource template id by label or by numeric id.
      */
     protected function getResourceTemplateId($labelOrId): ?int
@@ -2367,6 +2406,21 @@ class References extends AbstractPlugin
             $this->prepareItemSets();
         }
         return array_column(array_intersect_key($this->itemSetsByTitlesAndIds, array_flip($titlesOrIds)), 'o:id');
+    }
+
+    /**
+     * Get item set titles by title or by numeric ids.
+     *
+     * Warning, titles are not unique.
+     *
+     * @return string[]
+     */
+    protected function getItemSetTitles(array $titlesOrIds): array
+    {
+        if (is_null($this->itemSetsByTitlesAndIds)) {
+            $this->prepareItemSets();
+        }
+        return array_column(array_intersect_key($this->itemSetsByTitlesAndIds, array_flip($titlesOrIds)), 'o:label');
     }
 
     /**
