@@ -186,7 +186,9 @@ return [
             ],
             'referenceIndex' => [
                 'args' => [
-                    'terms' => ['dcterms:subject'],
+                    'fields' => [
+                        'dcterms:subject',
+                    ],
                     'type' => 'properties',
                     'resource_name' => 'items',
                     'order' => ['alphabetic' => 'ASC'],

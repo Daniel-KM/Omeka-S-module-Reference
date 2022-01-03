@@ -405,4 +405,14 @@ if (version_compare($oldVersion, '3.4.35.3', '<')) {
         $entityManager->persist($block);
     }
     $entityManager->flush();
+
+    $blocks = $repository->findBy(['layout' => 'referenceIndex']);
+    foreach ($blocks as $block) {
+        $data = $block->getData();
+        $data['args']['fields'] = $data['args']['terms'];
+        // The term is kept for compatibility with old themes, at least until edition of the page.
+        $block->setData($data);
+        $entityManager->persist($block);
+    }
+    $entityManager->flush();
 }

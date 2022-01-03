@@ -2,7 +2,7 @@
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
  * @var \Omeka\Api\Representation\SiteRepresentation $site
- * @var array $metadata
+ * @var array $fields
  * @var array $query
  * @var array $options
  */
@@ -13,31 +13,31 @@ $url = $this->plugin('url');
 $api = $this->plugin('api');
 $siteSlug = $site->slug();
 
-$totals = $this->references()->count($metadata, $query, $options);
+$totals = $this->references()->count($fields, $query, $options);
 
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 ?>
 
 <ul class="references">
-    <?php foreach ($metadata as $term): ?>
+    <?php foreach ($fields as $field): ?>
     <li><?php
     if (@$options['total']):
         // TODO Get the properties and classes labels one time.
-        $element = $api->searchOne('properties', ['term' => $term])->getContent() ?: $api->searchOne('resource_classes', ['term' => $term])->getContent();
-        $total = $totals[$term];
+        $element = $api->searchOne('properties', ['term' => $field])->getContent() ?: $api->searchOne('resource_classes', ['term' => $field])->getContent();
+        $total = $totals[$field];
         echo $hyperlink(
             sprintf($translate('%s (%d)'), $element->label(), $total),
             // TODO Define the link to the reference page.
-            $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $term)]),
+            $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $field)]),
             ['title' => sprintf($translate('Browse %s'), $element->label())]
         );
     else:
-        $element = $api->searchOne('properties', ['term' => $term])->getContent() ?: $api->searchOne('resource_classes', ['term' => $term])->getContent();
-        $total = $totals[$term];
+        $element = $api->searchOne('properties', ['term' => $field])->getContent() ?: $api->searchOne('resource_classes', ['term' => $field])->getContent();
+        $total = $totals[$field];
         echo $hyperlink(
             $element->label(),
             // TODO Define the link to the reference page.
-            $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $term)]),
+            $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $field)]),
             ['title' => sprintf($translate('Browse %s'), $element->label())]
         );
     endif;
