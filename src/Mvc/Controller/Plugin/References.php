@@ -6,9 +6,11 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
+use Laminas\EventManager\Event;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Api\Adapter\AbstractResourceEntityAdapter;
 use Omeka\Api\Adapter\Manager as AdapterManager;
+use Omeka\Api\Request;
 use Omeka\Entity\User;
 use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Mvc\Controller\Plugin\Translate;
@@ -309,7 +311,7 @@ class References extends AbstractPlugin
             }
             $this->options = [
                 'resource_name' => $resourceName,
-                'entity_class' => $this->mapResourceNameToEntity($resourceName),
+                'entity_class' => $this->mapResourceNameToEntityClass($resourceName),
                 'per_page' => isset($options['per_page']) && is_numeric($options['per_page']) ? (int) $options['per_page'] : $defaults['per_page'],
                 'page' => $options['page'] ?? $defaults['page'],
                 'sort_by' => $options['sort_by'] ?? 'alphabetic',
@@ -1688,16 +1690,18 @@ class References extends AbstractPlugin
             return $this;
         }
 
-        $subQb = $this->entityManager->createQueryBuilder()
-            ->select('omeka_root.id')
-            ->from($this->options['entity_class'], 'omeka_root');
+        if (empty($this->options['entity_class']) || $this->options['entity_class'] === \Omeka\Entity\Resource::class) {
+            return $this;
+        }
+
+        $resourceName = $this->mapEntityClassToResourceName($this->options['entity_class']);
+        if (empty($resourceName)) {
+            return $this;
+        }
 
         $expr = $qb->expr();
 
-        // Support of "starts with" is needed to get all subjects for a letter.
-        // So, the properties part of the query is managed separately.
         $mainQuery = $this->query;
-        unset($mainQuery['property']);
 
         // When searching by item set or site, remove the matching query filter.
         if ($type === 'o:item_set') {
@@ -1708,10 +1712,13 @@ class References extends AbstractPlugin
         }
 
         /**
-         * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::search()
          * @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter
+         * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::search()
          */
         $adapter = $this->adapterManager->get($this->options['resource_name']);
+        $subQb = $this->entityManager->createQueryBuilder()
+            ->select('omeka_root.id')
+            ->from($this->options['entity_class'], 'omeka_root');
         $adapter->buildBaseQuery($subQb, $mainQuery);
         $adapter->buildQuery($subQb, $mainQuery);
 
@@ -1719,16 +1726,22 @@ class References extends AbstractPlugin
         if (isset($this->query['fulltext_search'])) {
             $this->buildFullTextSearchQuery($subQb, $adapter);
         }
+        $subQb->groupBy('omeka_root.id');
 
-        // Managed separated properties.
-        if (isset($this->query['property']) && is_array($this->query['property'])) {
-            $this->buildPropertyQuery($subQb, $adapter);
-        }
+        $request = new Request('search', $resourceName);
+        $request->setContent($mainQuery);
+        $event = new Event('api.search.query', $adapter, [
+            'queryBuilder' => $subQb,
+            'request' => $request,
+        ]);
+        $adapter->getEventManager()->triggerEvent($event);
+
+        $subQb->select('omeka_root.id');
 
         // TODO Manage not only standard visibility, but modules ones.
         // TODO Check the visibility for the main queries.
         // Set visibility constraints for users without "view-all" privilege.
-        if (!$this->acl->userIsAllowed('Omeka\Entity\Resource', 'view-all')) {
+        if (!$this->acl->userIsAllowed(\Omeka\Entity\Resource::class, 'view-all')) {
             $constraints = $expr->eq('omeka_root.isPublic', true);
             if ($this->user) {
                 // Users can view all resources they own.
@@ -1746,11 +1759,12 @@ class References extends AbstractPlugin
 
         $subParams = $subQb->getParameters();
         foreach ($subParams as $parameter) {
-            $qb->setParameter(
-                $parameter->getName(),
-                $parameter->getValue(),
-                $parameter->getType()
-            );
+            $qb
+                ->setParameter(
+                    $parameter->getName(),
+                    $parameter->getValue(),
+                    $parameter->getType()
+                );
         }
 
         return $this;
@@ -1763,6 +1777,7 @@ class References extends AbstractPlugin
      *
      * This is an adaptation of the core method, except rights check.
      * @see \Omeka\Module::searchFulltext()
+     * @see \Folksonomy\View\helper\TagCloud
      */
     protected function buildFullTextSearchQuery(QueryBuilder $qb, AbstractResourceEntityAdapter $adapter): self
     {
@@ -1797,365 +1812,6 @@ class References extends AbstractPlugin
             // addOrderBy(). This should ensure that ordering by relevance
             // is the first thing being ordered.
             ->orderBy($match, 'DESC');
-
-        return $this;
-    }
-
-    /**
-     * Improve the default property query for resources.
-     *
-     * @todo Unlike advanced search, does not manage excluded fields.
-     *
-     * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
-     * @see \AdvancedSearch\Listener\SearchResourcesListener::buildPropertyQuery()
-     *
-     * Complete \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
-     *
-     * Query format:
-     *
-     * - property[{index}][joiner]: "and" OR "or" OR "not" joiner with previous query
-     * - property[{index}][property]: property ID
-     * - property[{index}][text]: search text
-     * - property[{index}][type]: search type
-     * - property[{index}][datatype]: filter on data type(s)
-     *   - eq: is exactly (core)
-     *   - neq: is not exactly (core)
-     *   - in: contains (core)
-     *   - nin: does not contain (core)
-     *   - ex: has any value (core)
-     *   - nex: has no value (core)
-     *   - list: is in list
-     *   - nlist: is not in list
-     *   - sw: starts with
-     *   - nsw: does not start with
-     *   - ew: ends with
-     *   - new: does not end with
-     *   - res: has resource (core)
-     *   - nres: has no resource (core)
-     *   - dtp: has data type
-     *   - ndtp: does not have data type
-     *   For date time only for now (a check is done to have a meaningful answer):
-     *   TODO Remove the check for valid date time? Add another key (before/after)?
-     *   Of course, it's better to use Numeric Data Types.
-     *   - gt: greater than (after)
-     *   - gte: greater than or equal
-     *   - lte: lower than or equal
-     *   - lt: lower than (before)
-     *
-     * @param QueryBuilder $qb
-     * @param AbstractResourceEntityAdapter $adapter
-     */
-    protected function buildPropertyQuery(QueryBuilder $qb, AbstractResourceEntityAdapter $adapter): self
-    {
-        if (empty($this->query['property']) || !is_array($this->query['property'])) {
-            return $this;
-        }
-
-        $valuesJoin = 'omeka_root.values';
-        $where = '';
-        $expr = $qb->expr();
-
-        $escape = function ($string) {
-            return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], (string) $string);
-        };
-
-        $reciprocalQueryTypes = [
-            'eq' => 'neq',
-            'neq' => 'eq',
-            'in' => 'nin',
-            'nin' => 'in',
-            'ex' => 'nex',
-            'nex' => 'ex',
-            'list' => 'nlist',
-            'nlist' => 'list',
-            'sw' => 'nsw',
-            'nsw' => 'sw',
-            'ew' => 'new',
-            'new' => 'ew',
-            'res' => 'nres',
-            'nres' => 'res',
-            'dtp' => 'ndtp',
-            'ndtp' => 'dtp',
-            'gt' => 'lte',
-            'gte' => 'lt',
-            'lte' => 'gt',
-            'lt' => 'gte',
-        ];
-
-        foreach ($this->query['property'] as $queryRow) {
-            if (!(
-                is_array($queryRow)
-                && array_key_exists('property', $queryRow)
-                && array_key_exists('type', $queryRow)
-            )) {
-                continue;
-            }
-
-            $queryType = $queryRow['type'];
-            $joiner = $queryRow['joiner'] ?? '';
-            $value = $queryRow['text'] ?? '';
-            $dataType = $queryRow['datatype'] ?? '';
-
-            // A value can be an array with types "list" and "nlist".
-            if (!is_array($value)
-                && !strlen((string) $value)
-                && $queryType !== 'nex'
-                && $queryType !== 'ex'
-            ) {
-                continue;
-            }
-
-            // Invert the query type for joiner "not".
-            if ($joiner === 'not') {
-                $joiner = 'and';
-                $queryType = $reciprocalQueryTypes[$queryType];
-            }
-
-            $propertyIds = $queryRow['property'];
-            if ($propertyIds) {
-                $propertyIds = $this->getPropertyIds(is_array($propertyIds) ? $propertyIds : [$propertyIds]);
-            }
-
-            $valuesAlias = $adapter->createAlias();
-            $positive = true;
-            $incorrectValue = false;
-
-            switch ($queryType) {
-                case 'neq':
-                    $positive = false;
-                    // no break.
-                case 'eq':
-                    $param = $adapter->createNamedParameter($qb, $value);
-                    $subqueryAlias = $adapter->createAlias();
-                    $subquery = $this->entityManager
-                        ->createQueryBuilder()
-                        ->select("$subqueryAlias.id")
-                        ->from('Omeka\Entity\Resource', $subqueryAlias)
-                        ->where($expr->eq("$subqueryAlias.title", $param));
-                    $predicateExpr = $expr->orX(
-                        $expr->in("$valuesAlias.valueResource", $subquery->getDQL()),
-                        $expr->eq("$valuesAlias.value", $param),
-                        $expr->eq("$valuesAlias.uri", $param)
-                    );
-                    break;
-
-                case 'nin':
-                    $positive = false;
-                    // no break.
-                case 'in':
-                    $param = $adapter->createNamedParameter($qb, '%' . $escape($value) . '%');
-                    $subqueryAlias = $adapter->createAlias();
-                    $subquery = $this->entityManager
-                        ->createQueryBuilder()
-                        ->select("$subqueryAlias.id")
-                        ->from('Omeka\Entity\Resource', $subqueryAlias)
-                        ->where($expr->like("$subqueryAlias.title", $param));
-                    $predicateExpr = $expr->orX(
-                        $expr->in("$valuesAlias.valueResource", $subquery->getDQL()),
-                        $expr->like("$valuesAlias.value", $param),
-                        $expr->like("$valuesAlias.uri", $param)
-                    );
-                    break;
-
-                case 'nlist':
-                    $positive = false;
-                    // no break.
-                case 'list':
-                    $list = is_array($value) ? $value : explode("\n", $value);
-                    $list = array_unique(array_filter(array_map('trim', array_map('strval', $list)), 'strlen'));
-                    if (empty($list)) {
-                        continue 2;
-                    }
-                    $param = $adapter->createNamedParameter($qb, $list);
-                    $subqueryAlias = $adapter->createAlias();
-                    $subquery = $this->entityManager
-                        ->createQueryBuilder()
-                        ->select("$subqueryAlias.id")
-                        ->from('Omeka\Entity\Resource', $subqueryAlias)
-                        ->where($expr->in("$subqueryAlias.title", $param));
-                    $predicateExpr = $expr->orX(
-                        $expr->in("$valuesAlias.valueResource", $subquery->getDQL()),
-                        $expr->in("$valuesAlias.value", $param),
-                        $expr->in("$valuesAlias.uri", $param)
-                    );
-                    break;
-
-                case 'nsw':
-                    $positive = false;
-                    // no break.
-                case 'sw':
-                    $param = $adapter->createNamedParameter($qb, $escape($value) . '%');
-                    $subqueryAlias = $adapter->createAlias();
-                    $subquery = $this->entityManager
-                        ->createQueryBuilder()
-                        ->select("$subqueryAlias.id")
-                        ->from('Omeka\Entity\Resource', $subqueryAlias)
-                        ->where($expr->like("$subqueryAlias.title", $param));
-                    $predicateExpr = $expr->orX(
-                        $expr->in("$valuesAlias.valueResource", $subquery->getDQL()),
-                        $expr->like("$valuesAlias.value", $param),
-                        $expr->like("$valuesAlias.uri", $param)
-                    );
-                    break;
-
-                case 'new':
-                    $positive = false;
-                    // no break.
-                case 'ew':
-                    $param = $adapter->createNamedParameter($qb, '%' . $escape($value));
-                    $subqueryAlias = $adapter->createAlias();
-                    $subquery = $this->entityManager
-                        ->createQueryBuilder()
-                        ->select("$subqueryAlias.id")
-                        ->from('Omeka\Entity\Resource', $subqueryAlias)
-                        ->where($expr->like("$subqueryAlias.title", $param));
-                    $predicateExpr = $expr->orX(
-                        $expr->in("$valuesAlias.valueResource", $subquery->getDQL()),
-                        $expr->like("$valuesAlias.value", $param),
-                        $expr->like("$valuesAlias.uri", $param)
-                    );
-                    break;
-
-                case 'nres':
-                    $positive = false;
-                    // no break.
-                case 'res':
-                    $predicateExpr = $expr->eq(
-                        "$valuesAlias.valueResource",
-                        $adapter->createNamedParameter($qb, $value)
-                    );
-                    break;
-
-                case 'nex':
-                    $positive = false;
-                    // no break.
-                case 'ex':
-                    $predicateExpr = $expr->isNotNull("$valuesAlias.id");
-                    break;
-
-                case 'dtp':
-                    $positive = false;
-                    // no break.
-                case 'ndtp':
-                    if (is_array($value)) {
-                        $dataTypeAlias = $adapter->createAlias();
-                        $qb->setParameter($dataTypeAlias, $value, Connection::PARAM_STR_ARRAY);
-                        $predicateExpr = $expr->in("$valuesAlias.type", $dataTypeAlias);
-                    } else {
-                        $dataTypeAlias = $adapter->createNamedParameter($qb, $value);
-                        $predicateExpr = $expr->eq("$valuesAlias.type", $dataTypeAlias);
-                    }
-                    break;
-
-                // TODO Manage uri and resources with gt, gte, lte, lt (it has a meaning at least for resource ids, but separate).
-                case 'gt':
-                    $valueNorm = $this->getDateTimeFromValue($value, false);
-                    if (is_null($valueNorm)) {
-                        $incorrectValue = true;
-                    } else {
-                        $predicateExpr = $expr->gt(
-                            "$valuesAlias.value",
-                            $adapter->createNamedParameter($qb, $valueNorm)
-                        );
-                    }
-                    break;
-                case 'gte':
-                    $valueNorm = $this->getDateTimeFromValue($value, true);
-                    if (is_null($valueNorm)) {
-                        $incorrectValue = true;
-                    } else {
-                        $predicateExpr = $expr->gte(
-                            "$valuesAlias.value",
-                            $adapter->createNamedParameter($qb, $valueNorm)
-                        );
-                    }
-                    break;
-                case 'lte':
-                    $valueNorm = $this->getDateTimeFromValue($value, false);
-                    if (is_null($valueNorm)) {
-                        $incorrectValue = true;
-                    } else {
-                        $predicateExpr = $expr->lte(
-                            "$valuesAlias.value",
-                            $adapter->createNamedParameter($qb, $valueNorm)
-                        );
-                    }
-                    break;
-                case 'lt':
-                    $valueNorm = $this->getDateTimeFromValue($value, true);
-                    if (is_null($valueNorm)) {
-                        $incorrectValue = true;
-                    } else {
-                        $predicateExpr = $expr->lt(
-                            "$valuesAlias.value",
-                            $adapter->createNamedParameter($qb, $valueNorm)
-                        );
-                    }
-                    break;
-
-                default:
-                    continue 2;
-            }
-
-            $joinConditions = [];
-            // Narrow to specific property, if one is selected.
-            // The check is done against the requested property, like in core:
-            // when user request is invalid, return an empty result.
-            if ($queryRow['property']) {
-                $joinConditions[] = count($propertyIds) < 2
-                    // There may be 0 or 1 property id.
-                    ? $expr->eq("$valuesAlias.property", (int) reset($propertyIds))
-                    : $expr->in("$valuesAlias.property", $propertyIds);
-            }
-
-            // Avoid to get results when the query is incorrect.
-            if ($incorrectValue) {
-                $where = $expr->eq('omeka_root.id', 0);
-                break;
-            }
-
-            if ($dataType) {
-                if (is_array($dataType)) {
-                    $dataTypeAlias = $adapter->createAlias();
-                    $qb->setParameter($dataTypeAlias, $dataType, Connection::PARAM_STR_ARRAY);
-                    $predicateExpr = $expr->andX(
-                        $predicateExpr,
-                        $expr->in("$valuesAlias.type", ':' . $dataTypeAlias)
-                    );
-                } else {
-                    $dataTypeAlias = $adapter->createNamedParameter($qb, $dataType);
-                    $predicateExpr = $expr->andX(
-                        $predicateExpr,
-                        $expr->eq("$valuesAlias.type", $dataTypeAlias)
-                    );
-                }
-            }
-
-            if ($positive) {
-                $whereClause = '(' . $predicateExpr . ')';
-            } else {
-                $joinConditions[] = $predicateExpr;
-                $whereClause = $expr->isNull("$valuesAlias.id");
-            }
-
-            if ($joinConditions) {
-                $qb->leftJoin($valuesJoin, $valuesAlias, 'WITH', $expr->andX(...$joinConditions));
-            } else {
-                $qb->leftJoin($valuesJoin, $valuesAlias);
-            }
-
-            if ($where == '') {
-                $where = $whereClause;
-            } elseif ($joiner == 'or') {
-                $where .= " OR $whereClause";
-            } else {
-                $where .= " AND $whereClause";
-            }
-        }
-
-        if ($where) {
-            $qb->andWhere($where);
-        }
 
         return $this;
     }
@@ -2408,11 +2064,8 @@ class References extends AbstractPlugin
 
     /**
      * Normalize the resource name as an entity class.
-     *
-     * @param string $resourceName
-     * @return string
      */
-    protected function mapResourceNameToEntity($resourceName)
+    protected function mapResourceNameToEntityClass($resourceName): string
     {
         $resourceEntityMap = [
             null => \Omeka\Entity\Resource::class,
@@ -2422,6 +2075,20 @@ class References extends AbstractPlugin
             'resources' => \Omeka\Entity\Resource::class,
         ];
         return $resourceEntityMap[$resourceName] ?? \Omeka\Entity\Resource::class;
+    }
+
+    /**
+     * Get the api resource name from the entity class.
+     */
+    protected function mapEntityClassToResourceName($entityClass): ?string
+    {
+        $entityResourceMap = [
+            \Omeka\Entity\Resource::class => 'resources',
+            \Omeka\Entity\Item::class => 'items',
+            \Omeka\Entity\ItemSet::class => 'item_sets',
+            \Omeka\Entity\Media::class => 'media',
+        ];
+        return $entityResourceMap[$entityClass] ?? null;
     }
 
     /**
