@@ -678,6 +678,28 @@ class References extends AbstractPlugin
             }
         }
 
+        // Normalize initials: a "É" (when first reference is "Éxxx") should be
+        // converted into a "E".
+        if (extension_loaded('intl')) {
+            $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+            foreach ($result as &$resultData) {
+                $initials = [];
+                foreach ($resultData['o:references'] as $initial => $total) {
+                    $initials[$transliterator->transliterate((string) $initial)] = $total;
+                }
+                $resultData['o:references'] = $initials;
+            }
+        } elseif (extension_loaded('iconv')) {
+            foreach ($result as &$resultData) {
+                $initials = [];
+                foreach ($resultData['o:references'] as $initial => $total) {
+                    $trans = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', (string) $initial);
+                    $initials[$trans === false ? $initial : $trans] = $total;
+                }
+                $resultData['o:references'] = $initials;
+            }
+        }
+
         $this->process = null;
         $this->options = $currentOptions;
         return $result;
