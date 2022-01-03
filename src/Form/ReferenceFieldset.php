@@ -139,6 +139,17 @@ class ReferenceFieldset extends Form
                 ],
             ])
             ->add([
+                'name' => 'by_initial',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'One page by initial', // @translate
+                    'info' => 'This option is recommended for big lists.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'reference-options-by-initial',
+                ],
+            ])
+            ->add([
                 'name' => 'link_to_single',
                 'type' => Element\Checkbox::class,
                 'options' => [

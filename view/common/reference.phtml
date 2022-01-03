@@ -15,9 +15,9 @@
 
 // The sub-level (list by) is limited to 1024 resources by mysql (group_concat).
 
-// It is recommended to skip "link_to_single" when there are more than 5000
-// references on a page and there are custom_url (clean url, ark...) with many
-// single values.
+// It is recommended to skip "link_to_single" or to filter by initial when there are
+// more than 5000 references on a page and there are custom_url (clean url, ark...)
+// with many single values.
 
 if (!count($references)) return;
 
@@ -41,7 +41,7 @@ $mapResourcesControllers = ['resources' => 'resource', 'items' => 'item', 'item_
 $controllerName = $mapResourcesControllers[$options['resource_name']];
 
 // Set default values if needed.
-$options += ['link_to_single' => true, 'total' => true, 'raw' => false, 'raw_sub' => false, 'skiplinks' => true, 'headings' => true, 'custom_url' => false];
+$options += ['by_initial' => false, 'link_to_single' => true, 'total' => true, 'raw' => false, 'raw_sub' => false, 'skiplinks' => true, 'headings' => true, 'custom_url' => false];
 $options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
 $hasInitial = array_key_exists('initial', $references[key($references)]);
 $listByMax = empty($options['list_by_max']) ? false : (int) $options['list_by_max'];

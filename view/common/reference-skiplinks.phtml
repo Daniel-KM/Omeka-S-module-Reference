@@ -48,11 +48,21 @@ $initials = array_merge($alphabet, $initials);
 // Don't display symbols if useless.
 if (empty($initials['0-9'])) unset($initials['0-9']);
 
+if (!empty($options['by_initial'])) {
+    $baseUrl = $this->url(null, [], true) . '?initial=';
+    $initial = $this->params()->fromQuery('initial');
+    $active = $initial ? mb_strtolower($initial) : 'a';
+} else {
+    $baseUrl = '#';
+    $active = '';
+}
+
 // Display the list of initials.
 $paginationList = '<ul class="pagination-list">';
 foreach ($initials as $initial => $isSet):
+    $initial = mb_strtolower($initial);
     $paginationList .= $isSet
-        ? sprintf('<li class="pagination-range"><a href="#%s">%s</a></li>', $initial, $initial)
+        ? sprintf('<li class="pagination-range%s"><a href="%s%s">%s</a></li>', $initial === $active ? ' active' : '', $baseUrl, rawurlencode($initial), $initial)
         : sprintf('<li class="pagination-range"><span>%s</span></li>', $initial);
 endforeach;
 $paginationList .= '</ul>';

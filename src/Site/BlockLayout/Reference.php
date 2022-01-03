@@ -72,11 +72,12 @@ class Reference extends AbstractBlockLayout
             : [];
 
         // Normalize options.
-        $data['options']['link_to_single'] = (bool) $data['options']['link_to_single'];
-        $data['options']['custom_url'] = (bool) $data['options']['custom_url'];
-        $data['options']['skiplinks'] = (bool) $data['options']['skiplinks'];
-        $data['options']['headings'] = (bool) $data['options']['headings'];
-        $data['options']['total'] = (bool) $data['options']['total'];
+        $data['options']['by_initial'] = !empty($data['options']['by_initial']);
+        $data['options']['link_to_single'] = !empty($data['options']['link_to_single']);
+        $data['options']['custom_url'] = !empty($data['options']['custom_url']);
+        $data['options']['skiplinks'] = !empty($data['options']['skiplinks']);
+        $data['options']['headings'] = !empty($data['options']['headings']);
+        $data['options']['total'] = !empty($data['options']['total']);
         $data['options']['list_by_max'] = (int) $data['options']['list_by_max'];
 
         unset($data['args']['properties']);
@@ -174,6 +175,11 @@ class Reference extends AbstractBlockLayout
         unset($options['languages']);
         if ($languages) {
             $options['filters']['languages'] = $languages;
+        }
+
+        $byInitial = !empty($options['by_initial']);
+        if ($byInitial) {
+            $options['filters']['begin'] = $view->params()->fromQuery('initial') ?: 'a';
         }
 
         $options['sort_order'] = reset($args['order']);

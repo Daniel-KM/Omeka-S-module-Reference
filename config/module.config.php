@@ -173,9 +173,10 @@ return [
                     'languages' => [],
                 ],
                 'options' => [
+                    'heading' => 'Subjects', // @translate
+                    'by_initial' => false,
                     'link_to_single' => true,
                     'custom_url' => false,
-                    'heading' => 'Subjects', // @translate
                     'skiplinks' => true,
                     'headings' => true,
                     'total' => true,
