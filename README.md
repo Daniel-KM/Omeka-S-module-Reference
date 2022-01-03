@@ -323,7 +323,7 @@ Copyright
 
 * Copyright William Mayo, 2011
 * Copyright Philip Collins, 2013 ([jQuery tree view])
-* Copyright Daniel Berthereau, 2014-2021 (see [Daniel-KM] on GitLab)
+* Copyright Daniel Berthereau, 2014-2022 (see [Daniel-KM] on GitLab)
 
 This module is inspired from earlier work done by William Mayo (see [pobocks] on
 GitLab) in [Subject Browse], with some ideas from [Metadata Browser] and

@@ -425,4 +425,18 @@ if (version_compare($oldVersion, '3.4.35.3', '<')) {
         $entityManager->persist($block);
     }
     $entityManager->flush();
+
+    $messenger = new Messenger();
+    $message = new Message(
+        'It is possible now to aggregate properties in references, for example to get list of people from properties dcterms:creator and dcterms:contributor.' // @translate
+    );
+    $messenger->addSuccess($message);
+    $message = new Message(
+        'Warning: the name of the source properties or classes "term" has been replace by "fields" in pages, so check your theme templates if you updated the default ones of the module.' // @translate
+    );
+    $messenger->addWarning($message);
+    $message = new Message(
+        'It is possible now to get a specific number of initials, for example to get the list of years from standard dates.' // @translate
+    );
+    $messenger->addSuccess($message);
 }
