@@ -90,6 +90,8 @@ echo $this->references()->displayListForTerm('dcterms:subject', $query, $options
 echo $this->references()->list('dcterms:subject', $query, $options);
 // Get the count.
 echo $this->references()->count('dcterms:subject', $query, $options);
+// Get the initials (here to get the list of years from iso 8601 values or numeric timestamp).
+echo $this->references()->initials('dcterms:created', $query, ['initial' => 4]);
 ```
 
 The references are available via the api in `/api/references` too. Arguments are
@@ -272,6 +274,7 @@ TODO
 - [ ] Check if the option "include_without_meta" is still needed with data types.
 - [ ] Include the fields in the main request or get them via a second request, not via api.
 - [ ] Use the new table `reference_metadata` when possible.
+- [ ] Simplify queries for aggregated fields (see AdvancedSearch).
 
 
 Warning
