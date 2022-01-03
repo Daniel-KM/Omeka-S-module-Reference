@@ -124,6 +124,28 @@ class References extends AbstractHelper
     }
 
     /**
+     * Get the initials of values for a field.
+     *
+     * The filter "begin" is skipped from the query.
+     *
+     * @uses \Reference\Mvc\Controller\Plugin\References::initials()
+     *
+     * @param string|array $metadata
+     * @param array $query
+     * @param array $options
+     * @return array The list of initials for each field.
+     */
+    public function initials($metadata = null, ?array $query = [], ?array $options = []): array
+    {
+        $isSingle = !is_array($metadata);
+        if ($isSingle) {
+            $metadata = ['fields' => $metadata];
+        }
+        $result = $this->references->__invoke($metadata, $query, $options)->initials();
+        return $isSingle ? reset($result) : $result;
+    }
+
+    /**
      * Display list of references of one or more fields via a template.
      *
      * @uses \Reference\Mvc\Controller\Plugin\References::list()
