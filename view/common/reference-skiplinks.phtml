@@ -1,25 +1,41 @@
 <?php
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var array $currentField
+ * @var array $query
+ * @var array $options
+ * @var array $request
  * @var array $references
+ * @var array $initials
  */
 
-if (!count($references)) return;
-
-// Prepare the list.
-$letters = [];
-if (array_key_exists('initial', $references[key($references)])) {
-    foreach ($references as $reference => $referenceData) {
-        $initial = $referenceData['initial'];
-        if (empty($letters[$initial])) {
-            $letters[preg_match('/\W|\d/u', $initial) ? '0-9' : $initial] = true;
+if (empty($initials)) {
+    if (!count($references)) return;
+    // Prepare the list: what is quicker: a second query + a small loop or a loop of all references? Used only for direct call anyway.
+    // $list = $this->references($currentField, $query, $options)->initials();
+    $initials = [];
+    if (array_key_exists('initial', $references[key($references)])) {
+        foreach ($references as $reference => $referenceData) {
+            $initial = $referenceData['initial'];
+            if (empty($initials[$initial])) {
+                $initials[preg_match('/\W|\d/u', $initial) ? '0-9' : $initial] = true;
+            }
+        }
+    } else {
+        foreach ($references as $reference => $referenceData) {
+            $initial = mb_strtoupper(mb_substr($reference, 0, 1));
+            if (empty($initials[$initial])) {
+                $initials[preg_match('/\W|\d/u', $initial) ? '0-9' : $initial] = true;
+            }
         }
     }
 } else {
-    foreach ($references as $reference => $referenceData) {
-        $initial = mb_strtoupper(mb_substr($reference, 0, 1));
-        if (empty($letters[$initial])) {
-            $letters[preg_match('/\W|\d/u', $initial) ? '0-9' : $initial] = true;
+    $list = $initials;
+    $initials = [];
+    // Merge special initials.
+    foreach ($list as $initial => $total) {
+        if (empty($initials[$initial])) {
+            $initials[preg_match('/\W|\d/u', $initial) ? '0-9' : $initial] = true;
         }
     }
 }
@@ -28,16 +44,16 @@ if (array_key_exists('initial', $references[key($references)])) {
 // Get the default list of initials for latin. To be updated for non-latin references.
 // Anyway, even in latin, some characters are not transcoded, like Œ.
 $alphabet = ['0-9' => false] + array_fill_keys(range('A', 'Z'), false);
-$letters = array_merge($alphabet, $letters);
+$initials = array_merge($alphabet, $initials);
 // Don't display symbols if useless.
-if (empty($letters['0-9'])) unset($letters['0-9']);
+if (empty($initials['0-9'])) unset($initials['0-9']);
 
 // Display the list of initials.
 $paginationList = '<ul class="pagination-list">';
-foreach ($letters as $letter => $isSet):
+foreach ($initials as $initial => $isSet):
     $paginationList .= $isSet
-        ? sprintf('<li class="pagination-range"><a href="#%s">%s</a></li>', $letter, $letter)
-        : sprintf('<li class="pagination-range"><span>%s</span></li>', $letter);
+        ? sprintf('<li class="pagination-range"><a href="#%s">%s</a></li>', $initial, $initial)
+        : sprintf('<li class="pagination-range"><span>%s</span></li>', $initial);
 endforeach;
 $paginationList .= '</ul>';
 

@@ -196,6 +196,7 @@ class References extends AbstractHelper
 
         $ref = $this->references->__invoke($fields, $query, $options);
         $list = $ref->list();
+        $initials = $options['initial'] ? $ref->initials() : [];
 
         $options = $ref->getOptions() + $options;
 
@@ -216,6 +217,7 @@ class References extends AbstractHelper
                 'options' => $options,
                 'request' => $result['o:request'] ?? [],
                 'references' => $result['o:references'] ?? [],
+                'initials' => $options['initial'] ? $initials[$keyField]['o:references'] ?? [] : [],
                 // Kept for compatibility of old themes.
                 'first' => $result['o:request']['o:field'][0] ?? ['o:id' => null, 'o:term' => null, '@type' => null],
                 'term' => $result['o:request']['o:field'][0]['o:term'] ?? null,

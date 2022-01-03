@@ -6,6 +6,7 @@
  * @var array $options
  * @var array $request
  * @var array $references
+ * @var array $initials
  */
 
 // The process seems complex because it uses many ways to display big lists.
@@ -159,7 +160,7 @@ $querier = function ($reference, $emptyReferenceValue, $limit = null) use ($quer
 <?php
 // Prepare and display skip links.
 if ($options['skiplinks']):
-    $paginationList = $this->partial('common/reference-skiplinks', ['references' => $references]);
+    $paginationList = $this->partial('common/reference-skiplinks');
 ?>
 <div id="reference-skiplinks" class="pagination reference-pagination pagination-top">
     <?= $paginationList ?>
@@ -186,16 +187,16 @@ if ($options['skiplinks']):
             } else {
                 $firstChar = mb_strtoupper(mb_substr($reference, 0, 1));
                 if (!strlen($firstChar)) {
-                    $firstChar = '#0-9';
+                    $firstChar = '0-9';
                 }
             }
             if (preg_match('/\W|\d/u', $firstChar)) {
-                $firstChar = '#0-9';
+                $firstChar = '0-9';
             }
             $currentFirstChar = $firstChar;
             if ($currentHeading !== $currentFirstChar) {
                 $currentHeading = $currentFirstChar;
-                $currentHeadingId = $currentHeading === '#0-9' ? 'number' : $currentHeading;
+                $currentHeadingId = $currentHeading;
                 $heading = [
                     '{heading_id}' => $currentHeadingId,
                     '{heading_text}' => $currentHeading,
