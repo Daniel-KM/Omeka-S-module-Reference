@@ -70,12 +70,6 @@ class Reference extends AbstractBlockLayout
             ? array_unique(array_map('trim', explode('|', $data['args']['languages'])))
             : [];
 
-        // Make the search simpler and quicker later on display.
-        // TODO To be removed in Omeka 1.2.
-        $data['args']['termId'] = $this->api->searchOne($data['args']['type'], [
-            'term' => $data['args']['term'],
-        ])->getContent()->id();
-
         // Normalize options.
         $data['options']['link_to_single'] = (bool) $data['options']['link_to_single'];
         $data['options']['custom_url'] = (bool) $data['options']['custom_url'];
