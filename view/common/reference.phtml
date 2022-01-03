@@ -19,7 +19,19 @@
 // more than 5000 references on a page and there are custom_url (clean url, ark...)
 // with many single values.
 
-if (!count($references)) return;
+if (!count($references)): ?>
+    <?php // Prepare and display skip links.
+    if ($options['skiplinks']):
+        $paginationList = $this->partial('common/reference-skiplinks');
+        ?>
+<div id="reference-skiplinks" class="pagination reference-pagination pagination-top">
+    <?= $paginationList ?>
+</div>
+<?php endif; ?>
+<div id="reference-headings">
+</div>
+    <?php return;
+endif;
 
 $plugins = $this->getHelperPluginManager();
 $translate = $plugins->get('translate');

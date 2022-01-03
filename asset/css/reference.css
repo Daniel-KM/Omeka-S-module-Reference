@@ -39,6 +39,9 @@
     color: #000;
     text-decoration: none;
 }
+.reference-pagination li.pagination-range.active a {
+    background-color: #DDDDDD;
+}
 
 ul.references {
     list-style: inside none disc;
