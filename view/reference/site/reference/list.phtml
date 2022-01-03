@@ -16,7 +16,7 @@ $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 <div id="primary" class="reference">
     <h2><?= sprintf($translate('Browse items by "%s" (%d headings)'), $label, $total) ?></h2>
     <?php if ($total): ?>
-    <?= $this->references()->displayListForTerm($term, $query, $options) ?>
+    <?= $this->references()->displayListForFields(['fieds' => $term], $query, $options) ?>
     <?php else: ?>
     <p><?= $this->escapeHtml(sprintf($translate('There is no references for "%s".'), $label)) ?></p>
     <?php endif; ?>

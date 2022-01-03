@@ -1,10 +1,10 @@
 <?php
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
- * @var string $term
+ * @var array $currentField
  * @var array $query
  * @var array $options
- * @var array $field
+ * @var array $request
  * @var array $references
  */
 
@@ -43,9 +43,6 @@ $controllerName = $mapResourcesControllers[$options['resource_name']];
 $options += ['link_to_single' => true, 'total' => true, 'raw' => false, 'raw_sub' => false, 'skiplinks' => true, 'headings' => true, 'custom_url' => false];
 $options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
 $hasInitial = array_key_exists('initial', $references[key($references)]);
-$propertyTitle = 'dcterms:title';
-$termId = $field['o:id'];
-$term = @$field['o:term'];
 $listByMax = empty($options['list_by_max']) ? false : (int) $options['list_by_max'];
 $seeAll = $escape($translate('See all…')); // @translate
 $andMore = $escape($translate('And %d more.')); // @translate
@@ -56,15 +53,17 @@ $options['raw_sub'] = $options['raw_sub'] || !$isRecursive;
 
 $querySource = $query;
 
-$queryKeys = [
+// Normally, field types should not be mixed currently.
+$fieldTypes = [
     'o:ResourceClass' => 'resource_class_id',
     'o:ResourceTemplate' => 'resource_template_id',
     'o:ItemSet' => 'item_set_id',
     'resource_classes' => 'resource_class_id',
     'resource_templates' => 'resource_template_id',
     'item_sets' => 'item_set_id',
+    // Other cases are properties.
 ];
-$queryKey = $queryKeys[$field['@type']] ?? null;
+$mainFieldType = $fieldTypes[$request['o:field'][0]['@type']] ?? null;
 
 // Set default templates according to options for improved performance.
 $template = '';
@@ -104,33 +103,53 @@ if ($options['raw']) {
         $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}</a>{recursive}</div>' . PHP_EOL;
     }
     if (!$options['custom_url']) {
-        // Use the original query as the base of the url, avoiding overriding with the reference value.
-        // The default url helper doesn't encode "&" as "&amp;", so append it manually.
+        // Prepare the custom url one time with the original query as the base of the url,
+        // avoiding overriding with the reference value.
         $query = $querySource;
-        if ($queryKey) {
-            $query[$queryKey][] = $termId;
-            $queryEmpty = $query;
-            $queryEmpty['property'][] = ['property' => $propertyTitle, 'type' => 'nex'];
-            $templateUrlEmpty = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986);
-            $query['property'][] = ['property' => $propertyTitle, 'type' => 'eq', 'text' => '__temp_placeholder__'];
-            $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986);
-        } else {
-            $query['property'][] = ['property' => $term, 'type' => 'eq', 'text' => '__temp_placeholder__'];
-            $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986);
+        $queryEmpty = $querySource;
+        // Normally, types cannot be mixed, so it should be possible to use the main field type.
+        $hasEmptyFieldProperty = false;
+        foreach ($request['o:field'] as $field) {
+            $fieldType = $fieldTypes[$field['@type']] ?? null;
+            if ($fieldType) {
+                $query[$fieldType][] = $field['o:id'];
+                $queryEmpty[$fieldType][] = $field['o:id'];
+                if (!$hasEmptyFieldProperty) {
+                    $hasEmptyFieldProperty = true;
+                    $query['property'][] = ['joiner' => 'or', 'property' => 'dcterms:title', 'type' => 'eq', 'text' => '__temp_placeholder__'];
+                    $queryEmpty['property'][] = ['joiner' => 'and', 'property' => 'dcterms:title', 'type' => 'nex'];
+                }
+            } else {
+                $query['property'][] = ['joiner' => 'or', 'property' => $field['o:term'], 'type' => 'eq', 'text' => '__temp_placeholder__'];
+            }
         }
-        $templateUrl = str_replace('__temp_placeholder__', '{reference}', $templateUrl);
+        // The default url helper doesn't encode "&" as "&amp;", so append it manually.
+        $templateUrlEmpty = str_replace('__temp_placeholder__', '{reference}',
+            $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986));
+        $templateUrl = str_replace('__temp_placeholder__', '{reference}',
+            $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
     }
 }
 
-$querier = function ($reference, $emptyReferenceValue, $limit = null) use ($term, $termId, $querySource, $queryKey, $propertyTitle) {
+$querier = function ($reference, $emptyReferenceValue, $limit = null) use ($querySource, $request, $fieldTypes) {
     $query = $querySource;
-    if ($queryKey) {
-        $query[$queryKey][] = $termId;
-        $query['property'][] = $emptyReferenceValue
-            ? ['property' => $propertyTitle, 'type' => 'nex']
-            : ['property' => $propertyTitle, 'type' => 'eq', 'text' => $reference];
-    } else {
-        $query['property'][] = ['property' => $term, 'type' => 'eq', 'text' => $reference];
+    // Normally, types cannot be mixed, so it should be possible to use the main field type.
+    $hasEmptyFieldProperty = false;
+    foreach ($request['o:field'] as $field) {
+        $fieldType = $fieldTypes[$field['@type']] ?? null;
+        if ($fieldType) {
+            $query[$fieldType][] = $field['o:id'];
+            if ($emptyReferenceValue) {
+                if (!$hasEmptyFieldProperty) {
+                    $hasEmptyFieldProperty = true;
+                    $query['property'][] = ['joiner' => 'or', 'property' => 'dcterms:title', 'type' => 'nex'];
+                }
+            } else {
+                $query['property'][] = ['joiner' => 'or', 'property' =>  'dcterms:title', 'type' => 'eq', 'text' => $reference];
+            }
+        } else {
+            $query['property'][] = ['joiner' => 'or', 'property' => $field['o:term'], 'type' => 'eq', 'text' => $reference];
+        }
     }
     $query['limit'] = $limit;
     return $query;
@@ -206,7 +225,7 @@ if ($options['skiplinks']):
 
             } else {
                 if ($referenceNumber) {
-                    if ($queryKey) {
+                    if ($mainFieldType) {
                         $referenceUrl = $emptyReferenceValue
                             ? $templateUrlEmpty
                             : str_replace('{reference}', rawurlencode($reference), $templateUrl);

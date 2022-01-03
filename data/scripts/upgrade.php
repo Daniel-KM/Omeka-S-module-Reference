@@ -392,3 +392,17 @@ if (version_compare($oldVersion, '3.4.34.3', '<')) {
     );
     $messenger->addWarning($message);
 }
+
+if (version_compare($oldVersion, '3.4.35.3', '<')) {
+    $repository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
+    /** @var \Omeka\Entity\SitePageBlock[] $blocks */
+    $blocks = $repository->findBy(['layout' => 'reference']);
+    foreach ($blocks as $block) {
+        $data = $block->getData();
+        $data['args']['fields'] = [$data['args']['term']];
+        // The term is kept for compatibility with old themes, at least until edition of the page.
+        $block->setData($data);
+        $entityManager->persist($block);
+    }
+    $entityManager->flush();
+}

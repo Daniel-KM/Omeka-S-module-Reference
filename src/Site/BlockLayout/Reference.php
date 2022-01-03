@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Reference\Site\BlockLayout;
 
 use Laminas\View\Renderer\PhpRenderer;
@@ -41,25 +42,25 @@ class Reference extends AbstractBlockLayout
         $data = $block->getData();
 
         // Check if data are already formatted, checking the main value.
-        if (!empty($data['args']['term'])) {
+        if (!empty($data['args']['fields'])) {
             return;
         }
 
-        if (!empty($data['args']['property'])) {
-            $data['args']['term'] = $data['args']['property'];
+        if (!empty($data['args']['properties'])) {
+            $data['args']['fields'] = $data['args']['properties'];
             $data['args']['type'] = 'properties';
-        } elseif (!empty($data['args']['resource_class'])) {
-            $data['args']['term'] = $data['args']['resource_class'];
+        } elseif (!empty($data['args']['resource_classes'])) {
+            $data['args']['fields'] = $data['args']['resource_classes'];
             $data['args']['type'] = 'resource_classes';
         } else {
-            $errorStore->addError('property', 'To create references, there must be a property or a resource class.'); // @translate
+            $errorStore->addError('properties', 'To create references, there must be one or more properties or resource classes.'); // @translate
             return;
         }
         if (empty($data['args']['resource_name'])) {
             $data['args']['resource_name'] = 'items';
         }
         $query = [];
-        parse_str((string) $data['args']['query'], $query);
+        parse_str(ltrim((string) $data['args']['query'], "? \t\n\r\0\x0B"), $query);
         $data['args']['query'] = $query;
 
         $data['args']['order'] = empty($data['args']['order'])
@@ -78,8 +79,8 @@ class Reference extends AbstractBlockLayout
         $data['options']['total'] = (bool) $data['options']['total'];
         $data['options']['list_by_max'] = (int) $data['options']['list_by_max'];
 
-        unset($data['args']['property']);
-        unset($data['args']['resource_class']);
+        unset($data['args']['properties']);
+        unset($data['args']['resource_classes']);
 
         $block->setData($data);
     }
@@ -110,14 +111,18 @@ class Reference extends AbstractBlockLayout
             $data['args']['query'] = 'site_id=' . $site->id();
         }
 
-        if (empty($data['args']['term'])) {
+        if (empty($data['args']['fields'])) {
             // Nothing.
-        } elseif ($this->isResourceClass($data['args']['term'])) {
-            $data['args']['resource_class'] = $data['args']['term'];
         } else {
-            $data['args']['property'] = $data['args']['term'];
+            foreach ($data['args']['fields'] as $field) {
+                if ($this->isResourceClass($field)) {
+                    $data['args']['resource_classes'][] = $field;
+                } else {
+                    $data['args']['properties'][] = $field;
+                }
+            }
         }
-        unset($data['args']['term']);
+        unset($data['args']['fields']);
 
         $data['args']['order'] = (key($data['args']['order']) === 'alphabetic' ? 'alphabetic' : 'total') . ' ' . reset($data['args']['order']);
 
@@ -138,7 +143,7 @@ class Reference extends AbstractBlockLayout
 
         $fieldset->prepare();
 
-        $html = '<p>' . $view->translate('Choose a property or a resource class.') . '</p>';
+        $html = '<p>' . $view->translate('Choose one or more properties or one or more resource classes.') . '</p>';
         $html .= $view->formCollection($fieldset);
         return $html;
     }
@@ -157,10 +162,12 @@ class Reference extends AbstractBlockLayout
 
         // TODO Update forms and saved params.
         // Use new format for references.
-        $term = $args['term'];
+        $fields = ['fields' => $args['fields']];
         $query = $args['query'];
-        unset($args['term']);
-        unset($args['query']);
+        unset(
+            $args['fields'],
+            $args['query']
+        );
         $options = $options + $args;
 
         $languages = @$options['languages'];
@@ -177,7 +184,7 @@ class Reference extends AbstractBlockLayout
         unset($options['template']);
 
         $vars = [
-            'term' => $term,
+            'fields' => $fields,
             'query' => $query,
             'options' => $options,
         ];

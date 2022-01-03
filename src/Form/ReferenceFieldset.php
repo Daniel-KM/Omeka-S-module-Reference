@@ -20,33 +20,35 @@ class ReferenceFieldset extends Form
         $argsFieldset = $this->get('o:block[__blockIndex__][o:data][args]');
         $argsFieldset
             ->add([
-                'name' => 'property',
+                'name' => 'properties',
                 'type' => OmekaElement\PropertySelect::class,
                 'options' => [
-                    'label' => 'Property', // @translate
+                    'label' => 'Properties', // @translate
                     'term_as_value' => true,
                     'empty_option' => '',
                 ],
                 'attributes' => [
-                    'id' => 'reference-args-property',
+                    'id' => 'reference-args-properties',
                     'required' => false,
                     'class' => 'chosen-select',
-                    'data-placeholder' => 'Select a property…', // @translate
+                    'multiple' => 'multiple',
+                    'data-placeholder' => 'Select properties…', // @translate
                 ],
             ])
             ->add([
-                'name' => 'resource_class',
+                'name' => 'resource_classes',
                 'type' => OmekaElement\ResourceClassSelect::class,
                 'options' => [
-                    'label' => 'Resource class', // @translate
+                    'label' => 'Resource classes', // @translate
                     'empty_option' => '',
                     'term_as_value' => true,
                 ],
                 'attributes' => [
-                    'id' => 'reference-args-resource-class',
+                    'id' => 'reference-args-resource-classes',
                     'required' => false,
                     'class' => 'chosen-select',
-                    'data-placeholder' => 'Select a resource class…', // @translate
+                    'multiple' => 'multiple',
+                    'data-placeholder' => 'Select resource classes…', // @translate
                 ],
             ])
             ->add([

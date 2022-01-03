@@ -163,7 +163,9 @@ return [
         'block_settings' => [
             'reference' => [
                 'args' => [
-                    'term' => 'dcterms:subject',
+                    'fields' => [
+                        'dcterms:subject',
+                    ],
                     'type' => 'properties',
                     'resource_name' => 'items',
                     'order' => ['alphabetic' => 'ASC'],

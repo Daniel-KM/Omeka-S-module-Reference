@@ -124,11 +124,11 @@ class References extends AbstractHelper
     }
 
     /**
-     * Display the list of the references of a term or a template via a partial view.
+     * Display list of references of one or more fields via a template.
      *
      * @uses \Reference\Mvc\Controller\Plugin\References::list()
      *
-     * @param string $term
+     * @param array $fields
      * @param array $query An Omeka search query to limit results.
      * @param array $options Same options than list(), and specific ones for
      * the display:
@@ -145,12 +145,11 @@ class References extends AbstractHelper
      * - subject_property (string|int): property to use for second level list
      * @return string Html list.
      */
-    public function displayListForTerm($term, array $query = null, array $options = null): string
+    public function displayListForFields($fields, ?array $query = [], ?array $options = []): string
     {
-        // Skip option output.
-        if (!$options) {
-            $options = [];
-        }
+        $query = $query ?: [];
+        $options = $options ?: [];
+
         $options['initial'] = @$options['initial'] || @$options['skiplinks'] || @$options['headings'];
         $options['first'] = @$options['first'] || @$options['link_to_single'];
 
@@ -173,28 +172,45 @@ class References extends AbstractHelper
             }
         }
 
-        $ref = $this->references->__invoke([$term], $query, $options);
+        $ref = $this->references->__invoke($fields, $query, $options);
         $list = $ref->list();
 
-        $first = reset($list);
         $options = $ref->getOptions() + $options;
 
         // Keep original option for key first.
         $options['first'] = $firstId;
 
-        $list = $first['o:references'];
-        unset($first['o:references']);
-
         $template = empty($options['template']) ? 'common/reference' : $options['template'];
         unset($options['template']);
 
-        return $this->getView()->partial($template, [
-            'term' => $term,
-            'query' => $query,
-            'options' => $options,
-            'field' => $first,
-            'references' => $list,
-        ]);
+        $html = '';
+        foreach ($list as $keyField => $result) {
+            if (empty($fields[$keyField])) {
+                continue;
+            }
+            $html .= $this->getView()->partial($template, [
+                'currentField' => [$keyField => $fields[$keyField]],
+                'query' => $query,
+                'options' => $options,
+                'request' => $result['o:request'] ?? [],
+                'references' => $result['o:references'] ?? [],
+                // Kept for compatibility of old themes.
+                'first' => $result['o:request']['o:field'][0] ?? ['o:id' => null, 'o:term' => null, '@type' => null],
+                'term' => $result['o:request']['o:field'][0]['o:term'] ?? null,
+            ]);
+        }
+        return $html;
+    }
+
+    /**
+     * Display the list of the references of a term or a template via a partial view.
+     *
+     * @deprecated Use displayListForFields() instead. Will be removed in a next release.
+     * @see \Reference\View\Helper::displayListForFields().
+     */
+    public function displayListForTerm($term, ?array $query = [], ?array $options = []): string
+    {
+        return $this->displayListForFields(['fields' => $term], $query, $options);
     }
 
     /**
@@ -207,7 +223,7 @@ class References extends AbstractHelper
      * @param array $options
      * @return array
      */
-    public function tree($referenceLevels, array $query = null, array $options = null): array
+    public function tree($referenceLevels, ?array $query = [], ?array $options = []): array
     {
         return $this->references->getController()->referenceTree()->getTree($referenceLevels, $query, $options);
     }
@@ -277,7 +293,7 @@ class References extends AbstractHelper
      * - expanded (bool) : Show tree as expanded (default to config)
      * @return string Html list.
      */
-    public function displayTree($referenceLevels, array $query = null, array $options = null): string
+    public function displayTree($referenceLevels, ?array $query = [], ?array $options = []): string
     {
         $default = [
             'term' => 'dcterms:subject',

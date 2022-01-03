@@ -1,7 +1,7 @@
 <?php
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
- * @var string $term
+ * @var array $fields
  * @var array $query
  * @var array $options
  */
@@ -10,7 +10,7 @@ $plugins = $this->getHelperPluginManager();
 $translate = $plugins->get('translate');
 $escape = $plugins->get('escapeHtml');
 
-$total = $this->references()->count($term, $query, $options);
+$total = array_sum($this->references()->count($fields, $query, $options));
 ?>
 
 <div class="reference-block">
@@ -18,7 +18,7 @@ $total = $this->references()->count($term, $query, $options);
     <h3><?= $escape(str_replace('{total}', $total, $translate($options['heading']))) ?></h3>
     <?php endif; ?>
     <?php if ($total): ?>
-    <?= $this->references()->displayListForTerm($term, $query, $options) ?>
+    <?= $this->references()->displayListForFields($fields, $query, $options) ?>
     <?php else: ?>
     <p><?= $translate('There is no references.') ?></p>
     <?php endif; ?>
