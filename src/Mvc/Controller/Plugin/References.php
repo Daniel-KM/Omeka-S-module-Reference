@@ -854,6 +854,7 @@ class References extends AbstractPlugin
         }
 
         return $this
+            ->filterByBeginOrEnd($qb, 'resource.title')
             ->manageOptions($qb, 'resource_classes')
             ->outputMetadata($qb, 'resource_classes');
     }
@@ -901,6 +902,7 @@ class References extends AbstractPlugin
         }
 
         return $this
+            ->filterByBeginOrEnd($qb, 'resource.title')
             ->manageOptions($qb, 'resource_templates')
             ->outputMetadata($qb, 'resource_templates');
     }
@@ -955,6 +957,7 @@ class References extends AbstractPlugin
         ;
 
         return $this
+            ->filterByBeginOrEnd($qb, 'resource.title')
             ->manageOptions($qb, 'item_sets')
             ->outputMetadata($qb, 'item_sets');
     }
