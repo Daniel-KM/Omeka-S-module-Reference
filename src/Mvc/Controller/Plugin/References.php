@@ -1210,7 +1210,7 @@ class References extends AbstractPlugin
                     // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
                     $this->supportAnyValue
                         ? 'ANY_VALUE(' . $expr->upper($expr->substring('resource.title', 1, 1)) . ') AS initial'
-                        : $expr->upper($expr->substring('resource.title', 1, 1)) . ' AS initial',
+                        : $expr->upper($expr->substring('resource.title', 1, 1)) . ' AS initial'
                 );
         }
 
@@ -1221,7 +1221,7 @@ class References extends AbstractPlugin
                     // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
                         ? 'ANY_VALUE(' . $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, 1)) . ') AS initial'
-                        : $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, 1)) . ' AS initial',
+                        : $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, 1)) . ' AS initial'
                 );
         }
 
@@ -1241,7 +1241,7 @@ class References extends AbstractPlugin
                 ->addSelect(
                     $this->supportAnyValue
                         ? 'ANY_VALUE(value.type) AS type'
-                        : 'value.type AS type',
+                        : 'value.type AS type'
                 );
             // No need to group by type: it is already managed with group by distinct "val,res,uri".
         }
@@ -1251,7 +1251,7 @@ class References extends AbstractPlugin
                 ->addSelect(
                     $this->supportAnyValue
                         ? 'ANY_VALUE(value.lang) AS lang'
-                        : 'value.lang AS lang',
+                        : 'value.lang AS lang'
                 );
             if ($this->options['distinct']) {
                 $qb
@@ -1263,7 +1263,7 @@ class References extends AbstractPlugin
         if ($this->options['first']) {
             $qb
                 ->addSelect(
-                    'MIN(resource.id) AS first',
+                    'MIN(resource.id) AS first'
                 );
         }
 
