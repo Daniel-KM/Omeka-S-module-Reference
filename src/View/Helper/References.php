@@ -69,7 +69,7 @@ class References extends AbstractHelper
      *   - "end": array Filter property values that end with these strings.
      * - values: array Allow to limit the answer to the specified values.
      * - first: false (default), or true (get first resource).
-     * - list_by_max: 0 (default), or the max number of resources for each reference)
+     * - list_by_max: 0 (default), or the max number of resources for each reference
      *   The max number should be below 1024 (mysql limit for group_concat).
      * - fields: the fields to use for the list of resources, if any. If not
      *   set, the output is an associative array with id as key and title as
