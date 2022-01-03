@@ -42,7 +42,7 @@ class UpdateReferenceMetadata extends AbstractJob
         );
 
         $sql = 'SELECT COUNT(id) FROM resource;';
-        $totalResources = $this->entityManager->getConnection()->executeQuery($sql)->fetchColumn();
+        $totalResources = $this->entityManager->getConnection()->executeQuery($sql)->fetchOne();
         if (empty($totalResources)) {
             $this->logger->notice(
                 'No resource to process.' // @translate

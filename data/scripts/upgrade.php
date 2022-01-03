@@ -269,27 +269,25 @@ if (version_compare($oldVersion, '3.4.23.3', '<')) {
 
         $qb = $connection->createQueryBuilder();
         $qb
-            ->select([
-                'DISTINCT property.id AS id',
-                'CONCAT(vocabulary.prefix, ":", property.local_name) AS term',
-            ])
+            ->select(
+                'DISTINCT CONCAT(vocabulary.prefix, ":", property.local_name) AS term',
+                'property.id AS id'
+            )
             ->from('property', 'property')
             ->innerJoin('property', 'vocabulary', 'vocabulary', 'property.vocabulary_id = vocabulary.id');
-        // Fetch by key pair is not supported by doctrine 2.0.
-        $result = $connection->executeQuery($qb)->fetchAll(\PDO::FETCH_ASSOC);
-        $terms['properties'] = array_map('intval', array_column($result, 'id', 'term'));
+        $result = $connection->executeQuery($qb)->fetchAllKeyValue();
+        $terms['properties'] = array_map('intval', $result);
 
         $qb = $connection->createQueryBuilder();
         $qb
-            ->select([
-                'DISTINCT resource_class.id AS id',
-                'CONCAT(vocabulary.prefix, ":", resource_class.local_name) AS term',
-            ])
+            ->select(
+                'DISTINCT CONCAT(vocabulary.prefix, ":", resource_class.local_name) AS term',
+                'resource_class.id AS id'
+            )
             ->from('resource_class', 'resource_class')
             ->innerJoin('resource_class', 'vocabulary', 'vocabulary', 'resource_class.vocabulary_id = vocabulary.id');
-        // Fetch by key pair is not supported by doctrine 2.0.
-        $result = $connection->executeQuery($qb)->fetchAll(\PDO::FETCH_ASSOC);
-        $terms['resource_classes'] = array_map('intval', array_column($result, 'id', 'term'));
+        $result = $connection->executeQuery($qb)->fetchAllKeyValue();
+        $terms['resource_classes'] = array_map('intval', $result);
 
         return $terms;
     };
