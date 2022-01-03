@@ -74,7 +74,9 @@ class References extends AbstractHelper
      * - fields: the fields to use for the list of resources, if any. If not
      *   set, the output is an associative array with id as key and title as
      *   value. If set, value is an array of the specified fields.
-     * - initial: false (default), or true (get first letter of each result).
+     * - initial: false (default), or true (get first letter of each result), or
+     *   integer (number of first characters to get for each "initial", useful
+     *   for example to extract years from iso 8601 dates).
      * - distinct: false (default), or true (distinct values by type).
      * - datatype: false (default), or true (include datatype of values).
      * - lang: false (default), or true (include language of value to result).
@@ -124,7 +126,7 @@ class References extends AbstractHelper
     }
 
     /**
-     * Get the initials of values for a field.
+     * Get the initials (first or more characters) of values for a field.
      *
      * The filter "begin" is skipped from the query.
      *
@@ -132,7 +134,8 @@ class References extends AbstractHelper
      *
      * @param string|array $metadata
      * @param array $query
-     * @param array $options
+     * @param array $options The option "initial" allows to set the number of
+     *   characters by "initial" (default 1).
      * @return array The list of initials for each field.
      */
     public function initials($metadata = null, ?array $query = [], ?array $options = []): array

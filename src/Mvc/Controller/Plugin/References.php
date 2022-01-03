@@ -173,7 +173,9 @@ class References extends AbstractPlugin
      * - fields: the fields to use for the list of resources, if any. If not
      *   set, the output is an associative array with id as key and title as
      *   value. If set, value is an array of the specified fields.
-     * - initial: false (default), or true (get first letter of each result).
+     * - initial: false (default), or true (get first letter of each result), or
+     *   integer (number of first characters to get for each "initial", useful
+     *   for example to extract years from iso 8601 dates).
      * - distinct: false (default), or true (distinct values by type).
      * - datatype: false (default), or true (include datatype of values).
      * - lang: false (default), or true (include language of value to result).
@@ -292,7 +294,7 @@ class References extends AbstractPlugin
             $first = !empty($options['first']);
             $listByMax = empty($options['list_by_max']) ? 0 : (int) $options['list_by_max'];
             $fields = empty($options['fields']) ? [] : $options['fields'];
-            $initial = !empty($options['initial']);
+            $initial = empty($options['initial']) ? false : (int) $options['initial'];
             $distinct = !empty($options['distinct']);
             $datatype = !empty($options['datatype']);
             $lang = !empty($options['lang']);
@@ -575,10 +577,13 @@ class References extends AbstractPlugin
     }
 
     /**
-     * Get the initials of values for a field.
+     * Get the initials (first or more characters) of values for a field.
      *
      * The filters "begin" / "end" are skipped from the query.
      * @todo Some options are not yet managed: initials of item sets, sites.
+     *
+     * The option "initial" allows to set the number of characters by "initial"
+     * (default 1).
      *
      * @return array Associative array with the list of initials for each field
      * and  the total of resources.
@@ -592,6 +597,7 @@ class References extends AbstractPlugin
 
         // Use the same requests than list(), except select / group and begin.
         $this->process = 'initials';
+
         $currentOptions = $this->options;
         $this->options['first'] = false;
         $this->options['list_by_max'] = 0;
@@ -602,6 +608,9 @@ class References extends AbstractPlugin
         $this->options['lang'] = false;
         $this->options['fields'] = [];
         $this->options['output'] = 'associative';
+
+        // Internal option to specify the number of characters of each "initial".
+        $this->options['_initials'] = (int) $currentOptions['initial'] ?: 1;
 
         $result = [];
         foreach ($fields as $keyOrLabel => $inputField) {
@@ -743,7 +752,7 @@ class References extends AbstractPlugin
                 $qb
                     ->select(
                         // 'CONVERT(UPPER(LEFT(refmeta.text, 1)) USING latin1) AS val',
-                        $val = $expr->upper($expr->substring('refmeta.text', 1, 1)) . ' AS val',
+                        $val = $expr->upper($expr->substring('refmeta.text', 1, $this->options['_initials'])) . ' AS val',
                         // "Distinct" avoids to count duplicate values in properties in
                         // a resource: we count resources, not properties.
                         $expr->countDistinct('resource.id') . ' AS total'
@@ -761,10 +770,10 @@ class References extends AbstractPlugin
                 // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
                 $qb
                     ->select(
-                        // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), 1)) USING latin1) AS val',
+                        // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), $this->options['_initials'])) USING latin1) AS val',
                         $val = $this->supportAnyValue
-                            ? 'ANY_VALUE(' . $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, 1)) . ') AS val'
-                            : $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, 1)) . ' AS val',
+                            ? 'ANY_VALUE(' . $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, $this->options['_initials'])) . ') AS val'
+                            : $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, $this->options['_initials'])) . ' AS val',
                         // "Distinct" avoids to count duplicate values in properties in
                         // a resource: we count resources, not properties.
                         $expr->countDistinct('resource.id') . ' AS total'
@@ -831,7 +840,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    'DISTINCT ' . $expr->upper($expr->substring('resource.title', 1, 1)) . ' AS val',
+                    'DISTINCT ' . $expr->upper($expr->substring('resource.title', 1, $this->options['_initials'])) . ' AS val',
                     $expr->count('resource.id') . ' AS total'
                 );
         } else {
@@ -879,7 +888,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    'DISTINCT ' . $expr->upper($expr->substring('resource.title', 1, 1)) . ' AS val',
+                    'DISTINCT ' . $expr->upper($expr->substring('resource.title', 1, $this->options['_initials'])) . ' AS val',
                     $expr->count('resource.id') . ' AS total'
                 );
         } else {
@@ -931,7 +940,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    'DISTINCT ' . $expr->upper($expr->substring('resource.title', 1, 1)) . ' AS val',
+                    'DISTINCT ' . $expr->upper($expr->substring('resource.title', 1, $this->options['_initials'])) . ' AS val',
                     $expr->count('resource.id') . ' AS total'
                 );
         } else {
@@ -981,8 +990,8 @@ class References extends AbstractPlugin
             $qb
                 ->select(
                     $this->supportAnyValue
-                        ? 'ANY_VALUE(' . $expr->upper($expr->substring('resource.title', 1, 1)) . ') AS val'
-                        : $expr->upper($expr->substring('resource.title', 1, 1)) . ' AS val',
+                        ? 'ANY_VALUE(' . $expr->upper($expr->substring('resource.title', 1, $this->options['_initials'])) . ') AS val'
+                        : $expr->upper($expr->substring('resource.title', 1, $this->options['_initials'])) . ' AS val',
                     // "Distinct" avoids to count duplicate values in properties in
                     // a resource: we count resources, not properties.
                     $expr->countDistinct('resource.id') . ' AS total'
@@ -1032,7 +1041,7 @@ class References extends AbstractPlugin
                 ->select(
                     // 'property.label AS val',
                     // Important: use single quote for string ":", else doctrine fails.
-                    $expr->upper($expr->substring("CONCAT(vocabulary.prefix, ':', property.localName)", 1, 1)) . ' AS val',
+                    $expr->upper($expr->substring("CONCAT(vocabulary.prefix, ':', property.localName)", 1, $this->options['_initials'])) . ' AS val',
                     // "Distinct" avoids to count resources with multiple
                     // values multiple times for the same property: we count
                     // resources, not properties.
@@ -1107,7 +1116,7 @@ class References extends AbstractPlugin
                 ->select(
                     // 'resource_class.label AS val',
                     // Important: use single quote for string ":", else doctrine fails.
-                    $expr->upper($expr->substring("CONCAT(vocabulary.prefix, ':', resource_class.localName)", 1, 1)) . ' AS val',
+                    $expr->upper($expr->substring("CONCAT(vocabulary.prefix, ':', resource_class.localName)", 1, $this->options['_initials'])) . ' AS val',
                     'COUNT(resource.id) AS total'
                 );
         } else {
@@ -1163,7 +1172,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    $expr->upper($expr->substring('resource_template.label', 1, 1)) . ' AS val',
+                    $expr->upper($expr->substring('resource_template.label', 1, $this->options['_initials'])) . ' AS val',
                     'COUNT(resource.id) AS total'
                 );
         } else {
@@ -1223,7 +1232,7 @@ class References extends AbstractPlugin
             $qb
                 ->select(
                     // FIXME List of initials of item sets.
-                    $expr->upper($expr->substring('item_set.id', 1, 1)) . ' AS val',
+                    $expr->upper($expr->substring('item_set.id', 1, $this->options['_initials'])) . ' AS val',
                     'COUNT(resource.id) AS total'
                 );
         } else {
@@ -1282,7 +1291,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    $expr->upper($expr->substring('user.name', 1, 1)) . ' AS val',
+                    $expr->upper($expr->substring('user.name', 1, $this->options['_initials'])) . ' AS val',
                     'COUNT(resource.id) AS total'
                 );
         } else {
@@ -1334,7 +1343,7 @@ class References extends AbstractPlugin
             $qb
                 ->select(
                     // FIXME List of initials of sites.
-                    $expr->upper($expr->substring('site.slug', 1, 1)) . ' AS val',
+                    $expr->upper($expr->substring('site.slug', 1, $this->options['_initials'])) . ' AS val',
                     'COUNT(resource.id) AS total'
                 );
         } else {
@@ -1497,8 +1506,8 @@ class References extends AbstractPlugin
                 ->addSelect(
                     // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? 'ANY_VALUE(' . $expr->upper($expr->substring('resource.title', 1, 1)) . ') AS initial'
-                        : $expr->upper($expr->substring('resource.title', 1, 1)) . ' AS initial'
+                        ? 'ANY_VALUE(' . $expr->upper($expr->substring('resource.title', 1, $this->options['initial'])) . ') AS initial'
+                        : $expr->upper($expr->substring('resource.title', 1, $this->options['initial'])) . ' AS initial'
                 );
         }
 
@@ -1508,8 +1517,8 @@ class References extends AbstractPlugin
                 ->addSelect(
                     // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? 'ANY_VALUE(' . $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, 1)) . ') AS initial'
-                        : $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, 1)) . ' AS initial'
+                        ? 'ANY_VALUE(' . $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, $this->options['initial'])) . ') AS initial'
+                        : $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, $this->options['initial'])) . ' AS initial'
                 );
         }
 
