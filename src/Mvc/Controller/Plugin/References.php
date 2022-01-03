@@ -204,7 +204,11 @@ class References extends AbstractPlugin
         $this->metadata = $metadata ?: [];
 
         // Check if one of the metadata fields is a short aggregated one.
-        foreach ($this->metadata as &$fieldElement) {
+        foreach ($this->metadata as $key => &$fieldElement) {
+            if (empty($fieldElement)) {
+                unset($this->metadata[$key]);
+                continue;
+            }
             if (!is_array($fieldElement) && strpos($fieldElement, ',') !== false) {
                 $fieldElement = array_filter(array_map('trim', explode(',', $fieldElement)));
             }
