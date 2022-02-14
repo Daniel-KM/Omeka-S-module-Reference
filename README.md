@@ -96,8 +96,8 @@ echo $this->references()->initials('dcterms:created', $query, ['initial' => 4]);
 
 The references are available via the api in `/api/references` too. Arguments are
 the same than above: the search query + a `metadata` array for the list of
-fields to get, and an array of `options` to use. The same feature is available
-via the module [Api Info] too on `/api/infos/references`.
+fields to get, and an array of `options` to use  (see [below](#api-to-get-references-and-facets)). The same feature
+is available via the module [Api Info] too on `/api/infos/references`.
 
 ### Tree view
 
