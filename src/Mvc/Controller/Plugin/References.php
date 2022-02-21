@@ -471,7 +471,7 @@ class References extends AbstractPlugin
                         $result[$keyResult]['o:references'] = $values;
                     } else {
                         foreach (array_filter($values) as $valueData) {
-                            $resourceTemplate = $this->getResourceTemplates($valueData['val']);
+                            $resourceTemplate = $this->getResourceTemplate($valueData['val']);
                             $result[$keyResult]['o:references'][] = $resourceTemplate + $valueData;
                         }
                     }
