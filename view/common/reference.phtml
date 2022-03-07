@@ -34,10 +34,10 @@ if (!count($references)): ?>
 endif;
 
 $plugins = $this->getHelperPluginManager();
-$translate = $plugins->get('translate');
-$escape = $plugins->get('escapeHtml');
 $url = $plugins->get('url');
 $api = $plugins->get('api');
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
 
 // This is the Omeka default title. May be different in the database.
 $emptyTitle = $translate('[Untitled]');
@@ -52,8 +52,17 @@ $this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Refer
 $mapResourcesControllers = ['resources' => 'resource', 'items' => 'item', 'item_sets' => 'item-set', 'media' => 'media'];
 $controllerName = $mapResourcesControllers[$options['resource_name']];
 
-// Set default values if needed.
-$options += ['by_initial' => false, 'link_to_single' => true, 'total' => true, 'raw' => false, 'raw_sub' => false, 'skiplinks' => true, 'headings' => true, 'custom_url' => false];
+// Set default values.
+$options += [
+    'by_initial' => false,
+    'link_to_single' => true,
+    'total' => true,
+    'raw' => false,
+    'raw_sub' => false,
+    'skiplinks' => true,
+    'headings' => true,
+    'custom_url' => false,
+];
 $options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
 $hasInitial = array_key_exists('initial', $references[key($references)]);
 $listByMax = empty($options['list_by_max']) ? false : (int) $options['list_by_max'];

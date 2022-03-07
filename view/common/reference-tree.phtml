@@ -7,23 +7,25 @@
 
 if (!count($references)) return;
 
-$hyperlink = $this->plugin('hyperlink');
-$url = $this->plugin('url');
+$plugins = $this->getHelperPluginManager();
+$url = $plugins->get('url');
+$escape = $this->plugin('escapeHtml');
+
 $siteSlug = $this->params()->fromRoute('site-slug');
 $fields = $options['fields'];
-$resourceName = $options['resource_name'];
 $query = $options['query'] ?? [];
-// $api = $this->api();
+$resourceName = $options['resource_name'];
 
-$this->headLink()->appendStylesheet($this->assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));
-$this->headScript()->appendFile($this->assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'), 'text/javascript', ['defer' => 'defer']);
+// Loaded via the block.
+// $this->headLink()->appendStylesheet($this->assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));
+// $this->headScript()->appendFile($this->assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'), 'text/javascript', ['defer' => 'defer']);
 
 $this->headStyle()->appendStyle('.tree .no-resource { font-style: italic; }');
 
 $mapResourcesControllers = ['resources' => 'resource', 'items' => 'item', 'item_sets' => 'item-set', 'media' => 'media'];
 $controllerName = $mapResourcesControllers[$resourceName];
 
-// Set default values if needed.
+// Set default values.
 $options += [
     'query_type' => 'eq',
     'link_to_single' => true,
@@ -34,19 +36,19 @@ $options += [
 ];
 $options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
 if (!$options['custom_url']) {
-    $tempPlaceholder = '00999999990999999001';
-    $templateUrlSingle = str_replace($tempPlaceholder, '{reference}',
-        $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $tempPlaceholder], false));
+    $templateUrlSingle = str_replace('__temp_placeholder__', '{reference}',
+        $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => '__temp_placeholder__'], false));
     foreach ($fields as $field) {
         $query['property'][] = [
             'joiner' => 'or',
             'property' => $field,
             'type' => $options['query_type'],
-            'text' => $tempPlaceholder,
+            'text' => '__temp_placeholder__',
         ];
     }
-    $templateUrl = str_replace($tempPlaceholder, '{reference}',
-        $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $query], false));
+    // The default url helper doesn't encode "&" as "&amp;", so append it manually.
+    $templateUrl = str_replace('__temp_placeholder__', '{reference}',
+        $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
 }
 ?>
 
@@ -59,8 +61,7 @@ if (!$options['custom_url']) {
                 $reference = $referenceData['val'];
                 $level = $referenceData['level'];
 
-                // Close the previous line (done before, because next line is
-                // not known yet).
+                // Close the previous line (done before, because next line is not known yet).
                 if (is_null($previous_level)):
                     // Nothing for the first value (first level).
                     $previous_level = 0;
@@ -114,13 +115,13 @@ if (!$options['custom_url']) {
                                 $referenceUrl = str_replace('{reference}', rawurldecode($referenceData['first']), $templateUrlSingle);
                             }
                         }
-                        $referenceText = $hyperlink($reference, $referenceUrl);
+                        $referenceText = '<a href="' . $referenceUrl . '">' . $escape($reference) . '</a>';
                     }
                 }
 
                 echo $referenceText;
                 // Can be null when references are set directly.
-                if ($options['total'] && $referenceNumber && @$referenceData['total']):
+                if ($options['total'] && $referenceNumber && ($referenceData['total'] ?? false)):
                     echo ' (' . $referenceData['total'] . ')';
                 endif;
 

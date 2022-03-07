@@ -32,6 +32,7 @@ class ReferenceTreeFieldset extends Fieldset
                 'attributes' => [
                     'id' => 'reference-tree-fields',
                     'required' => true,
+                    'multiple' => true,
                     'class' => 'chosen-select',
                     'data-placeholder' => 'Select properties…', // @translate
                 ],
@@ -113,6 +114,7 @@ Asia
                 'attributes' => [
                     'id' => 'reference-tree-query_type',
                     'class' => 'chosen-select',
+                    'value' => 'eq',
                 ],
             ])
             ->add([
