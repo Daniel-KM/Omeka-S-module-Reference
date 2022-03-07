@@ -132,7 +132,6 @@ class ReferenceFieldset extends Form
                 'type' => Element\Text::class,
                 'options' => [
                     'label' => 'Heading', // @translate
-                    'info' => 'Translatable title above references, if any. The placeholder {total} can be used.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'reference-options-heading',

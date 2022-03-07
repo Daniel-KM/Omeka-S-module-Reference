@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Reference\Site\BlockLayout;
 
 use Laminas\View\Renderer\PhpRenderer;

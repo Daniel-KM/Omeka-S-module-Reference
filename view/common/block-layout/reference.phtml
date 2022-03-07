@@ -7,8 +7,8 @@
  */
 
 $plugins = $this->getHelperPluginManager();
-$translate = $plugins->get('translate');
 $escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
 
 $total = array_sum($this->references()->count($fields, $query, $options));
 ?>

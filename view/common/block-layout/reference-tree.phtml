@@ -9,12 +9,14 @@
  * @var array $options
  */
 
-$translate = $this->plugin('translate');
+$plugins = $this->getHelperPluginManager();
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
 ?>
 
 <div class="reference-block">
     <?php if (!empty($heading)): ?>
-    <h3><?= str_replace('{total}', $total, $heading) ?></h3>
+    <h3><?= $escape($heading) ?></h3>
     <?php endif; ?>
     <?php
     if ($total):
