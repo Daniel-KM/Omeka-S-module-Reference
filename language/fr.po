@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Reference\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-01-03 00:00+0000\n"
-"PO-Revision-Date: 2022-01-03 00:00+0000\n"
+"POT-Creation-Date: 2022-03-07 00:00+0000\n"
+"PO-Revision-Date: 2022-03-07 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -21,7 +21,7 @@ msgstr ""
 msgid "Method Not Allowed"
 msgstr "Méthode non autorisée"
 
-#: src/Generic/AbstractModule.php:66
+#: src/Generic/AbstractModule.php:66 src/Generic/AbstractModule.php:740
 #, php-format
 msgid "This module requires the module \"%s\"."
 msgstr "Ce module requiert le module « %s »."
@@ -35,7 +35,26 @@ msgstr "Ce module requiert les modules « %s »."
 msgid "This module has resources that cannot be installed."
 msgstr "Ce module a des ressources qui ne peuvent pas être installées."
 
-#: src/Generic/AbstractModule.php:725
+#: src/Generic/AbstractModule.php:87
+msgid ""
+"This module cannot install its tables, because they exist already. Try to "
+"remove them first."
+msgstr ""
+"Ce module ne peut pas installer ses tables car elles existent déjà. Essayez "
+"de les supprimer manuellement."
+
+#: src/Generic/AbstractModule.php:328
+#, php-format
+msgid "The module removed tables \"%s\" from a previous broken install."
+msgstr ""
+"Le module a supprimé les tables \"%s\" depuis une installation échouée."
+
+#: src/Generic/AbstractModule.php:735
+#, php-format
+msgid "This module requires the module \"%s\", version %s or above."
+msgstr "Ce module requiert le module \"%s\", version \"%s\" ou supérieure."
+
+#: src/Generic/AbstractModule.php:832
 #, php-format
 msgid ""
 "The module \"%s\" was automatically deactivated because the dependencies are "
@@ -56,11 +75,11 @@ msgstr "[Inconnu]"
 msgid "Choose one or more properties or one or more resource classes."
 msgstr "Choisir une propriété ou une classe de ressource."
 
-#: src/Site/BlockLayout/ReferenceIndex.php:141
+#: src/Site/BlockLayout/ReferenceIndex.php:142
 msgid "Choose a list of property or resource class."
 msgstr "Choisir une liste de propriêtés ou de classes."
 
-#: src/Site/BlockLayout/ReferenceIndex.php:142
+#: src/Site/BlockLayout/ReferenceIndex.php:143
 msgid ""
 "The pages for the selected terms should be created manually with the terms "
 "as slug, with the \":\" replaced by a \"-\"."
@@ -69,7 +88,7 @@ msgstr ""
 "terme en tant que chemin, avec le \":\" remplacé par un \"-\"."
 
 #: view/common/block-layout/reference-index.phtml:19
-#: view/common/block-layout/reference-tree.phtml:24
+#: view/common/block-layout/reference-tree.phtml:26
 #: view/common/block-layout/reference.phtml:23
 msgid "There is no references."
 msgstr "Il n’y a aucune référence."
@@ -86,11 +105,11 @@ msgstr "%s (%d)"
 msgid "Browse %s"
 msgstr "Parcourir %s"
 
-#: view/common/reference.phtml:60
+#: view/common/reference.phtml:69
 msgid "See all…"
 msgstr "Tout voir…"
 
-#: view/common/reference.phtml:61
+#: view/common/reference.phtml:70
 #, php-format
 msgid "And %d more."
 msgstr "Et %d de plus."
@@ -185,8 +204,8 @@ msgstr ""
 #: Module.php:159
 #, php-format
 msgid ""
-"Another job is running for the same process (job %1$s#%2$d%3$s, %4$slogs"
-"%3$s)."
+"Another job is running for the same process (job %1$s#%2$d%3$s, "
+"%4$slogs%3$s)."
 msgstr ""
 "Une autre tâche est en cours pour le même traitement (job %1$s#%2$d%3$s, "
 "%4$sjournaux%3$s)."
@@ -194,8 +213,8 @@ msgstr ""
 #: Module.php:184
 #, php-format
 msgid ""
-"Indexing translated and linked resource metadata in background (job %1$s#%2$d"
-"%3$s, %4$slogs%3$s)."
+"Indexing translated and linked resource metadata in background (job "
+"%1$s#%2$d%3$s, %4$slogs%3$s)."
 msgstr ""
 "Indexation des métadonnées des traductions et des ressources liées en "
 "arrière-plan (tâche %1$s#%2$d%3$s, %4$sjournaux%3$s)."
@@ -204,21 +223,16 @@ msgstr ""
 msgid "Block title"
 msgstr "Titre du bloc"
 
-#: src/Form/ReferenceTreeFieldset.php:20
-msgid "Heading for the block, if any. The placeholder {total} can be used."
-msgstr ""
-"Ajouter un titre éventuel pour le bloc. Le joker {total} peut être utilisé."
-
-#: src/Form/ReferenceTreeFieldset.php:38 src/Form/ReferenceIndexFieldset.php:36
+#: src/Form/ReferenceTreeFieldset.php:37 src/Form/ReferenceIndexFieldset.php:36
 #: src/Form/ReferenceFieldset.php:35
 msgid "Select properties…"
 msgstr "Choisir des propriétés…"
 
-#: src/Form/ReferenceTreeFieldset.php:45
+#: src/Form/ReferenceTreeFieldset.php:44
 msgid "Static tree of references"
 msgstr "Arborescence statique des références"
 
-#: src/Form/ReferenceTreeFieldset.php:46
+#: src/Form/ReferenceTreeFieldset.php:45
 msgid ""
 "Format is: one reference by line, preceded by zero, one or more \"-\" to "
 "indicate the hierarchy level.\n"
@@ -234,7 +248,7 @@ msgstr ""
 "Note : la base sql réalise des recherches sans tenir compte de la casse ; "
 "les références doivent donc être unique de façon insensible à la casse."
 
-#: src/Form/ReferenceTreeFieldset.php:55
+#: src/Form/ReferenceTreeFieldset.php:54
 msgid ""
 "Europe\n"
 "- France\n"
@@ -254,23 +268,23 @@ msgstr ""
 "Asie\n"
 "- Japon\n"
 
-#: src/Form/ReferenceTreeFieldset.php:74 src/Form/ReferenceIndexFieldset.php:63
+#: src/Form/ReferenceTreeFieldset.php:73 src/Form/ReferenceIndexFieldset.php:63
 #: src/Form/SiteSettingsFieldset.php:25 src/Form/ReferenceFieldset.php:62
 msgid "value_options"
 msgstr "value_options"
 
-#: src/Form/ReferenceTreeFieldset.php:93 src/Form/ReferenceFieldset.php:97
+#: src/Form/ReferenceTreeFieldset.php:92 src/Form/ReferenceFieldset.php:97
 msgid "Search pool query"
 msgstr "Requête de recherche"
 
-#: src/Form/ReferenceTreeFieldset.php:94 src/Form/ReferenceFieldset.php:98
+#: src/Form/ReferenceTreeFieldset.php:93 src/Form/ReferenceFieldset.php:98
 msgid ""
 "Restrict references to a particular subset of resources, for example a site."
 msgstr ""
 "Limiter les références à un lot spécifique de ressources, par exemple un "
 "site."
 
-#: src/Form/ReferenceTreeFieldset.php:109
+#: src/Form/ReferenceTreeFieldset.php:108
 msgid ""
 "The type of query defines how elements are regrouped (see the advanced "
 "search)."
@@ -278,20 +292,20 @@ msgstr ""
 "Le type de requête définit comment les éléments sont regroupés (voir la "
 "recherche avancée)."
 
-#: src/Form/ReferenceTreeFieldset.php:111
+#: src/Form/ReferenceTreeFieldset.php:110
 msgid "Is Exactly"
 msgstr "Est exactement"
 
-#: src/Form/ReferenceTreeFieldset.php:112
+#: src/Form/ReferenceTreeFieldset.php:111
 msgid "Contains"
 msgstr "Contient"
 
 #: src/Form/ReferenceTreeFieldset.php:124 src/Form/SiteSettingsFieldset.php:48
-#: src/Form/ReferenceFieldset.php:156
+#: src/Form/ReferenceFieldset.php:155
 msgid "Link to single records"
 msgstr "Lien vers les documents isolés"
 
-#: src/Form/ReferenceTreeFieldset.php:125 src/Form/ReferenceFieldset.php:157
+#: src/Form/ReferenceTreeFieldset.php:125 src/Form/ReferenceFieldset.php:156
 msgid ""
 "When a reference has only one item, link to it directly instead of to the "
 "items/browse page."
@@ -299,11 +313,11 @@ msgstr ""
 "Quand une référence contient un seul document, faire le lien directement "
 "vers lui plutôt que vers la page items/browse."
 
-#: src/Form/ReferenceTreeFieldset.php:135 src/Form/ReferenceFieldset.php:167
+#: src/Form/ReferenceTreeFieldset.php:135 src/Form/ReferenceFieldset.php:166
 msgid "Custom url for single"
 msgstr "Url personnalisée pour les références uniques"
 
-#: src/Form/ReferenceTreeFieldset.php:136 src/Form/ReferenceFieldset.php:168
+#: src/Form/ReferenceTreeFieldset.php:136 src/Form/ReferenceFieldset.php:167
 msgid ""
 "May be set with modules such Clean Url or Ark. May slow the display when "
 "there are many single references."
@@ -312,7 +326,7 @@ msgstr ""
 "l'affichage quand les références uniques sont nombreuses."
 
 #: src/Form/ReferenceTreeFieldset.php:146
-#: src/Form/ReferenceIndexFieldset.php:143 src/Form/ReferenceFieldset.php:198
+#: src/Form/ReferenceIndexFieldset.php:143 src/Form/ReferenceFieldset.php:197
 msgid "Add the total of resources for each reference"
 msgstr "Indiquer le total de ressources pour chaque référence"
 
@@ -333,7 +347,7 @@ msgstr ""
 "chemin est enregistré avec \" :: \" entre chaque branche)."
 
 #: src/Form/ReferenceTreeFieldset.php:180
-#: src/Form/ReferenceIndexFieldset.php:156 src/Form/ReferenceFieldset.php:241
+#: src/Form/ReferenceIndexFieldset.php:156 src/Form/ReferenceFieldset.php:240
 msgid "Template to display"
 msgstr "Gabarit à afficher"
 
@@ -453,35 +467,27 @@ msgstr "Par total croissant"
 msgid "Total descendant"
 msgstr "Par total décroissant"
 
-#: src/Form/ReferenceFieldset.php:135
-msgid ""
-"Translatable title above references, if any. The placeholder {total} can be "
-"used."
-msgstr ""
-"Ajouter un titre traduisible au-dessus des références. Le joker {total} peut "
-"être utilisé."
-
-#: src/Form/ReferenceFieldset.php:145
+#: src/Form/ReferenceFieldset.php:144
 msgid "One page by initial"
 msgstr "Une page par initiale"
 
-#: src/Form/ReferenceFieldset.php:146
+#: src/Form/ReferenceFieldset.php:145
 msgid "This option is recommended for big lists."
 msgstr "Cette option est recommandée pour les grandes listes."
 
-#: src/Form/ReferenceFieldset.php:178
+#: src/Form/ReferenceFieldset.php:177
 msgid "Add skiplinks above and below list"
 msgstr "Ajouter des raccourcis au dessus et en dessous de la liste"
 
-#: src/Form/ReferenceFieldset.php:188
+#: src/Form/ReferenceFieldset.php:187
 msgid "Add first letter as headings between references"
 msgstr "Ajouter l’initiale comme entête entre les références"
 
-#: src/Form/ReferenceFieldset.php:208
+#: src/Form/ReferenceFieldset.php:207
 msgid "Maximum resources to display by reference"
 msgstr "Nombre de ressources maximum à afficher par référence"
 
-#: src/Form/ReferenceFieldset.php:209
+#: src/Form/ReferenceFieldset.php:208
 msgid ""
 "For example, display the items by subject. Let 0 to display a simple list. "
 "Maximum is 1024."
@@ -489,11 +495,11 @@ msgstr ""
 "Par exemple, afficher les contenus par sujet. Laisser 0 pour afficher une "
 "liste simple. Le maximum est 1024."
 
-#: src/Form/ReferenceFieldset.php:222
+#: src/Form/ReferenceFieldset.php:221
 msgid "Subject values"
 msgstr "Valeurs sujet"
 
-#: src/Form/ReferenceFieldset.php:223
+#: src/Form/ReferenceFieldset.php:222
 msgid ""
 "Allow to list related resources. For example, in a library where there are "
 "items of types \"Authors\" and \"Documents\", and if the creator of the "
@@ -507,11 +513,11 @@ msgstr ""
 "voir la liste des documents par auteur. Cette option est ignorée quand "
 "l’option \"maximum par référence\" est utilisée."
 
-#: src/Form/ReferenceFieldset.php:231
+#: src/Form/ReferenceFieldset.php:230
 msgid "Select a property…"
 msgstr "Choisir une propriété…"
 
-#: src/Form/ReferenceFieldset.php:242
+#: src/Form/ReferenceFieldset.php:241
 msgid ""
 "Templates are in folder \"common/block-layout\" of the theme and should "
 "start with \"reference\"."
@@ -551,18 +557,18 @@ msgstr ""
 msgid "Reference tree"
 msgstr "Références en arborescence"
 
-#: src/Site/BlockLayout/ReferenceIndex.php:36 config/module.config.php:200
+#: src/Site/BlockLayout/ReferenceIndex.php:37 config/module.config.php:198
 msgid "Reference index"
 msgstr "Références (index)"
 
-#: src/Site/BlockLayout/ReferenceIndex.php:65
+#: src/Site/BlockLayout/ReferenceIndex.php:66
 msgid ""
 "To create a list of references, there must be properties or resource classes."
 msgstr ""
 "Pour créer des références, une propriété ou une classe de ressource doit "
 "être définie."
 
-#: src/Mvc/Controller/Plugin/CurrentReferenceMetadata.php:159
+#: src/Mvc/Controller/Plugin/CurrentReferenceMetadata.php:170
 #, php-format
 msgid "Resource #%d has a recursive title."
 msgstr "La ressource #%d a un titre récursif."
@@ -577,13 +583,25 @@ msgstr ""
 "utiliser pour utiliser le nouveau format ou ajouter l’option "
 "\"single_reference_format\" pour supprimer cet avertissement."
 
-#: config/module.config.php:176
+#: config/module.config.php:174
 msgid "Subjects"
 msgstr "Sujets"
 
-#: config/module.config.php:206
+#: config/module.config.php:204
 msgid "Tree of subjects"
 msgstr "Arborescence des sujets"
+
+#~ msgid "Heading for the block, if any. The placeholder {total} can be used."
+#~ msgstr ""
+#~ "Ajouter un titre éventuel pour le bloc. Le joker {total} peut être "
+#~ "utilisé."
+
+#~ msgid ""
+#~ "Translatable title above references, if any. The placeholder {total} can "
+#~ "be used."
+#~ msgstr ""
+#~ "Ajouter un titre traduisible au-dessus des références. Le joker {total} "
+#~ "peut être utilisé."
 
 #~ msgid "Resource class"
 #~ msgstr "Classe de ressource"
