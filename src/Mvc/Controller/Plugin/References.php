@@ -54,6 +54,11 @@ class References extends AbstractPlugin
     protected $supportAnyValue;
 
     /**
+     * @param bool
+     */
+    protected $hasAdvancedSearch;
+
+    /**
      * List of property main data by term and id.
      *
      * @var array
@@ -130,7 +135,8 @@ class References extends AbstractPlugin
         ?User $user,
         Api $api,
         Translate $translate,
-        $supportAnyValue
+        $supportAnyValue,
+        $hasAdvancedSearch
     ) {
         $this->entityManager = $entityManager;
         $this->adapterManager = $adapterManager;
@@ -139,6 +145,7 @@ class References extends AbstractPlugin
         $this->api = $api;
         $this->translate = $translate;
         $this->supportAnyValue = $supportAnyValue;
+        $this->hasAdvancedSearch = $hasAdvancedSearch;
     }
 
     /**
@@ -1997,7 +2004,10 @@ class References extends AbstractPlugin
     }
 
     /**
-     * Limit the results with a query (generally the site query).
+     * Limit the results with a query.
+     *
+     * The query is generally the site query, but may be complex with advanced
+     * search.
      */
     protected function searchQuery(QueryBuilder $qb, ?string $type = null): self
     {
@@ -2035,6 +2045,14 @@ class References extends AbstractPlugin
             ->select('omeka_root.id')
             ->from($this->options['entity_class'], 'omeka_root');
         $adapter->buildBaseQuery($subQb, $mainQuery);
+        // Manage advanced resquest of module Advanced Search for properties.
+        // TODO Remove this fix when Advanced Search will bypass AbstractResourceEntityAdapter directly.
+        if ($this->hasAdvancedSearch && !empty($mainQuery['property'])) {
+            $props = $mainQuery['property'];
+            unset($mainQuery['property']);
+        } else {
+            $props = null;
+        }
         $adapter->buildQuery($subQb, $mainQuery);
 
         // Full text search is not managed by adapters, but by a special event.
@@ -2042,6 +2060,10 @@ class References extends AbstractPlugin
             $this->buildFullTextSearchQuery($subQb, $adapter);
         }
         $subQb->groupBy('omeka_root.id');
+
+        if ($props) {
+            $mainQuery['property'] = $props;
+        }
 
         $request = new Request('search', $resourceName);
         $request->setContent($mainQuery);
@@ -2092,7 +2114,7 @@ class References extends AbstractPlugin
      *
      * This is an adaptation of the core method, except rights check.
      * @see \Omeka\Module::searchFulltext()
-     * @see \Folksonomy\View\helper\TagCloud
+     * @see \Folksonomy\View\Helper\TagCloud
      */
     protected function buildFullTextSearchQuery(QueryBuilder $qb, AbstractResourceEntityAdapter $adapter): self
     {

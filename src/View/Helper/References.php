@@ -233,7 +233,7 @@ class References extends AbstractHelper
      * Display the list of the references of a term or a template via a partial view.
      *
      * @deprecated Use displayListForFields() instead. Will be removed in a next release.
-     * @see \Reference\View\Helper::displayListForFields().
+     * @see \Reference\View\Helper\References::displayListForFields().
      */
     public function displayListForTerm($term, ?array $query = [], ?array $options = []): string
     {

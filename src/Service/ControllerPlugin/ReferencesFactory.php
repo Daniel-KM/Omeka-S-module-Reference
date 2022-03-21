@@ -13,6 +13,12 @@ class ReferencesFactory implements FactoryInterface
         $plugins = $services->get('ControllerPluginManager');
         $api = $plugins->get('api');
 
+        /** @var \Omeka\Module\Manager $moduleManager */
+        $moduleManager = $services->get('Omeka\ModuleManager');
+        $module = $moduleManager->getModule('AdvancedSearch');
+        $hasAdvancedSearch = $module
+            && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
+
         return new References(
             $services->get('Omeka\EntityManager'),
             $services->get('Omeka\ApiAdapterManager'),
@@ -20,7 +26,8 @@ class ReferencesFactory implements FactoryInterface
             $services->get('Omeka\AuthenticationService')->getIdentity(),
             $api,
             $plugins->get('translate'),
-            $this->supportAnyValue($services)
+            $this->supportAnyValue($services),
+            $hasAdvancedSearch
         );
     }
 
