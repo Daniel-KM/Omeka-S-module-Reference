@@ -538,9 +538,11 @@ class References extends AbstractPlugin
     /**
      * Count the total of distinct values for a term, a template or an item set.
      *
+     * If total is not correct, reindex the references in main settings.
+     *
      * @return int[] The number of references for each type, according to query.
      */
-    public function count()
+    public function count(): array
     {
         $fields = $this->getMetadata();
         if (empty($fields)) {
@@ -575,7 +577,7 @@ class References extends AbstractPlugin
                     $result[$keyResult] = $this->countResourcesForItemSets($ids);
                     break;
                 default:
-                    // Nothing.
+                    $result[$keyResult] = 0;
                     break;
             }
         }

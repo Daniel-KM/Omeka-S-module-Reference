@@ -12,6 +12,7 @@
 $plugins = $this->getHelperPluginManager();
 $escape = $plugins->get('escapeHtml');
 $translate = $plugins->get('translate');
+$references = $plugins->get('references');
 ?>
 
 <div class="reference-block">
@@ -20,7 +21,7 @@ $translate = $plugins->get('translate');
     <?php endif; ?>
     <?php
     if ($total):
-        echo $this->references()->displayTree($tree, $query, $options);
+        echo $references->displayTree($tree, $query, $options);
     else:
     ?>
     <p><?= $translate('There is no references.') ?></p>

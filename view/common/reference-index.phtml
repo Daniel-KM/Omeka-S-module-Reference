@@ -8,12 +8,13 @@
  */
 
 $translate = $this->plugin('translate');
-$hyperlink = $this->plugin('hyperlink');
 $url = $this->plugin('url');
 $api = $this->plugin('api');
 $siteSlug = $site->slug();
+$hyperlink = $this->plugin('hyperlink');
+$references = $this->plugin('references');
 
-$totals = $this->references()->count($fields, $query, $options);
+$totals = $references->count($fields, $query, $options);
 
 $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 ?>

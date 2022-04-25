@@ -9,8 +9,11 @@
 $plugins = $this->getHelperPluginManager();
 $escape = $plugins->get('escapeHtml');
 $translate = $plugins->get('translate');
+$references = $plugins->get('references');
 
-$total = array_sum($this->references()->count($fields, $query, $options));
+// The new format is used in block, but there is only one list of fields.
+// If total is not correct, reindex the references in main settings.
+$total = $references->count($fields, $query, $options)['fields'];
 ?>
 
 <div class="reference-block">
@@ -18,7 +21,7 @@ $total = array_sum($this->references()->count($fields, $query, $options));
     <h3><?= $escape(str_replace('{total}', $total, $translate($options['heading']))) ?></h3>
     <?php endif; ?>
     <?php if ($total): ?>
-    <?= $this->references()->displayListForFields($fields, $query, $options) ?>
+    <?= $references->displayListForFields($fields, $query, $options) ?>
     <?php else: ?>
     <p><?= $translate('There is no references.') ?></p>
     <?php endif; ?>

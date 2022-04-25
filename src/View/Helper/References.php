@@ -108,7 +108,10 @@ class References extends AbstractHelper
     /**
      * Count the total of distinct element texts for terms.
      *
+     * If total is not correct, reindex the references in main settings.
+     *
      * @uses \Reference\Mvc\Controller\Plugin\References::count()
+     * Unlike References::count(), it has arguments and may return an integer.
      *
      * @param string|array $metadata
      * @param array $query

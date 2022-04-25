@@ -170,10 +170,9 @@ class ApiController extends \Omeka\Controller\ApiController
         if (empty($query['site_id']) && !empty($query['site_slug'])) {
             $siteSlug = $query['site_slug'];
             if ($siteSlug) {
-                $api = $this->api();
-                $siteId = $api->searchOne('sites', ['slug' => $siteSlug], ['initialize' => false, 'returnScalar' => 'id'])->getContent();
-                if ($siteId) {
-                    $query['site_id'] = $siteId;
+                try {
+                    $query['site_id'] = $this->api->read('sites', ['slug' => $siteSlug], [], ['initialize' => false, 'finalize' => false])->getContent()->getId();
+                } catch (\Exception $e) {
                 }
             }
         }
