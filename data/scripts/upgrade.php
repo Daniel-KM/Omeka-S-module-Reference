@@ -24,20 +24,26 @@ $settings = $services->get('Omeka\Settings');
 $connection = $services->get('Omeka\Connection');
 $config = require dirname(__DIR__, 2) . '/config/module.config.php';
 
-// The reference plugin is not available during upgrade.
+// The reference plugin is not available during upgrade, so prepare it.
 include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/References.php';
 include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/ReferenceTree.php';
 $entityManager = $services->get('Omeka\EntityManager');
 $controllerPluginManager = $services->get('ControllerPluginManager');
 $api = $controllerPluginManager->get('api');
+/** @var \Omeka\Module\Manager $moduleManager */
+$moduleManager = $services->get('Omeka\ModuleManager');
+$module = $moduleManager->getModule('AdvancedSearch');
+$hasAdvancedSearch = $module
+    && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
 $referencesPlugin = new Mvc\Controller\Plugin\References(
-    $entityManager,
+    $services->get('Omeka\EntityManager'),
     $services->get('Omeka\ApiAdapterManager'),
     $services->get('Omeka\Acl'),
     $services->get('Omeka\AuthenticationService')->getIdentity(),
     $api,
-    $controllerPluginManager->get('translate'),
-    false
+    $services->get('ControllerPluginManager')->get('translate'),
+    false,
+    $hasAdvancedSearch
 );
 $referenceTreePlugin = new Mvc\Controller\Plugin\ReferenceTree($api, $referencesPlugin);
 
