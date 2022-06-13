@@ -325,7 +325,7 @@ class References extends AbstractPlugin
                 'page' => $options['page'] ?? $defaults['page'],
                 'sort_by' => $options['sort_by'] ?? 'alphabetic',
                 'sort_order' => isset($options['sort_order']) && strtolower((string) $options['sort_order']) === 'desc' ? 'DESC' : 'ASC',
-                'filters' => @$options['filters'] ? $options['filters'] + $defaults['filters'] : $defaults['filters'],
+                'filters' => isset($options['filters']) && is_array($options['filters']) ? $options['filters'] + $defaults['filters'] : $defaults['filters'],
                 'values' => $options['values'] ?? [],
                 'first' => $first,
                 'list_by_max' => $listByMax,

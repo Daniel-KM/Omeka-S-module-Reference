@@ -18,6 +18,11 @@ class UpdateReferenceMetadata extends AbstractJob
      */
     const SQL_LIMIT = 100;
 
+    /**
+     * @var \Doctrine\DBAL\Connection
+     */
+    protected $connection;
+
     public function perform(): void
     {
         $services = $this->getServiceLocator();
@@ -34,6 +39,7 @@ class UpdateReferenceMetadata extends AbstractJob
         // example when the job is run in foreground or multiple resources are
         // imported in bulk, so a flush() or a clear() will not be applied on
         // the imported resources but only on the indexed resources.
+        $this->connection = $services->get('Omeka\Connection');
         $this->entityManager = $this->getNewEntityManager($services->get('Omeka\EntityManager'));
         $this->resourceRepository = $this->entityManager->getRepository(\Omeka\Entity\Resource::class);
 
@@ -42,7 +48,7 @@ class UpdateReferenceMetadata extends AbstractJob
         );
 
         $sql = 'SELECT COUNT(id) FROM resource;';
-        $totalResources = $this->entityManager->getConnection()->executeQuery($sql)->fetchOne();
+        $totalResources = $this->connection->executeQuery($sql)->fetchOne();
         if (empty($totalResources)) {
             $this->logger->notice(
                 'No resource to process.' // @translate
@@ -88,7 +94,7 @@ class UpdateReferenceMetadata extends AbstractJob
                 ++$totalProcessed;
             }
 
-            $this->entityManager->getConnection()->executeStatement(
+            $this->connection->executeStatement(
                 'DELETE FROM `reference_metadata` WHERE `resource_id` IN (:resources)',
                 ['resources' => $ids],
                 ['resources' => \Doctrine\DBAL\Connection::PARAM_INT_ARRAY]
