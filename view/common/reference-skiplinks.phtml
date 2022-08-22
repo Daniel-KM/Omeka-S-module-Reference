@@ -60,9 +60,9 @@ if (!empty($options['by_initial'])) {
 // Display the list of initials.
 $paginationList = '<ul class="pagination-list">';
 foreach ($initials as $initial => $isSet):
-    $lowerInitial = mb_strtolower($initial);
+    $upperInitial = mb_strtoupper($initial);
     $paginationList .= $isSet
-        ? sprintf('<li class="pagination-range%s"><a href="%s%s">%s</a></li>', $lowerInitial === $active ? ' active' : '', $baseUrl, rawurlencode($lowerInitial), $initial)
+        ? sprintf('<li class="pagination-range%s"><a href="%s%s">%s</a></li>', $upperInitial === $active ? ' active' : '', $baseUrl, rawurlencode($upperInitial), $initial)
         : sprintf('<li class="pagination-range"><span>%s</span></li>', $initial);
 endforeach;
 $paginationList .= '</ul>';
