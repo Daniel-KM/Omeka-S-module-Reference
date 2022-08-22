@@ -15,6 +15,7 @@ class SettingsFieldset extends Fieldset
     public function init(): void
     {
         $this
+            ->setAttribute('id', 'reference')
             ->add([
                 'name' => 'reference_metadata_job',
                 'type' => Element\Checkbox::class,

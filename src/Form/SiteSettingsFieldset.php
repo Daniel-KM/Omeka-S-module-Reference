@@ -17,6 +17,7 @@ class SiteSettingsFieldset extends Fieldset
     public function init(): void
     {
         $this
+            ->setAttribute('id', 'reference')
             ->add([
                 'name' => 'reference_resource_name',
                 'type' => Element\Radio::class,
