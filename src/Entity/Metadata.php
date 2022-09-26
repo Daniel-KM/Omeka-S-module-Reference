@@ -166,8 +166,8 @@ class Metadata
     {
         $this->value = $value;
         return $this;
-
     }
+
     public function getValue(): Value
     {
         return $this->value;

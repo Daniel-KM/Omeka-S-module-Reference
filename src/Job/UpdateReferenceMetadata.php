@@ -3,7 +3,6 @@
 namespace Reference\Job;
 
 use Doctrine\ORM\EntityManager;
-use Omeka\Entity\Resource;
 use Omeka\Job\AbstractJob;
 
 /**
@@ -44,7 +43,7 @@ class UpdateReferenceMetadata extends AbstractJob
         $this->resourceRepository = $this->entityManager->getRepository(\Omeka\Entity\Resource::class);
 
         $this->logger->notice(
-            'Starting creation of reference metadata.', // @translate
+            'Starting creation of reference metadata.' // @translate
         );
 
         $sql = 'SELECT COUNT(id) FROM resource;';

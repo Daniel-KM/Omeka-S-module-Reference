@@ -311,7 +311,7 @@ class References extends AbstractPlugin
                 $locales = [];
             } else {
                 $locales = is_array($options['locale']) ? $options['locale'] : [$options['locale']];
-                $locales = array_filter(array_unique(array_map('trim', array_map('strval', $locales))), function($v) {
+                $locales = array_filter(array_unique(array_map('trim', array_map('strval', $locales))), function ($v) {
                     return ctype_alnum(str_replace(['-', '_'], ['', ''], $v));
                 });
                 if (($pos = array_search('null', $locales)) !== false) {
@@ -2517,7 +2517,7 @@ class References extends AbstractPlugin
                 ->addOrderBy('property.id', 'asc')
                 ->addGroupBy('property.id')
             ;
-            $results= $connection->executeQuery($qb)->fetchAllAssociative();
+            $results = $connection->executeQuery($qb)->fetchAllAssociative();
             $this->propertiesByTermsAndIds = [];
             foreach ($results as $result) {
                 unset($result['id']);
@@ -2616,7 +2616,7 @@ class References extends AbstractPlugin
                 ->addOrderBy('resource_class.id', 'asc')
                 ->addGroupBy('resource_class.id')
             ;
-            $results= $connection->executeQuery($qb)->fetchAllAssociative();
+            $results = $connection->executeQuery($qb)->fetchAllAssociative();
             $this->resourceClassesByTermsAndIds = [];
             foreach ($results as $result) {
                 unset($result['id']);
@@ -2711,7 +2711,7 @@ class References extends AbstractPlugin
                 ->orderBy('resource_template.id', 'asc')
                 ->addGroupBy('resource_template.id')
             ;
-            $results= $connection->executeQuery($qb)->fetchAllAssociative();
+            $results = $connection->executeQuery($qb)->fetchAllAssociative();
             $this->resourceTemplatesByLabelsAndIds = [];
             foreach ($results as $result) {
                 unset($result['id']);
@@ -2823,7 +2823,7 @@ class References extends AbstractPlugin
                 ->orderBy('resource.id', 'asc')
                 ->addGroupBy('resource.id')
             ;
-            $results= $connection->executeQuery($qb)->fetchAllAssociative();
+            $results = $connection->executeQuery($qb)->fetchAllAssociative();
             $this->itemSetsByTitlesAndIds = [];
             foreach ($results as $result) {
                 unset($result['id']);
@@ -2870,7 +2870,7 @@ class References extends AbstractPlugin
                 ->orderBy('user.id', 'asc')
                 ->addGroupBy('user.id')
             ;
-            $results= $connection->executeQuery($qb)->fetchAllAssociative();
+            $results = $connection->executeQuery($qb)->fetchAllAssociative();
             $this->ownersByNameAndIds = [];
             foreach ($results as $result) {
                 unset($result['id']);
@@ -2917,7 +2917,7 @@ class References extends AbstractPlugin
                 ->orderBy('site.id', 'asc')
                 ->addGroupBy('site.id')
             ;
-            $results= $connection->executeQuery($qb)->fetchAllAssociative();
+            $results = $connection->executeQuery($qb)->fetchAllAssociative();
             $this->sitesBySlugAndIds = [];
             foreach ($results as $result) {
                 unset($result['id']);
