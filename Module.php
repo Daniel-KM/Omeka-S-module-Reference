@@ -46,7 +46,7 @@ class Module extends AbstractModule
     protected function postInstall(): void
     {
         $services = $this->getServiceLocator();
-        $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
+        $messenger = $services->get('ControllerPluginManager')->get('messenger');
         try {
             $services->get(\Omeka\Job\Dispatcher::class)
                 ->dispatch(\Reference\Job\UpdateReferenceMetadata::class);
@@ -149,7 +149,7 @@ class Module extends AbstractModule
             return;
         }
 
-        $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
+        $messenger = $services->get('ControllerPluginManager')->get('messenger');
         $urlHelper = $services->get('ViewHelperManager')->get('url');
 
         // Check if a zip job is already running before running a new one.

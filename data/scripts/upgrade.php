@@ -23,6 +23,7 @@ $services = $serviceLocator;
 $settings = $services->get('Omeka\Settings');
 $connection = $services->get('Omeka\Connection');
 $config = require dirname(__DIR__, 2) . '/config/module.config.php';
+$messenger = $services->get('ControllerPluginManager')->get('messenger');
 
 // The reference plugin is not available during upgrade, so prepare it.
 include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/References.php';
@@ -169,7 +170,6 @@ if (version_compare($oldVersion, '3.4.16', '<')) {
 }
 
 if (version_compare($oldVersion, '3.4.23.3', '<')) {
-    $messenger = new Messenger();
     $message = new Message(
         'This release changed some features, so check your theme: the config has been moved to each site; the key "o-module-reference:values" is replaced by "o:references"; the helper $this->reference() is deprecated and is now an alias of $this->references().'
     );
@@ -356,7 +356,6 @@ if (version_compare($oldVersion, '3.4.23.3', '<')) {
 }
 
 if (version_compare($oldVersion, '3.4.24.3', '<')) {
-    $messenger = new Messenger();
     $message = new Message(
         'It is possible now to limit the list of references, for example only the of subjects starting with "a" with argument "filters[begin]=a".' // @translate
     );
@@ -369,7 +368,6 @@ if (version_compare($oldVersion, '3.4.24.3', '<')) {
 }
 
 if (version_compare($oldVersion, '3.4.32.3', '<')) {
-    $messenger = new Messenger();
     $message = new Message(
         'It is possible now to aggregate properties (api and helper).' // @translate
     );
@@ -377,7 +375,6 @@ if (version_compare($oldVersion, '3.4.32.3', '<')) {
 }
 
 if (version_compare($oldVersion, '3.4.33.3', '<')) {
-    $messenger = new Messenger();
     $message = new Message(
         'It is possible now to filter references by data types.' // @translate
     );
@@ -387,7 +384,6 @@ if (version_compare($oldVersion, '3.4.33.3', '<')) {
 if (version_compare($oldVersion, '3.4.34.3', '<')) {
     $this->execSqlFromFile($this->modulePath() . '/data/install/schema.sql');
 
-    $messenger = new Messenger();
     $message = new Message(
         'It is possible now to get translated linked resource.' // @translate
     );
@@ -432,7 +428,6 @@ if (version_compare($oldVersion, '3.4.35.3', '<')) {
     }
     $entityManager->flush();
 
-    $messenger = new Messenger();
     $message = new Message(
         'It is possible now to aggregate properties in references, for example to get list of people from properties dcterms:creator and dcterms:contributor.' // @translate
     );
