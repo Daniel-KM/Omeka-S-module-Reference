@@ -23,6 +23,8 @@ $connection = $services->get('Omeka\Connection');
 $messenger = $plugins->get('messenger');
 $entityManager = $services->get('Omeka\EntityManager');
 
+$defaultConfig = require dirname(dirname(__DIR__)) . '/config/module.config.php';
+
 // The reference plugin is not available during upgrade, so prepare it.
 include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/References.php';
 include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/ReferenceTree.php';
@@ -59,14 +61,13 @@ if (version_compare($oldVersion, '3.4.5', '<')) {
         $referenceTreePlugin->convertTreeToLevels($tree)
     );
 
-    $defaultConfig = $config[strtolower(__NAMESPACE__)]['config'];
     $settings->set(
         'reference_resource_name',
-        $defaultConfig['reference_resource_name']
+        $defaultConfig['reference']['config']['reference_resource_name'] ?? null
     );
     $settings->set(
         'reference_total',
-        $defaultConfig['reference_total']
+        $defaultConfig['reference']['config']['reference_total'] ?? null
     );
 }
 
@@ -132,7 +133,7 @@ if (version_compare($oldVersion, '3.4.10', '<')) {
                 unset($data['options']['headings']);
                 break;
             default:
-                $data = $config['reference']['block_settings']['args'];
+                $data = $defaultConfig['reference']['block_settings']['args'] ?? null;
                 break;
         }
         $block->setData($data);
@@ -417,7 +418,9 @@ if (version_compare($oldVersion, '3.4.35.3', '<')) {
     $blocks = $repository->findBy(['layout' => 'referenceTree']);
     foreach ($blocks as $block) {
         $data = $block->getData();
-        $data['fields'] = [$data['term']];
+        $data['fields'] = [
+            $data['term'] ?? (empty($data['fields']) ? 'dcterms:subject' : reset($data['fields'])),
+        ];
         // The term is kept for compatibility with old themes, at least until edition of the page.
         $block->setData($data);
         $entityManager->persist($block);
