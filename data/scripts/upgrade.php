@@ -2,35 +2,31 @@
 
 namespace Reference;
 
-use Omeka\Mvc\Controller\Plugin\Messenger;
 use Omeka\Stdlib\Message;
 
 /**
  * @var Module $this
- * @var \Laminas\ServiceManager\ServiceLocatorInterface $serviceLocator
- * @var string $oldVersion
+ * @var \Laminas\ServiceManager\ServiceLocatorInterface $services
  * @var string $newVersion
- */
-$services = $serviceLocator;
-
-/**
+ * @var string $oldVersion
+ *
+ * @var \Omeka\Api\Manager $api
  * @var \Omeka\Settings\Settings $settings
- * @var \Doctrine\ORM\EntityManager $entityManager
  * @var \Doctrine\DBAL\Connection $connection
- * @var \Omeka\Mvc\Controller\Plugin\Api $api
- * @var array $config
+ * @var \Doctrine\ORM\EntityManager $entityManager
+ * @var \Omeka\Mvc\Controller\Plugin\Messenger $messenger
  */
+$plugins = $services->get('ControllerPluginManager');
+$api = $plugins->get('api');
 $settings = $services->get('Omeka\Settings');
 $connection = $services->get('Omeka\Connection');
-$config = require dirname(__DIR__, 2) . '/config/module.config.php';
-$messenger = $services->get('ControllerPluginManager')->get('messenger');
+$messenger = $plugins->get('messenger');
+$entityManager = $services->get('Omeka\EntityManager');
 
 // The reference plugin is not available during upgrade, so prepare it.
 include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/References.php';
 include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/ReferenceTree.php';
-$entityManager = $services->get('Omeka\EntityManager');
-$controllerPluginManager = $services->get('ControllerPluginManager');
-$api = $controllerPluginManager->get('api');
+
 /** @var \Omeka\Module\Manager $moduleManager */
 $moduleManager = $services->get('Omeka\ModuleManager');
 $module = $moduleManager->getModule('AdvancedSearch');
@@ -105,7 +101,7 @@ UPDATE site_page_block
 SET data = CONCAT('{"reference":{"order":{"alphabetic":"ASC"},"query":[],', SUBSTR(data, 15))
 WHERE layout = "reference";
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
 }
 
 if (version_compare($oldVersion, '3.4.10', '<')) {

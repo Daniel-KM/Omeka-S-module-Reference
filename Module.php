@@ -274,8 +274,8 @@ WHERE status IN ("starting", "stopping", "in_progress")
 ORDER BY id ASC;
 SQL;
 
-        $connection = $this->getServiceLocator()->get('Omeka\EntityManager')->getConnection();
-        $result = $connection->executeQuery($sql, ['class' => $class])->fetchAll(\PDO::FETCH_ASSOC);
+        $connection = $this->getServiceLocator()->get('Omeka\Connection');
+        $result = $connection->executeQuery($sql, ['class' => $class])->fetchAllAssociative();
 
         // Unselect processes without pid.
         foreach ($result as $id => $row) {
