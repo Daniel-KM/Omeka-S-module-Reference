@@ -216,16 +216,15 @@ class References extends AbstractPlugin
      */
     public function setMetadata(?array $metadata = [])
     {
-        $this->metadata = $metadata ?: [];
+        $this->metadata = $metadata ? array_filter($metadata) : [];
 
         // Check if one of the metadata fields is a short aggregated one.
         foreach ($this->metadata as $key => &$fieldElement) {
-            if (empty($fieldElement)) {
-                unset($this->metadata[$key]);
-                continue;
-            }
             if (!is_array($fieldElement) && strpos($fieldElement, ',') !== false) {
                 $fieldElement = array_filter(array_map('trim', explode(',', $fieldElement)));
+                if (!$fieldElement) {
+                    unset($this->metadata[$key]);
+                }
             }
         }
         unset($fieldElement);
@@ -387,10 +386,7 @@ class References extends AbstractPlugin
         return $this->options;
     }
 
-    /**
-     * @return array
-     */
-    public function list()
+    public function list(): array
     {
         $fields = $this->getMetadata();
         if (empty($fields)) {

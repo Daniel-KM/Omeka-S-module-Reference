@@ -102,7 +102,9 @@ class References extends AbstractHelper
             $metadata = ['fields' => $metadata];
         }
         $result = $this->references->__invoke($metadata, $query, $options)->list();
-        return $isSingle ? reset($result) : $result;
+        return $isSingle && $result
+            ? reset($result)
+            : $result;
     }
 
     /**
@@ -125,7 +127,9 @@ class References extends AbstractHelper
             $metadata = ['fields' => $metadata];
         }
         $result = $this->references->__invoke($metadata, $query, $options)->count();
-        return $isSingle ? reset($result) : $result;
+        return $isSingle
+            ? ($result ? reset($result) : 0)
+            : $result;
     }
 
     /**
@@ -148,7 +152,9 @@ class References extends AbstractHelper
             $metadata = ['fields' => $metadata];
         }
         $result = $this->references->__invoke($metadata, $query, $options)->initials();
-        return $isSingle ? reset($result) : $result;
+        return $isSingle && $result
+            ? reset($result)
+            : $result;
     }
 
     /**
