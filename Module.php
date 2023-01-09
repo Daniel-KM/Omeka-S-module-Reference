@@ -20,7 +20,7 @@ use Omeka\Settings\SettingsInterface;
  * Allows to serve an alphabetized and a hierarchical page of links to searches
  * for all resources classes and properties of all resources of Omeka S.
  *
- * @copyright Daniel Berthereau, 2017-2021
+ * @copyright Daniel Berthereau, 2017-2023
  * @license http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.txt
  */
 class Module extends AbstractModule
@@ -89,7 +89,6 @@ class Module extends AbstractModule
             \Omeka\Api\Adapter\ItemSetAdapter::class,
             \Omeka\Api\Adapter\MediaAdapter::class,
             \Annotate\Api\Adapter\AnnotationAdapter::class,
-            \Article\Api\Adapter\ArticleAdapter::class,
         ];
         foreach ($adapters as $adapter) {
             $sharedEventManager->attach(
