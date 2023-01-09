@@ -61,7 +61,7 @@ class References extends AbstractHelper
      *     used only for properties.
      *   - "datatypes": array Filter property values according to the data types.
      *     Default datatypes are "literal", "resource", "resource:item", "resource:itemset",
-     *     "resource:media" and "uri".
+     *     "resource:media" and "uri"; other existing ones are managed.
      *     Warning: "resource" is not the same than specific resources.
      *     Use module Bulk Edit or Bulk Check to specify all resources automatically.
      *   - "begin": array Filter property values that begin with these strings,

@@ -87,11 +87,13 @@ These contents can be displayed anywere via the view helper `references()`:
 // With default values.
 echo $this->references()->displayListForTerm('dcterms:subject', $query, $options);
 // Get the lists.
-echo $this->references()->list('dcterms:subject', $query, $options);
+print_r($this->references()->list('dcterms:subject', $query, $options));
 // Get the count.
 echo $this->references()->count('dcterms:subject', $query, $options);
 // Get the initials (here to get the list of years from iso 8601 values or numeric timestamp).
-echo $this->references()->initials('dcterms:created', $query, ['initial' => 4]);
+print_r($this->references()->initials('dcterms:created', $query, ['initial' => 4]));
+// Get the list of resources related to all subjects.
+print_r($references->list('dcterms:subject', null, ['list_by_max' => 1024]));
 ```
 
 The references are available via the api in `/api/references` too. Arguments are
@@ -160,7 +162,7 @@ The conversion is automatically done inside the user interface (page blocks).
 To get the results via api, use a standard query and append the options you need,
 for example `/api/references?metadata[subjects]=dcterms:subject` to get the list
 of all subjects, or `/api/references?metadata[people]=foaf:Person` to get the
-list of all resources with class "Person". You can add multiple metadata together: `medatadata[subjects]=dcterms:subject&medatadata[creators]=dcterms:creator`
+list of all resources with class "Person". You can add multiple metadata together: `/api/references?medatadata[subjects]=dcterms:subject&medatadata[creators]=dcterms:creator`
 You can use the special metadata `o:title` too, but some options won't be
 available for it since it is managed differently inside Omeka. The metadata can
 be a property term, or `o:item_set`, `o:resource_class`, and `o:resource_template`
@@ -171,55 +173,57 @@ The query from the url can be simplified with `text=my-text` in most of the
 cases, so the references are filtered by this text in any property.
 If one or multiple fields are specified, the references are returned for these
 fields. The fields can be a comma separated list of an array, for example:
-`/api/infos/references?text=example&metadata[subjects]=dcterms:subject` allows to get all
+`/api/references?text=example&metadata[subjects]=dcterms:subject` allows to get all
 references for the specified text in the specified field.
 
 To get the facets for the search result page, you can use this query:
-`text=xxx&site_id=1&option[resource_name]=items&option[sort_by]=total&option[sort_order]=desc&option[filters][languages][]=fra&option[filters][languages][]=null&option[filters][languages]=&option[lang]=1&metadata[subjects]=dcterms:subject`
+`/api/references?text=xxx&site_id=1&option[resource_name]=items&option[sort_by]=total&option[sort_order]=desc&option[filters][languages][]=fra&option[filters][languages][]=null&option[filters][languages]=&option[lang]=1&metadata[subjects]=dcterms:subject`
 Note: if you use the filters for the language, it may be needed to add an
 empty language `&option[filters][languages][]=null` or, for string format, `&option[filters][languages]=fra,null`
 because many metadata have no language (date, names, etc.).
 The empty language can be an empty string too (deprecated).
 
-Options can be appended to the query. If you don't want to mix them, you can use
-the keys `query` and `option`.
+To get more information about results, in particular the list of resources
+associated to each reference (`list_by_max`), use options. Options can be
+appended to the query. If you don't want to mix them, you can use the keys
+`query` and `option`.
 
 Options are the same than the view helper:
 
-- resource_name: items (default), "item_sets", "media", "resources".
-- sort_by: "alphabetic" (default), "count", or any available column.
-- sort_order: "asc" (default) or "desc".
-- filters: array Limit values to the specified data. Currently managed:
-  - "languages": list of languages. Values without language are returned with
+- `resource_name`: items (default), "item_sets", "media", "resources".
+- `sort_by`: "alphabetic" (default), "count", or any available column.
+- `sort_order`: "asc" (default) or "desc".
+- `filters`: array Limit values to the specified data. Currently managed:
+  - `languages`: list of languages. Values without language are returned with
     the value "null". This option is used only for properties.
-  - "datatypes": array Filter property values according to the data types.
+  - `datatypes`: array Filter property values according to the data types.
     Default datatypes are "literal", "resource", "resource:item", "resource:itemset",
-    "resource:media" and "uri".
+    "resource:media" and "uri"; other existing ones are managed.
     Warning: "resource" is not the same than specific resources.
     Use module Bulk Edit or Bulk Check to specify all resources automatically.
-  - "begin": array Filter property values that begin with these strings,
+  - `begin`: array Filter property values that begin with these strings,
     generally one or more initials.
-  - "end": array Filter property values that end with these strings.
-- values: array Allow to limit the answer to the specified values.
-- first: false (default), or true (get first resource).
-- list_by_max: 0 (default), or the max number of resources for each reference)
+  - `end`: array Filter property values that end with these strings.
+- `values`: array Allow to limit the answer to the specified values.
+- `first`: false (default), or true (get first resource).
+- `list_by_max`: 0 (default), or the max number of resources for each reference)
   The max number should be below 1024 (mysql limit for group_concat).
-- fields: the fields to use for the list of resources, if any. If not set, the
+- `fields`: the fields to use for the list of resources, if any. If not set, the
   output is an associative array with id as key and title as value. If set,
   value is an array of the specified fields.
-- initial: false (default), or true (get first letter of each result).
-- distinct: false (default), or true (distinct values by type).
-- datatype: false (default), or true (include datatype of values).
-- lang: false (default), or true (include language of value to result).
-- locale: empty (default) or a string or an ordered array Allow to get the
+- `initial`: false (default), or true (get first letter of each result).
+- `distinct`: false (default), or true (distinct values by type).
+- `datatype`: false (default), or true (include datatype of values).
+- `lang`: false (default), or true (include language of value to result).
+- `locale`: empty (default) or a string or an ordered array Allow to get the
   returned values in the first specified language when a property has translated
   values. Use "null" to get a value without language.
   Unlike Omeka core, it gets the translated title of linked resources.
-- include_without_meta: false (default), or true (include total of resources
+- `include_without_meta`: false (default), or true (include total of resources
   with no metadata) (TODO Check if this option is still needed).
-- single_reference_format: false (default), or true to keep the old output
+- `single_reference_format`: false (default), or true to keep the old output
   without the deprecated warning for single references without named key.
-- output: "list" (default) or "associative" (possible only without added
+- `output`: "list" (default) or "associative" (possible only without added
   options: first, initial, distinct, datatype, or lang).
 
 A standard resource query can be appended to the query. The property argument
