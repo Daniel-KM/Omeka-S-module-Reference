@@ -12,14 +12,20 @@ class SettingsFieldset extends Fieldset
      */
     protected $label = 'Reference'; // @translate
 
+    protected $elementGroups = [
+        'jobs' => 'Jobs', // @translate
+    ];
+
     public function init(): void
     {
         $this
             ->setAttribute('id', 'reference')
+            ->setOption('element_groups', $this->elementGroups)
             ->add([
                 'name' => 'reference_metadata_job',
                 'type' => Element\Checkbox::class,
                 'options' => [
+                    'element_group' => 'jobs',
                     'label' => 'Index reference metadata', // @translate
                     'info' => 'To use some features of module Reference, an index is required.', // @translate
                 ],
