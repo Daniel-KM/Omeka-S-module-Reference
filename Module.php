@@ -234,19 +234,19 @@ class Module extends AbstractModule
 
         // When a post flush event is used, flush is not available to avoid loop,
         // so use only sql.
-        $parameters = [];
-        $sql = "INSERT INTO `reference_metadata` (`resource_id`, `value_id`, `field`, `lang`, `is_public`, `text`) VALUES\n";
-        foreach ($referenceMetadatas as $key => $metadata) {
-            $sql .= "(:resource_id_$key, :value_id_$key, :field_$key, :lang_$key, :is_public_$key, :text_$key),\n";
-            $parameters["resource_id_$key"] = (int) $metadata->getResource()->getId();
-            $parameters["value_id_$key"] = (int) $metadata->getValue()->getId();
-            $parameters["field_$key"] = (string) $metadata->getField();
-            $parameters["lang_$key"] = (string) $metadata->getLang();
-            $parameters["is_public_$key"] = (int) $metadata->getIsPublic();
-            $parameters["text_$key"] = (string) $metadata->getText();
+        $connection = $this->getServiceLocator()->get('Omeka\Connection');
+        foreach ($referenceMetadatas as $metadata) {
+            $sql = "INSERT INTO `reference_metadata` (`resource_id`, `value_id`, `field`, `lang`, `is_public`, `text`) VALUES (:resource_id, :value_id, :field, :lang, :is_public, :text)";
+            $parameters = [
+                'resource_id' => (int) $metadata->getResource()->getId(),
+                'value_id' => (int) $metadata->getValue()->getId(),
+                'field' => (string) $metadata->getField(),
+                'lang' => (string) $metadata->getLang(),
+                'is_public' => (int) $metadata->getIsPublic(),
+                'text' => (string) $metadata->getText(),
+            ];
+            $connection->executeStatement($sql, $parameters);
         }
-        $sql = trim($sql, " \n,");
-        $this->getServiceLocator()->get('Omeka\Connection')->executeStatement($sql, $parameters);
     }
 
     /**
