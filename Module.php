@@ -139,7 +139,19 @@ class Module extends AbstractModule
         $fieldset = $services->get('FormElementManager')->get(\Reference\Form\SettingsFieldset::class);
         $fieldset->setName('reference');
         $form = $event->getTarget();
-        $form->add($fieldset);
+        $form
+            ->setOption('element_groups', array_merge($form->getOption('element_groups') ?: [], $fieldset->getOption('element_groups')));
+
+        if (version_compare(\Omeka\Module::VERSION, '4', '<')) {
+            $form->add($fieldset);
+        } else {
+            foreach ($fieldset->getFieldsets() as $subFieldset) {
+                $form->add($subFieldset);
+            }
+            foreach ($fieldset->getElements() as $element) {
+                $form->add($element);
+            }
+        }
 
         $settings = $services->get('Omeka\Settings');
         $job = $settings->get('reference_metadata_job');
@@ -234,6 +246,9 @@ class Module extends AbstractModule
 
         // When a post flush event is used, flush is not available to avoid loop,
         // so use only sql.
+        // See commit #eb068cc the explanation of the foreach instead of the
+        // single query (possible memory issue with extracted text).
+        // TODO Improve the query to avoid a loop on query. Check using doctrine dql.
         $connection = $this->getServiceLocator()->get('Omeka\Connection');
         foreach ($referenceMetadatas as $metadata) {
             $sql = "INSERT INTO `reference_metadata` (`resource_id`, `value_id`, `field`, `lang`, `is_public`, `text`) VALUES (:resource_id, :value_id, :field, :lang, :is_public, :text)";
