@@ -279,6 +279,7 @@ TODO
 - [ ] Include the fields in the main request or get them via a second request, not via api.
 - [ ] Use the new table `reference_metadata` when possible.
 - [ ] Simplify queries for aggregated fields (see AdvancedSearch).
+- [ ] Order by years instead of alphabetic.
 
 
 Warning
@@ -327,7 +328,7 @@ Copyright
 
 * Copyright William Mayo, 2011
 * Copyright Philip Collins, 2013 ([jQuery tree view])
-* Copyright Daniel Berthereau, 2014-2022 (see [Daniel-KM] on GitLab)
+* Copyright Daniel Berthereau, 2014-2023 (see [Daniel-KM] on GitLab)
 
 This module is inspired from earlier work done by William Mayo (see [pobocks] on
 GitLab) in [Subject Browse], with some ideas from [Metadata Browser] and
