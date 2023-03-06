@@ -3,6 +3,7 @@
 namespace Reference\Mvc\Controller\Plugin;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
@@ -1400,7 +1401,7 @@ class References extends AbstractPlugin
                 // @see \Omeka\Api\Adapter\ItemSetAdapter::buildQuery()
                 ->innerJoin('item_set.siteItemSets', 'ref_site_item_set')
                 ->andWhere($expr->eq('ref_site_item_set.site', ':ref_site_item_set_site'))
-                ->setParameter(':ref_site_item_set_site', $this->query['site_id']);
+                ->setParameter(':ref_site_item_set_site', (int) $this->query['site_id'], ParameterType::INTEGER);
         }
         return $this;
     }
@@ -1466,13 +1467,14 @@ class References extends AbstractPlugin
                     if ($firstFilter === '0-9') {
                         $qb
                             ->andWhere("REGEXP($column, :filter_09) = false")
-                            ->setParameter('filter_09', $filter === 'begin' ? '^[[:alpha:]]' :  '[[:alpha:]]$');
+                            ->setParameter('filter_09', $filter === 'begin' ? '^[[:alpha:]]' :  '[[:alpha:]]$', ParameterType::STRING);
                     } else {
                         $qb
                             ->andWhere($expr->like($column, ":filter_$filter"))
                             ->setParameter(
                                 "filter_$filter",
-                                $filterB . str_replace(['%', '_'], ['\%', '\_'], $firstFilter) . $filterE
+                                $filterB . str_replace(['%', '_'], ['\%', '\_'], $firstFilter) . $filterE,
+                                ParameterType::STRING
                             );
                     }
                 } elseif (count($this->options['filters'][$filter]) <= 20) {
@@ -1482,7 +1484,8 @@ class References extends AbstractPlugin
                         $qb
                             ->setParameter(
                                 "filter_{$filter}_$key",
-                                $filterB . str_replace(['%', '_'], ['\%', '\_'], $string) . $filterE
+                                $filterB . str_replace(['%', '_'], ['\%', '\_'], $string) . $filterE,
+                                ParameterType::STRING
                             );
                     }
                     $qb
@@ -1491,7 +1494,7 @@ class References extends AbstractPlugin
                     $regexp = implode('|', array_map('preg_quote', $this->options['filters'][$filter]));
                     $qb
                         ->andWhere("REGEXP($column, :filter_filter) = true")
-                        ->setParameter("filter_$filter", $regexp);
+                        ->setParameter("filter_$filter", $regexp, ParameterType::STRING);
                 }
             }
         }
@@ -1606,7 +1609,7 @@ class References extends AbstractPlugin
                                 $expr->eq("ress_$strLocale.lang", ':locale_' . $strLocale)
                             )
                         )
-                        ->setParameter('locale_' . $strLocale, $locale)
+                        ->setParameter('locale_' . $strLocale, $locale, ParameterType::STRING);
                     ;
                 }
                 $coalesce[] = 'ress.text';
@@ -1624,13 +1627,13 @@ class References extends AbstractPlugin
                             $expr->eq('ress.field', ':display_title')
                         )
                     )
-                    ->setParameter('display_title', 'display_title')
+                    ->setParameter('display_title', 'display_title', ParameterType::STRING)
                     ->addSelect(
                         // Note: for doctrine, separators must be set as parameters.
                         "GROUP_CONCAT(IDENTITY(ress.resource), :unit_separator, $ressText SEPARATOR :group_separator) AS resources"
                     )
-                    ->setParameter('unit_separator', chr(0x1F))
-                    ->setParameter('group_separator', chr(0x1D))
+                    ->setParameter('unit_separator', chr(0x1F), ParameterType::STRING)
+                    ->setParameter('group_separator', chr(0x1D), ParameterType::STRING)
                 ;
             } else {
                 $qb
@@ -1644,8 +1647,8 @@ class References extends AbstractPlugin
                         // Note: for doctrine, separators must be set as parameters.
                         'GROUP_CONCAT(ress.id, :unit_separator, ress.title SEPARATOR :group_separator) AS resources'
                     )
-                    ->setParameter('unit_separator', chr(0x1F))
-                    ->setParameter('group_separator', chr(0x1D))
+                    ->setParameter('unit_separator', chr(0x1F), ParameterType::STRING)
+                    ->setParameter('group_separator', chr(0x1D), ParameterType::STRING)
                 ;
             }
         }
@@ -1657,7 +1660,7 @@ class References extends AbstractPlugin
                 case 'resource_templates':
                     $qb
                         ->andWhere('value.value IN (:values)')
-                        ->setParameter('values', $this->options['values']);
+                        ->setParameter('values', $this->options['values'], Connection::PARAM_STR_ARRAY);
                     break;
                 case 'resource_titles':
                     // TODO Nothing to filter for resource titles?
@@ -1666,34 +1669,34 @@ class References extends AbstractPlugin
                     $values = $this->getPropertyIds($this->options['values']) ?: [0];
                     $qb
                         ->andWhere('property' . '.id IN (:ids)')
-                        ->setParameter('ids', $values);
+                        ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:resource_class':
                     $values = $this->getResourceClassIds($this->options['values']) ?: [0];
                     $qb
                         ->andWhere('resource_class' . '.id IN (:ids)')
-                        ->setParameter('ids', $values);
+                        ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:resource_template':
                     $values = $this->getResourceTemplateIds($this->options['values']) ?: [0];
                     $qb
                         ->andWhere('resource_template' . '.id IN (:ids)')
-                        ->setParameter('ids', $values);
+                        ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:item_set':
                     $qb
                         ->andWhere('item_set.id IN (:ids)')
-                        ->setParameter('ids', $this->options['values']);
+                        ->setParameter('ids', array_map('intval', $this->options['values']), Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:owner':
                     $qb
                         ->andWhere('user.id IN (:ids)')
-                        ->setParameter('ids', $this->options['values']);
+                        ->setParameter('ids', array_map('intval', $this->options['values']), Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:site':
                     $qb
                         ->andWhere('site.id IN (:ids)')
-                        ->setParameter('ids', $this->options['values']);
+                        ->setParameter('ids', array_map('intval', $this->options['values']), Connection::PARAM_INT_ARRAY);
                     break;
                 default:
                     break;
