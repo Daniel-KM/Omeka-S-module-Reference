@@ -47,6 +47,7 @@ class SiteSettingsFieldset extends Fieldset
                 'name' => 'reference_options',
                 'type' => OptionalMultiCheckbox::class,
                 'options' => [
+                    'element_group' => 'references',
                     'label' => 'Display [deprecated: use page block]', // @translate
                     'value_options' => [
                         'element_group' => 'references',
