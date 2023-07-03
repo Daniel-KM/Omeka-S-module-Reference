@@ -103,6 +103,7 @@ class Metadata
      * @var string
      *
      * @Column(
+     *     type="string",
      *     length=190,
      *     nullable=false
      * )
