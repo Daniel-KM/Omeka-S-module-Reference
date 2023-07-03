@@ -775,6 +775,7 @@ class References extends AbstractPlugin
             ->setParameter('properties', array_map('intval', $propertyIds), Connection::PARAM_INT_ARRAY)
             ->groupBy('val')
         ;
+
         // The values should be distinct for each type.
         if ($this->options['is_base_resource']) {
             $qb
@@ -836,6 +837,7 @@ class References extends AbstractPlugin
         }
 
         return $this
+            ->filterByVisibility($qb, 'properties')
             ->filterByDatatype($qb)
             ->filterByLanguage($qb)
             ->filterByBeginOrEnd($qb, substr($val, 0, -7))
@@ -887,6 +889,7 @@ class References extends AbstractPlugin
         }
 
         return $this
+            ->filterByVisibility($qb, 'resource_classes')
             ->filterByBeginOrEnd($qb, 'resource.title')
             ->manageOptions($qb, 'resource_classes')
             ->outputMetadata($qb, 'resource_classes');
@@ -936,6 +939,7 @@ class References extends AbstractPlugin
         }
 
         return $this
+            ->filterByVisibility($qb, 'resource_templates')
             ->filterByBeginOrEnd($qb, 'resource.title')
             ->manageOptions($qb, 'resource_templates')
             ->outputMetadata($qb, 'resource_templates');
@@ -986,6 +990,7 @@ class References extends AbstractPlugin
         ;
 
         return $this
+            ->filterByVisibility($qb, 'item_sets')
             ->filterByBeginOrEnd($qb, 'resource.title')
             ->manageOptions($qb, 'item_sets')
             ->outputMetadata($qb, 'item_sets');
@@ -1037,6 +1042,7 @@ class References extends AbstractPlugin
             // TODO Improve filter for "o:title".
             // ->filterByDatatype($qb)
             // ->filterByLanguage($qb)
+            ->filterByVisibility($qb, 'resource_titles')
             ->filterByBeginOrEnd($qb, 'resource.title')
             ->manageOptions($qb, 'resource_titles')
             ->outputMetadata($qb, 'properties');
@@ -1091,6 +1097,7 @@ class References extends AbstractPlugin
         }
 
         return $this
+            ->filterByVisibility($qb, 'o:property')
             ->filterByLanguage($qb)
             ->manageOptions($qb, 'o:property')
             ->outputMetadata($qb, 'o:property');
@@ -1150,6 +1157,7 @@ class References extends AbstractPlugin
         }
 
         return $this
+            ->filterByVisibility($qb, 'o:resource_class')
             ->manageOptions($qb, 'o:resource_class')
             ->outputMetadata($qb, 'o:resource_class');
     }
@@ -1194,6 +1202,7 @@ class References extends AbstractPlugin
         }
 
         return $this
+            ->filterByVisibility($qb, 'o:resource_template')
             ->manageOptions($qb, 'o:resource_template')
             ->outputMetadata($qb, 'o:resource_template');
     }
@@ -1247,6 +1256,7 @@ class References extends AbstractPlugin
         ;
 
         return $this
+            ->filterByVisibility($qb, 'o:item_set')
             // TODO Check if items are limited by sites.
             // By exeption, the query for item sets should add public site,
             // because item sets are limited by sites.
@@ -1303,6 +1313,7 @@ class References extends AbstractPlugin
         }
 
         return $this
+            ->filterByVisibility($qb, 'o:owner')
             ->manageOptions($qb, 'o:owner')
             ->outputMetadata($qb, 'o:owner');
     }
@@ -1347,6 +1358,7 @@ class References extends AbstractPlugin
         // TODO Count item sets and media by site.
 
         return $this
+            ->filterByVisibility($qb, 'o:site')
             ->manageOptions($qb, 'o:site')
             ->outputMetadata($qb, 'o:site');
     }
@@ -1372,6 +1384,101 @@ class References extends AbstractPlugin
                 ->innerJoin('resource_item_set', 'site_item_set', 'ref_site_item_set', $expr->eq('ref_site_item_set.item_set_id', 'resource_item_set.id'))
                 ->andWhere($expr->eq('ref_site_item_set.site_id', ':ref_site_item_set_site'))
                 ->setParameter(':ref_site_item_set_site', $siteId, ParameterType::INTEGER);
+        }
+        return $this;
+    }
+
+    protected function filterByVisibility(QueryBuilder $qb, $type): self
+    {
+        if ($this->acl->userIsAllowed(\Omeka\Entity\Resource::class, 'view-all')) {
+            return $this;
+        }
+        return $this->user
+            ? $this->filterByVisibilityForUser($qb, $type)
+            : $this->filterByVisibilityForAnonymous($qb, $type);
+    }
+
+    protected function filterByVisibilityForAnonymous(QueryBuilder $qb, $type): self
+    {
+        /**
+         * @see \Omeka\Db\Filter\ResourceVisibilityFilter
+         * @see \Omeka\Db\Filter\ValueVisibilityFilter
+         */
+        switch ($type) {
+            case 'o:item_set':
+                $qb
+                    ->andWhere('resource_item_set.is_public = 1');
+                // No break.
+            case 'resource_classes':
+            case 'resource_templates':
+            case 'item_sets':
+            case 'resource_titles':
+            case 'o:resource_class':
+            case 'o:resource_template':
+            case 'o:owner':
+            case 'o:site':
+                $qb
+                    ->andWhere('resource.is_public = 1');
+                break;
+            case 'properties':
+            case 'o:property':
+                $qb
+                    ->andWhere('resource.is_public = 1')
+                    ->andWhere('value.is_public = 1');
+            default:
+                break;
+        }
+        return $this;
+    }
+
+    protected function filterByVisibilityForUser(QueryBuilder $qb, $type): self
+    {
+        /**
+         * @see \Omeka\Db\Filter\ResourceVisibilityFilter
+         * @see \Omeka\Db\Filter\ValueVisibilityFilter
+         */
+        $expr = $qb->expr();
+        switch ($type) {
+            case 'o:item_set':
+                $qb
+                    ->andWhere($expr->orX(
+                        'resource_item_set.is_public = 1',
+                        'resource_item_set.owner_id = :user_id'
+                    ))
+                ;
+                // No break.
+            case 'resource_classes':
+            case 'resource_templates':
+            case 'item_sets':
+            case 'resource_titles':
+            case 'o:resource_class':
+            case 'o:resource_template':
+            case 'o:owner':
+            case 'o:site':
+                $qb
+                    ->andWhere($expr->orX(
+                        'resource.is_public = 1',
+                        'resource.owner_id = :user_id'
+                    ))
+                    ->setParameter('user_id', (int) $this->user->getId(), \Doctrine\DBAL\ParameterType::INTEGER)
+                ;
+                break;
+            case 'properties':
+            case 'o:property':
+                $qb
+                    ->andWhere($expr->orX(
+                        'resource.is_public = 1',
+                        'resource.owner_id = :user_id'
+                    ))
+                    ->andWhere($expr->orX(
+                        'value.is_public = 1',
+                        'value.resource_id = (SELECT r.id FROM resource r WHERE r.owner_id = :user_id AND r.id = value.resource_id)'
+                    ))
+                    ->setParameter('user_id', (int) $this->user->getId(), \Doctrine\DBAL\ParameterType::INTEGER)
+                ;
+                break;
+            default:
+                break;
         }
         return $this;
     }
