@@ -4,16 +4,12 @@ namespace Reference\Mvc\Controller\Plugin;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Query\Expr\Join;
-use Doctrine\ORM\QueryBuilder;
-use Laminas\EventManager\Event;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
-use Omeka\Api\Adapter\AbstractResourceEntityAdapter;
 use Omeka\Api\Adapter\Manager as AdapterManager;
-use Omeka\Api\Request;
+use Omeka\Api\Manager as ApiManager;
 use Omeka\Entity\User;
-use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Mvc\Controller\Plugin\Translate;
 use Omeka\Permissions\Acl;
 
@@ -23,6 +19,11 @@ class References extends AbstractPlugin
      * @param EntityManager
      */
     protected $entityManager;
+
+    /**
+     * @param Connection
+     */
+    protected $connection;
 
     /**
      * @param AdapterManager
@@ -40,7 +41,7 @@ class References extends AbstractPlugin
     protected $user;
 
     /**
-     * @var Api
+     * @var ApiManager
      */
     protected $api;
 
@@ -53,11 +54,6 @@ class References extends AbstractPlugin
      * @param bool
      */
     protected $supportAnyValue;
-
-    /**
-     * @param bool
-     */
-    protected $hasAdvancedSearch;
 
     /**
      * List of property main data by term and id.
@@ -131,22 +127,22 @@ class References extends AbstractPlugin
 
     public function __construct(
         EntityManager $entityManager,
+        Connection $connection,
         AdapterManager $adapterManager,
         Acl $acl,
         ?User $user,
-        Api $api,
+        ApiManager $api,
         Translate $translate,
-        $supportAnyValue,
-        $hasAdvancedSearch
+        $supportAnyValue
     ) {
         $this->entityManager = $entityManager;
+        $this->connection = $connection;
         $this->adapterManager = $adapterManager;
         $this->acl = $acl;
         $this->user = $user;
         $this->api = $api;
         $this->translate = $translate;
         $this->supportAnyValue = $supportAnyValue;
-        $this->hasAdvancedSearch = $hasAdvancedSearch;
     }
 
     /**
@@ -269,6 +265,8 @@ class References extends AbstractPlugin
             'resource_name' => 'items',
             // Not an option, but simpler to set it here.
             'entity_class' => \Omeka\Entity\Item::class,
+            'resource_table' => 'item',
+            'is_base_resource' => false,
             // Options sql.
             'per_page' => 0,
             'page' => 1,
@@ -318,9 +316,12 @@ class References extends AbstractPlugin
                     $locales[$pos] = '';
                 }
             }
+            $entityClass = $this->mapResourceNameToEntityClass($resourceName);
             $this->options = [
                 'resource_name' => $resourceName,
-                'entity_class' => $this->mapResourceNameToEntityClass($resourceName),
+                'entity_class' => $entityClass,
+                'resource_table' => $this->mapResourceNameToTable($resourceName),
+                'is_base_resource' => empty($entityClass) || $entityClass === \Omeka\Entity\Resource::class,
                 'per_page' => isset($options['per_page']) && is_numeric($options['per_page']) ? (int) $options['per_page'] : $defaults['per_page'],
                 'page' => $options['page'] ?? $defaults['page'],
                 'sort_by' => $options['sort_by'] ?? 'alphabetic',
@@ -393,6 +394,25 @@ class References extends AbstractPlugin
         if (empty($fields)) {
             return [];
         }
+
+        /**
+         * Note: The process doesn't use the orm query builder anymore but the
+         * dbal query builder in order to largely speed process: 4 to 10 times
+         * on a small base, but this is exponential, so more than 100 or 1000 on
+         * big bases, in particular with the old version of the module Annotate
+         * that created four sub-resources to manage annotations, parts, bodies
+         * and targets.
+         * The issue with "resource" is that many classes are joined to it, even
+         * when it is useless. Here, this is always useless, because only the id
+         * and title are needed. So each time a resource is queried, multiple
+         * left join are appended (item, item set, media, value annotation,
+         * annotation value,
+         * @see https://github.com/doctrine/orm/issues/5961
+         * @see https://github.com/doctrine/orm/issues/5980
+         *
+         * Nevertheless, this solution requires to check visibility manually for
+         * resource and value, but user and sites too.
+         */
 
         $isAssociative = $this->options['output'] === 'associative';
 
@@ -734,41 +754,49 @@ class References extends AbstractPlugin
             return [];
         }
 
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         // TODO This is no more the case.
         // TODO Check if ANY_VALUE can be replaced by MIN in order to remove it.
-        // Note: Doctrine requires simple label, without quote or double quote:
-        // "o:label" is not possible, neither "count".
+        // Note: Doctrine ORM requires simple label, without quote or double quote:
+        // "o:label" is not possible, neither "count". Use of Doctrine DBAL now.
+
+        // Dbal expr() and orm expr() don't have the same methods, for example
+        // count(), substring(), upper(), etc. It has only the common comparison
+        // operators.
 
         $qb
-            ->from(\Omeka\Entity\Value::class, 'value')
-            // This join allow to check visibility automatically too.
-            ->innerJoin($this->options['entity_class'], 'resource', Join::WITH, $expr->eq('value.resource', 'resource'))
-            // The values should be distinct for each type.
-            ->leftJoin($this->options['entity_class'], 'valueResource', Join::WITH, $expr->eq('value.valueResource', 'valueResource'))
-            ->andWhere($expr->in('value.property', ':properties'))
+            // "Distinct" avoids to count duplicate values in properties in a
+            // resource: we count resources, not properties.
+            ->distinct(true)
+            ->from('value', 'value')
+            ->where($expr->in('value.property_id', ':properties'))
             ->setParameter('properties', array_map('intval', $propertyIds), Connection::PARAM_INT_ARRAY)
             ->groupBy('val')
         ;
+        // The values should be distinct for each type.
+        if ($this->options['is_base_resource']) {
+            $qb
+                ->innerJoin('value', 'resource', 'resource', $expr->eq('resource.id', 'value.resource_id'))
+                ->innerJoin('value', 'resource', 'value_resource', $expr->eq('value_resource.id', 'value.resource_id'));
+        } else {
+            $qb
+                ->innerJoin('value', 'resource', 'resource', $expr->andX($expr->eq('resource.id', 'value.resource_id'), $expr->eq('resource.resource_type', ':entity_class')))
+                ->innerJoin('value', 'resource', 'value_resource', $expr->andX($expr->eq('value_resource.id', 'value.resource_id'), $expr->eq('value_resource.resource_type', ':entity_class')))
+                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
+        }
 
         if ($this->process === 'initials') {
             if ($this->options['locale']) {
                 $qb
                     ->select(
+                        // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert. Anyway convert should be only for diacritics.
                         // 'CONVERT(UPPER(LEFT(refmeta.text, 1)) USING latin1) AS val',
-                        $val = $expr->upper($expr->substring('refmeta.text', 1, $this->options['_initials'])) . ' AS val',
-                        // "Distinct" avoids to count duplicate values in properties in
-                        // a resource: we count resources, not properties.
-                        $expr->countDistinct('resource.id') . ' AS total'
+                        $val = "UPPER(LEFT(refmeta.text, {$this->options['_initials']})) AS val",
+                        'COUNT(esource.id) AS total'
                     )
-                    ->innerJoin(
-                        \Reference\Entity\Metadata::class,
-                        'refmeta',
-                        Join::WITH,
-                        $expr->eq('refmeta.value', 'value.id')
-                    )
+                    ->innerJoin('value', 'reference_metadata', 'refmeta', $expr->eq('refmeta.value_id', 'value.id'))
                     ->andWhere($expr->in('refmeta.lang', ':locales'))
                     ->setParameter('locales', $this->options['locale'], Connection::PARAM_STR_ARRAY)
                 ;
@@ -778,11 +806,9 @@ class References extends AbstractPlugin
                     ->select(
                         // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), $this->options['_initials'])) USING latin1) AS val',
                         $val = $this->supportAnyValue
-                            ? 'ANY_VALUE(' . $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, $this->options['_initials'])) . ') AS val'
-                            : $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, $this->options['_initials'])) . ' AS val',
-                        // "Distinct" avoids to count duplicate values in properties in
-                        // a resource: we count resources, not properties.
-                        $expr->countDistinct('resource.id') . ' AS total'
+                            ? "ANY_VALUE(UPPER(LEFT(COALESCE(value.value, value_resource.title, value.uri), {$this->options['_initials']}))) AS val"
+                            : "UPPER(LEFT(COALESCE(value.value, value_resource.title, value.uri), {$this->options['_initials']})) AS val",
+                        'COUNT(resource.id) AS total'
                     )
                 ;
             }
@@ -791,16 +817,9 @@ class References extends AbstractPlugin
                 $qb
                     ->select(
                         $val = 'refmeta.text AS val',
-                        // "Distinct" avoids to count duplicate values in properties in
-                        // a resource: we count resources, not properties.
-                        $expr->countDistinct('resource.id') . ' AS total'
+                        'COUNT(resource.id) AS total'
                     )
-                    ->innerJoin(
-                        \Reference\Entity\Metadata::class,
-                        'refmeta',
-                        Join::WITH,
-                        $expr->eq('refmeta.value', 'value.id')
-                    )
+                    ->innerJoin('value', 'reference_metadata', 'refmeta', $expr->eq('refmeta.value_id', 'value.id'))
                     ->andWhere($expr->in('refmeta.lang', ':locales'))
                     ->setParameter('locales', $this->options['locale'], Connection::PARAM_STR_ARRAY)
                 ;
@@ -808,11 +827,9 @@ class References extends AbstractPlugin
                 $qb
                     ->select(
                         $val = $this->supportAnyValue
-                            ? 'ANY_VALUE(COALESCE(value.value, valueResource.title, value.uri)) AS val'
-                            : 'COALESCE(value.value, valueResource.title, value.uri) AS val',
-                        // "Distinct" avoids to count duplicate values in properties in
-                        // a resource: we count resources, not properties.
-                        $expr->countDistinct('resource.id') . ' AS total'
+                            ? 'ANY_VALUE(COALESCE(value.value, value_resource.title, value.uri)) AS val'
+                            : 'COALESCE(value.value, value_resource.title, value.uri) AS val',
+                        'COUNT(resource.id) AS total'
                     )
                 ;
             }
@@ -840,32 +857,33 @@ class References extends AbstractPlugin
             return [];
         }
 
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    'DISTINCT ' . $expr->upper($expr->substring('resource.title', 1, $this->options['_initials'])) . ' AS val',
-                    $expr->count('resource.id') . ' AS total'
+                    "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val",
+                    'COUNT(resource.id) AS total'
                 );
         } else {
             $qb
                 ->select(
-                    'DISTINCT resource.title AS val',
-                    $expr->count('resource.id') . ' AS total'
+                    'resource.title AS val',
+                    'COUNT(resource.id) AS total'
                 );
         }
         $qb
-            // The use of resource checks visibility automatically.
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->where($expr->in('resource.resourceClass', ':resource_classes'))
+            ->distinct(true)
+            ->from('resource', 'resource')
+            ->where($expr->in('resource.resource_class_id', ':resource_classes'))
             ->setParameter('resource_classes', array_map('intval', $resourceClassIds), Connection::PARAM_INT_ARRAY)
             ->groupBy('val');
 
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
-                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
+                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
         }
 
         return $this
@@ -888,32 +906,33 @@ class References extends AbstractPlugin
             return [];
         }
 
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    'DISTINCT ' . $expr->upper($expr->substring('resource.title', 1, $this->options['_initials'])) . ' AS val',
-                    $expr->count('resource.id') . ' AS total'
+                    "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val",
+                    'COUNT(resource.id) AS total'
                 );
         } else {
             $qb
                 ->select(
-                    'DISTINCT resource.title AS val',
-                    $expr->count('resource.id') . ' AS total'
+                    'resource.title AS val',
+                    'COUNT(resource.id) AS total'
                 );
         }
         $qb
-            // The use of resource checks visibility automatically.
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->where($expr->in('resource.resourceTemplate', ':resource_templates'))
+            ->distinct(true)
+            ->from('resource', 'resource')
+            ->where($expr->in('resource.resource_template_id', ':resource_templates'))
             ->setParameter('resource_templates', array_map('intval', $resourceTemplateIds), Connection::PARAM_INT_ARRAY)
             ->groupBy('val');
 
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
-                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
+                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
         }
 
         return $this
@@ -936,7 +955,7 @@ class References extends AbstractPlugin
             return [];
         }
 
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         if ($this->options['entity_class'] !== \Omeka\Entity\Item::class) {
@@ -946,27 +965,22 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    'DISTINCT ' . $expr->upper($expr->substring('resource.title', 1, $this->options['_initials'])) . ' AS val',
-                    $expr->count('resource.id') . ' AS total'
+                    "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val",
+                    'COUNT(resource.id) AS total'
                 );
         } else {
             $qb
                 ->select(
-                    'DISTINCT resource.title AS val',
-                    $expr->count('resource.id') . ' AS total'
+                    'resource.title AS val',
+                    'COUNT(resource.id) AS total'
                 );
         }
         $qb
-            // The use of resource checks visibility automatically.
-            ->from(\Omeka\Entity\Resource::class, 'resource')
+            ->distinct(true)
+            ->from('resource', 'resource')
             // Always an item.
-            ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id')
-            ->innerJoin(
-                'res.itemSets',
-                'item_set',
-                Join::WITH,
-                $expr->in('item_set.id', ':item_sets')
-            )
+            ->innerJoin('resource', 'item', 'res', 'res.id = resource.id')
+            ->innerJoin('res', 'item_item_set', 'item_set', $expr->in('item_set.item_set_id', ':item_sets'))
             ->setParameter('item_sets', array_map('intval', $itemSetIds), Connection::PARAM_INT_ARRAY)
             ->groupBy('val')
         ;
@@ -986,21 +1000,19 @@ class References extends AbstractPlugin
      */
     protected function listDataForResourceTitle()
     {
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
-        // Note: Doctrine requires simple label, without quote or double quote:
-        // "o:label" is not possible, neither "count".
+        // Note: Doctrine ORM requires simple label, without quote or double quote:
+        // "o:label" is not possible, neither "count". Use of Doctrine DBAL now.
 
         if ($this->process === 'initials') {
             $qb
                 ->select(
                     $this->supportAnyValue
-                        ? 'ANY_VALUE(' . $expr->upper($expr->substring('resource.title', 1, $this->options['_initials'])) . ') AS val'
-                        : $expr->upper($expr->substring('resource.title', 1, $this->options['_initials'])) . ' AS val',
-                    // "Distinct" avoids to count duplicate values in properties in
-                    // a resource: we count resources, not properties.
-                    $expr->countDistinct('resource.id') . ' AS total'
+                        ? "ANY_VALUE(UPPER(LEFT(resource.title, {$this->options['_initials']}))) AS val"
+                        : "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val",
+                    'COUNT(resource.id) AS total'
                 );
         } else {
             $qb
@@ -1008,15 +1020,16 @@ class References extends AbstractPlugin
                     $this->supportAnyValue
                         ? 'ANY_VALUE(resource.title) AS val'
                         : 'resource.title AS val',
-                    // "Distinct" avoids to count duplicate values in properties in
-                    // a resource: we count resources, not properties.
-                    $expr->countDistinct('resource.id') . ' AS total'
+                    'COUNT(resource.id) AS total'
                 );
         }
         $qb
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            // This join allow to check visibility automatically too.
-            ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res', 'resource'))
+            // "Distinct" avoids to count duplicate values in properties in a
+            // resource: we count resources, not properties.
+            ->distinct(true)
+            ->from('resource', 'resource')
+            ->where($expr->eq('resource.resource_type', ':entity_class'))
+            ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING)
             ->groupBy('val')
         ;
 
@@ -1038,7 +1051,7 @@ class References extends AbstractPlugin
      */
     protected function listProperties(): array
     {
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         // Initials don't have real meaning for a list of properties.
@@ -1046,48 +1059,35 @@ class References extends AbstractPlugin
             $qb
                 ->select(
                     // 'property.label AS val',
-                    // Important: use single quote for string ":", else doctrine fails.
-                    $expr->upper($expr->substring("CONCAT(vocabulary.prefix, ':', property.localName)", 1, $this->options['_initials'])) . ' AS val',
-                    // "Distinct" avoids to count resources with multiple
-                    // values multiple times for the same property: we count
-                    // resources, not properties.
-                    $expr->countDistinct('value.resource') . ' AS total'
+                    // Important: use single quote for string ":", else doctrine fails in ORM.
+                    "UPPER(LEFT(CONCAT(vocabulary.prefix, ':', property.local_name), {$this->options['_initials']})) AS val",
+                    'COUNT(value.resource_id) AS total'
                 );
         } else {
             $qb
                 ->select(
                     // 'property.label AS val',
-                    // Important: use single quote for string ":", else doctrine fails.
-                    "CONCAT(vocabulary.prefix, ':', property.localName) AS val",
-                    // "Distinct" avoids to count resources with multiple
-                    // values multiple times for the same property: we count
-                    // resources, not properties.
-                    $expr->countDistinct('value.resource') . ' AS total'
+                    // Important: use single quote for string ":", else doctrine fails in ORM.
+                    "CONCAT(vocabulary.prefix, ':', property.local_name) AS val",
+                    'COUNT(value.resource_id) AS total'
                 );
         }
         $qb
-            // The use of resource checks visibility automatically.
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->innerJoin(\Omeka\Entity\Value::class, 'value', Join::WITH, $expr->eq('value.resource', 'resource'))
-            // The left join allows to get the total of items without
-            // property.
-            ->leftJoin(
-                \Omeka\Entity\Property::class,
-                'property',
-                Join::WITH,
-                $expr->eq('property.id', 'value.property')
-            )
-            ->innerJoin(
-                \Omeka\Entity\Vocabulary::class,
-                'vocabulary',
-                Join::WITH,
-                $expr->eq('vocabulary.id', 'property.vocabulary')
-            )
+            // "Distinct" avoids to count resources with multiple values
+            // multiple times for the same property: we count resources, not
+            // properties.
+            ->distinct(true)
+            ->from('resource', 'resource')
+            ->innerJoin('resource', 'value', 'value', $expr->eq('value.resource_id', 'resource.id'))
+            // The left join allows to get the total of items without property.
+            ->leftJoin('value', 'property', 'property', $expr->eq('property.id', 'value.property_id'))
+            ->innerJoin('property', 'vocabulary', 'vocabulary', $expr->eq('vocabulary.id', 'property.vocabulary_id'))
             ->groupBy('val')
         ;
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
-                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
+                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
         }
 
         return $this
@@ -1105,7 +1105,7 @@ class References extends AbstractPlugin
      */
     protected function listResourceClasses():array
     {
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         /*
@@ -1121,41 +1121,32 @@ class References extends AbstractPlugin
             $qb
                 ->select(
                     // 'resource_class.label AS val',
-                    // Important: use single quote for string ":", else doctrine fails.
-                    $expr->upper($expr->substring("CONCAT(vocabulary.prefix, ':', resource_class.localName)", 1, $this->options['_initials'])) . ' AS val',
+                    // Important: use single quote for string ":", else doctrine orm fails.
+                    "UPPER(LEFT(CONCAT(vocabulary.prefix, ':', property.local_name), {$this->options['_initials']})) AS val",
                     'COUNT(resource.id) AS total'
                 );
         } else {
             $qb
                 ->select(
                     // 'resource_class.label AS val',
-                    // Important: use single quote for string ":", else doctrine fails.
-                    "CONCAT(vocabulary.prefix, ':', resource_class.localName) AS val",
+                    // Important: use single quote for string ":", else doctrine orm fails.
+                    "CONCAT(vocabulary.prefix, ':', resource_class.local_name) AS val",
                     'COUNT(resource.id) AS total'
                 );
         }
         $qb
-            // The use of resource checks visibility automatically.
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            // The left join allows to get the total of items without
-            // resource class.
-            ->leftJoin(
-                \Omeka\Entity\ResourceClass::class,
-                'resource_class',
-                Join::WITH,
-                $expr->eq('resource_class.id', 'resource.resourceClass')
-            )
-            ->innerJoin(
-                \Omeka\Entity\Vocabulary::class,
-                'vocabulary',
-                Join::WITH,
-                $expr->eq('vocabulary.id', 'resource_class.vocabulary')
-            )
+            ->distinct(true)
+            ->from('resource', 'resource')
+            // The left join allows to get the total of items without resource
+            // class.
+            ->leftJoin('resource', 'resource_class', 'resource_class', $expr->eq('resource_class.id', 'resource.resource_class_id'))
+            ->innerJoin('resource_class', 'vocabulary', 'vocabulary', $expr->eq('vocabulary.id', 'resource_class.vocabulary_id'))
             ->groupBy('val')
         ;
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
-                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
+                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
         }
 
         return $this
@@ -1172,13 +1163,13 @@ class References extends AbstractPlugin
      */
     protected function listResourceTemplates(): array
     {
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    $expr->upper($expr->substring('resource_template.label', 1, $this->options['_initials'])) . ' AS val',
+                    "UPPER(LEFT(resource_template.label, {$this->options['_initials']})) AS val",
                     'COUNT(resource.id) AS total'
                 );
         } else {
@@ -1189,21 +1180,17 @@ class References extends AbstractPlugin
                 );
         }
         $qb
-            // The use of resource checks visibility automatically.
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            // The left join allows to get the total of items without
-            // resource template.
-            ->leftJoin(
-                \Omeka\Entity\ResourceTemplate::class,
-                'resource_template',
-                Join::WITH,
-                $expr->eq('resource_template.id', 'resource.resourceTemplate')
-            )
+            ->distinct(true)
+            ->from('resource', 'resource')
+            // The left join allows to get the total of items without resource
+            // template.
+            ->leftJoin('resource', 'resource_template', 'resource_template', $expr->eq('resource_template.id', 'resource.resource_template_id'))
             ->groupBy('val')
         ;
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
-                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
+                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
         }
 
         return $this
@@ -1219,11 +1206,10 @@ class References extends AbstractPlugin
      */
     protected function listItemSets(): array
     {
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         // Count the number of items by item set.
-        // TODO Extract the title via Omeka v2.0.
 
         // TODO Get all item sets, even without items (or private items).
         /*
@@ -1237,35 +1223,31 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
+                    // TODO Extract the title via Omeka v2.0.
                     // FIXME List of initials of item sets.
-                    $expr->upper($expr->substring('item_set.id', 1, $this->options['_initials'])) . ' AS val',
+                    // TODO Doctrine orm doesn't manage left() and convert(), but we may not need to convert: only for diacritics.
+                    "UPPER(LEFT(resource_item_set.id, {$this->options['_initials']})) AS val",
                     'COUNT(resource.id) AS total'
                 );
         } else {
             $qb
                 ->select(
-                    'item_set.id AS val',
+                    'item_set.item_set_id AS val',
                     'COUNT(resource.id) AS total'
                 );
         }
         $qb
-            // The use of resource checks visibility automatically.
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->innerJoin(\Omeka\Entity\Item::class, 'item', Join::WITH, $expr->eq('item.id', 'resource.id'))
-            // The left join allows to get the total of items without
-            // item set.
-            ->leftJoin('item.itemSets', 'item_set', Join::WITH, $expr->neq('item_set.id', 0))
-            // Check visibility automatically for item sets.
-            ->leftJoin(
-                \Omeka\Entity\Resource::class,
-                'resource_item_set',
-                Join::WITH,
-                $expr->eq('resource_item_set.id', 'item_set.id')
-            )
+            ->distinct(true)
+            ->from('resource', 'resource')
+            ->innerJoin('resource', 'item', 'item', $expr->eq('item.id', 'resource.id'))
+            // The left join allows to get the total of items without item set.
+            ->leftJoin('item', 'item_item_set', 'item_set', $expr->andX($expr->eq('item_set.item_id', 'item.id'), $expr->neq('item_set.item_set_id', 0)))
+            ->leftJoin('item_set', 'resource', 'resource_item_set', $expr->eq('resource_item_set.id', 'item_set.item_set_id'))
             ->groupBy('val')
         ;
 
         return $this
+            // TODO Check if items are limited by sites.
             // By exeption, the query for item sets should add public site,
             // because item sets are limited by sites.
             ->limitItemSetsToSite($qb)
@@ -1281,7 +1263,7 @@ class References extends AbstractPlugin
      */
     protected function listOwners()
     {
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         // Count the number of items by owner.
@@ -1297,7 +1279,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    $expr->upper($expr->substring('user.name', 1, $this->options['_initials'])) . ' AS val',
+                    "UPPER(LEFT(user.name, {$this->options['_initials']})) AS val",
                     'COUNT(resource.id) AS total'
                 );
         } else {
@@ -1308,21 +1290,16 @@ class References extends AbstractPlugin
                 );
         }
         $qb
-            // The use of resource checks visibility automatically.
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            // Check visibility automatically.
-            ->leftJoin(
-                \Omeka\Entity\User::class,
-                'user',
-                Join::WITH,
-                $expr->eq('user', 'resource.owner')
-            )
+            ->distinct(true)
+            ->from('resource', 'resource')
+            ->leftJoin('resource', 'user', 'user', $expr->eq('user.id', 'resource.owner_id'))
             ->groupBy('val')
         ;
 
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
-                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, $expr->eq('res.id', 'resource.id'));
+                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
+                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
         }
 
         return $this
@@ -1338,7 +1315,7 @@ class References extends AbstractPlugin
      */
     protected function listSites()
     {
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         // Count the number of items by site.
@@ -1349,7 +1326,7 @@ class References extends AbstractPlugin
             $qb
                 ->select(
                     // FIXME List of initials of sites.
-                    $expr->upper($expr->substring('site.slug', 1, $this->options['_initials'])) . ' AS val',
+                    "UPPER(LEFT(site.slug, {$this->options['_initials']})) AS val",
                     'COUNT(resource.id) AS total'
                 );
         } else {
@@ -1360,18 +1337,10 @@ class References extends AbstractPlugin
                 );
         }
         $qb
-            // The use of resource checks visibility automatically.
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->innerJoin(
-                \Omeka\Entity\Item::class,
-                'res',
-                Join::WITH,
-                $expr->eq('res.id', 'resource.id')
-            )
-            ->leftJoin(
-                'res.sites',
-                'site'
-            )
+            ->distinct(true)
+            ->from('resource', 'resource')
+            ->innerJoin('resource', 'item', 'res', $expr->eq('res.id', 'resource.id'))
+            ->leftJoin('res', 'item_site', 'site', $expr->eq('site.item_id', 'resource.id'))
             ->groupBy('val')
         ;
 
@@ -1386,6 +1355,7 @@ class References extends AbstractPlugin
     {
         // @see \Omeka\Api\Adapter\ItemSetAdapter::buildQuery()
         if (isset($this->query['site_id']) && is_numeric($this->query['site_id'])) {
+            $siteId = (int) $this->query['site_id'];
             $expr = $qb->expr();
 
             // TODO Check if this useful here.
@@ -1393,15 +1363,15 @@ class References extends AbstractPlugin
             // user cannot perform a query against a private site he doesn't
             // have access to.
             try {
-                $this->adapterManager->get('sites')->findEntity($this->query['site_id']);
+                $this->adapterManager->get('sites')->findEntity($siteId);
             } catch (\Omeka\Api\Exception\NotFoundException$e) {
+                $siteId = 0;
             }
 
             $qb
-                // @see \Omeka\Api\Adapter\ItemSetAdapter::buildQuery()
-                ->innerJoin('item_set.siteItemSets', 'ref_site_item_set')
-                ->andWhere($expr->eq('ref_site_item_set.site', ':ref_site_item_set_site'))
-                ->setParameter(':ref_site_item_set_site', (int) $this->query['site_id'], ParameterType::INTEGER);
+                ->innerJoin('resource_item_set', 'site_item_set', 'ref_site_item_set', $expr->eq('ref_site_item_set.item_set_id', 'resource_item_set.id'))
+                ->andWhere($expr->eq('ref_site_item_set.site_id', ':ref_site_item_set_site'))
+                ->setParameter(':ref_site_item_set_site', $siteId, ParameterType::INTEGER);
         }
         return $this;
     }
@@ -1425,7 +1395,7 @@ class References extends AbstractPlugin
             // some non-reproductible cases. Db version related?
             $hasEmptyLanguage = in_array('', $this->options['filters']['languages']);
             $in = $expr->in('value.lang', ':languages');
-            $filter = $hasEmptyLanguage ? $expr->orX($in, $expr->isNull('value.lang')) : $in;
+            $filter = $hasEmptyLanguage ? $expr->orX( $in, $expr->isNull('value.lang')) : $in;
             $qb
                 ->andWhere($filter)
                 ->setParameter('languages', $this->options['filters']['languages'], Connection::PARAM_STR_ARRAY);
@@ -1489,7 +1459,7 @@ class References extends AbstractPlugin
                             );
                     }
                     $qb
-                        ->andWhere($expr->orX(...$orX));
+                        ->andWhere($expr->orX( ...$orX));
                 } else {
                     $regexp = implode('|', array_map('preg_quote', $this->options['filters'][$filter]));
                     $qb
@@ -1514,8 +1484,8 @@ class References extends AbstractPlugin
                 ->addSelect(
                     // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? 'ANY_VALUE(' . $expr->upper($expr->substring('resource.title', 1, $this->options['initial'])) . ') AS initial'
-                        : $expr->upper($expr->substring('resource.title', 1, $this->options['initial'])) . ' AS initial'
+                        ? "ANY_VALUE(UPPER(LEFT(resource.title, {$this->options['_initials']}))) AS val"
+                        : "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val"
                 );
         }
 
@@ -1525,8 +1495,8 @@ class References extends AbstractPlugin
                 ->addSelect(
                     // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? 'ANY_VALUE(' . $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, $this->options['initial'])) . ') AS initial'
-                        : $expr->upper($expr->substring('COALESCE(value.value, valueResource.title, value.uri)', 1, $this->options['initial'])) . ' AS initial'
+                        ? "ANY_VALUE(UPPER(LEFT(COALESCE(value.value, value_resource.title, value.uri), {$this->options['_initials']}))) AS val"
+                        : "UPPER(LEFT(COALESCE(value.value, value_resource.title, value.uri), {$this->options['_initials']})) AS val"
                 );
         }
 
@@ -1534,7 +1504,7 @@ class References extends AbstractPlugin
             $qb
                 ->addSelect(
                     // TODO Warning with type "resource", that may be the same than "resource:item", etc.
-                    'valueResource.id AS res',
+                    'value_resource.id AS res',
                     'value.uri AS uri'
                 )
                 ->addGroupBy('res')
@@ -1598,17 +1568,12 @@ class References extends AbstractPlugin
                     $strLocale = str_replace('-', '_', $locale);
                     $coalesce[] = "ress_$strLocale.text";
                     $qb
-                        ->leftJoin(
-                            \Reference\Entity\Metadata::class,
-                            // The join is different than in listDataForProperties().
-                            "ress_$strLocale",
-                            Join::WITH,
-                            $expr->andX(
-                                $expr->eq('value.resource', "ress_$strLocale.resource"),
-                                $expr->eq("ress_$strLocale.field", ':display_title'),
-                                $expr->eq("ress_$strLocale.lang", ':locale_' . $strLocale)
-                            )
-                        )
+                        // The join is different than in listDataForProperties().
+                        ->leftJoin('value', 'reference_metadata', "ress_$strLocale", $expr->andX(
+                            $expr->eq("ress_$strLocale.resource_id", 'value.resource_id'),
+                            $expr->eq("ress_$strLocale.field", ':display_title'),
+                            $expr->eq("ress_$strLocale.lang", ':locale_' . $strLocale)
+                        ))
                         ->setParameter('locale_' . $strLocale, $locale, ParameterType::STRING);
                     ;
                 }
@@ -1617,20 +1582,15 @@ class References extends AbstractPlugin
                     ? 'ANY_VALUE(COALESCE(' . implode(', ', $coalesce) . '))'
                     : 'COALESCE(' . implode(', ', $coalesce) . ')';
                 $qb
-                    ->leftJoin(
-                        \Reference\Entity\Metadata::class,
-                        // The join is different than in listDataForProperties().
-                        'ress',
-                        Join::WITH,
-                        $expr->andX(
-                            $expr->eq('value.resource', 'ress.resource'),
-                            $expr->eq('ress.field', ':display_title')
-                        )
-                    )
+                    // The join is different than in listDataForProperties().
+                    ->leftJoin('value', 'reference_metadata', 'ress', $expr->andX(
+                        $expr->eq('ress.resource_id', 'value.resource_id'),
+                        $expr->eq('ress.field', ':display_title')
+                    ))
                     ->setParameter('display_title', 'display_title', ParameterType::STRING)
                     ->addSelect(
-                        // Note: for doctrine, separators must be set as parameters.
-                        "GROUP_CONCAT(IDENTITY(ress.resource), :unit_separator, $ressText SEPARATOR :group_separator) AS resources"
+                        // Note: for doctrine orm, separators must be set as parameters.
+                        "GROUP_CONCAT(ress.resource_id, :unit_separator, $ressText SEPARATOR :group_separator) AS resources"
                     )
                     ->setParameter('unit_separator', chr(0x1F), ParameterType::STRING)
                     ->setParameter('group_separator', chr(0x1D), ParameterType::STRING)
@@ -1638,13 +1598,13 @@ class References extends AbstractPlugin
             } else {
                 $qb
                     ->leftJoin(
-                        \Omeka\Entity\Resource::class,
+                        $type === 'resource_titles' ? 'resource' : 'value',
+                        'resource',
                         'ress',
-                        Join::WITH,
-                        $expr->eq($type === 'resource_titles' ? 'resource' : 'value.resource', 'ress')
+                        $expr->eq('ress.id', $type === 'resource_titles' ? 'resource.id' : 'value.resource_id')
                     )
                     ->addSelect(
-                        // Note: for doctrine, separators must be set as parameters.
+                        // Note: for doctrine orm, separators must be set as parameters.
                         'GROUP_CONCAT(ress.id, :unit_separator, ress.title SEPARATOR :group_separator) AS resources'
                     )
                     ->setParameter('unit_separator', chr(0x1F), ParameterType::STRING)
@@ -1659,7 +1619,7 @@ class References extends AbstractPlugin
                 case 'resource_classes':
                 case 'resource_templates':
                     $qb
-                        ->andWhere('value.value IN (:values)')
+                        ->andWhere($expr->in('value.value', ':values'))
                         ->setParameter('values', $this->options['values'], Connection::PARAM_STR_ARRAY);
                     break;
                 case 'resource_titles':
@@ -1668,34 +1628,34 @@ class References extends AbstractPlugin
                 case 'o:property':
                     $values = $this->getPropertyIds($this->options['values']) ?: [0];
                     $qb
-                        ->andWhere('property' . '.id IN (:ids)')
+                        ->andWhere($expr->in('property.id', ':ids'))
                         ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:resource_class':
                     $values = $this->getResourceClassIds($this->options['values']) ?: [0];
                     $qb
-                        ->andWhere('resource_class' . '.id IN (:ids)')
+                        ->andWhere($expr->in('resource_class.id', ':ids'))
                         ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:resource_template':
                     $values = $this->getResourceTemplateIds($this->options['values']) ?: [0];
                     $qb
-                        ->andWhere('resource_template' . '.id IN (:ids)')
+                        ->andWhere($expr->in('resource_template.id', ':ids'))
                         ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:item_set':
                     $qb
-                        ->andWhere('item_set.id IN (:ids)')
+                        ->andWhere($expr->in('item_set.id', ':ids'))
                         ->setParameter('ids', array_map('intval', $this->options['values']), Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:owner':
                     $qb
-                        ->andWhere('user.id IN (:ids)')
+                        ->andWhere($expr->in('user.id', ':ids'))
                         ->setParameter('ids', array_map('intval', $this->options['values']), Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:site':
                     $qb
-                        ->andWhere('site.id IN (:ids)')
+                        ->andWhere($expr->in('site.id', ':ids'))
                         ->setParameter('ids', array_map('intval', $this->options['values']), Connection::PARAM_INT_ARRAY);
                     break;
                 default:
@@ -1740,7 +1700,7 @@ class References extends AbstractPlugin
 
     protected function outputMetadata(QueryBuilder $qb, $type): array
     {
-        $result = $qb->getQuery()->getScalarResult();
+        $result = $qb->execute()->fetchAllAssociative();
         if (!count($result)) {
             return $result;
         }
@@ -1878,24 +1838,25 @@ class References extends AbstractPlugin
             return 0;
         }
 
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         $qb
             ->select(
                 // Here, this is the count of references, not resources.
-                $expr->countDistinct('refmeta.text')
+                'COUNT(refmeta.text)'
             )
-            ->from(\Reference\Entity\Metadata::class, 'refmeta')
-            // This join allow to check visibility automatically too.
-            ->innerJoin(\Omeka\Entity\Resource::class, 'resource', Join::WITH, $expr->eq('refmeta.resource', 'resource'))
+            ->distinct(true)
+            ->from('reference_metadata', 'refmeta')
+            ->innerJoin('refmeta', 'resource', 'resource', $expr->eq('resource.id', 'refmeta.resource_id'))
             ->andWhere($expr->in('refmeta.field', ':properties'))
             ->setParameter('properties', $this->getPropertyTerms($propertyIds), Connection::PARAM_STR_ARRAY)
         ;
 
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
-                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, 'res.id = resource.id');
+                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
+                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
         }
 
         $this->searchQuery($qb);
@@ -1914,20 +1875,22 @@ class References extends AbstractPlugin
             return 0;
         }
 
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         $qb
             ->select(
-                $expr->countDistinct('resource.id')
+                'COUNT(resource.id)'
             )
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->andWhere($expr->in('resource.resourceClass', ':resource_classes'))
+            ->distinct(true)
+            ->from('resource', 'resource')
+            ->andWhere($expr->in('resource.resource_class_id', ':resource_classes'))
             ->setParameter('resource_classes', array_map('intval', $resourceClassIds), Connection::PARAM_INT_ARRAY);
 
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
-                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, 'res.id = resource.id');
+                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
+                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
         }
 
         $this->searchQuery($qb);
@@ -1946,20 +1909,22 @@ class References extends AbstractPlugin
             return 0;
         }
 
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         $qb
             ->select(
-                $expr->countDistinct('resource.id')
+                'COUNT(resource.id)'
             )
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->andWhere($expr->in('resource.resourceTemplate', ':resource_templates'))
+            ->distinct(true)
+            ->from('resource', 'resource')
+            ->andWhere($expr->in('resource.resource_template_id', ':resource_templates'))
             ->setParameter('resource_templates', array_map('intval', $resourceTemplateIds), Connection::PARAM_INT_ARRAY);
 
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
-                ->innerJoin($this->options['entity_class'], 'res', Join::WITH, 'res.id = resource.id');
+                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
+                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
         }
 
         $this->searchQuery($qb);
@@ -1978,25 +1943,22 @@ class References extends AbstractPlugin
             return 0;
         }
 
-        $qb = $this->entityManager->createQueryBuilder();
+        $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
         if ($this->options['entity_class'] !== \Omeka\Entity\Item::class) {
             return 0;
         }
+
         $qb
             ->select(
-                $expr->countDistinct('resource.id')
+                'COUNT(resource.id)'
             )
-            ->from(\Omeka\Entity\Resource::class, 'resource')
-            ->innerJoin(\Omeka\Entity\Item::class, 'res', Join::WITH, 'res.id = resource.id')
+            ->distinct(true)
+            ->from('resource', 'resource')
+            ->innerJoin('resource', 'item', 'res', $expr->eq('res.id', 'resource.id'))
             // See \Omeka\Api\Adapter\ItemAdapter::buildQuery()
-            ->innerJoin(
-                'res.itemSets',
-                'item_set',
-                Join::WITH,
-                $expr->in('item_set.id', ':item_sets')
-            )
+            ->innerJoin('res', 'item_item_set', 'item_set', $expr->in('item_set.item_set_id', ':item_sets'))
             ->setParameter('item_sets', array_map('intval', $itemSetIds), Connection::PARAM_INT_ARRAY);
 
         $this->searchQuery($qb);
@@ -2008,7 +1970,7 @@ class References extends AbstractPlugin
      * Limit the results with a query.
      *
      * The query is generally the site query, but may be complex with advanced
-     * search.
+     * search, in particular for facets in module AdvancedSearch.
      */
     protected function searchQuery(QueryBuilder $qb, ?string $type = null): self
     {
@@ -2016,6 +1978,7 @@ class References extends AbstractPlugin
             return $this;
         }
 
+        // TODO Search in any resources in Omeka S v4.1.
         if (empty($this->options['entity_class']) || $this->options['entity_class'] === \Omeka\Entity\Resource::class) {
             return $this;
         }
@@ -2025,11 +1988,10 @@ class References extends AbstractPlugin
             return $this;
         }
 
-        $expr = $qb->expr();
-
         $mainQuery = $this->query;
 
         // When searching by item set or site, remove the matching query filter.
+        // TODO Is it still needed?
         if ($type === 'o:item_set') {
             unset($mainQuery['item_set_id']);
         }
@@ -2037,119 +1999,18 @@ class References extends AbstractPlugin
             unset($mainQuery['site_id']);
         }
 
-        /**
-         * @var \Omeka\Api\Adapter\AbstractResourceEntityAdapter $adapter
-         * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::search()
-         */
-        $adapter = $this->adapterManager->get($this->options['resource_name']);
-        $subQb = $this->entityManager->createQueryBuilder()
-            ->select('omeka_root.id')
-            ->from($this->options['entity_class'], 'omeka_root');
-        $adapter->buildBaseQuery($subQb, $mainQuery);
-        // Manage advanced resquest of module Advanced Search for properties.
-        // TODO Remove this fix when Advanced Search will bypass AbstractResourceEntityAdapter directly.
-        if ($this->hasAdvancedSearch && !empty($mainQuery['property'])) {
-            $props = $mainQuery['property'];
-            unset($mainQuery['property']);
-        } else {
-            $props = null;
-        }
-        $adapter->buildQuery($subQb, $mainQuery);
-
-        // Full text search is not managed by adapters, but by a special event.
-        if (isset($this->query['fulltext_search'])) {
-            $this->buildFullTextSearchQuery($subQb, $adapter);
-        }
-        $subQb->groupBy('omeka_root.id');
-
-        if ($props) {
-            $mainQuery['property'] = $props;
-        }
-
-        $request = new Request('search', $resourceName);
-        $request->setContent($mainQuery);
-        $event = new Event('api.search.query', $adapter, [
-            'queryBuilder' => $subQb,
-            'request' => $request,
-        ]);
-        $adapter->getEventManager()->triggerEvent($event);
-
-        $subQb->select('omeka_root.id');
-
-        // TODO Manage not only standard visibility, but modules ones.
-        // TODO Check the visibility for the main queries.
-        // Set visibility constraints for users without "view-all" privilege.
-        if (!$this->acl->userIsAllowed(\Omeka\Entity\Resource::class, 'view-all')) {
-            $constraints = $expr->eq('omeka_root.isPublic', true);
-            if ($this->user) {
-                // Users can view all resources they own.
-                $constraints = $expr->orX(
-                    $constraints,
-                    $expr->eq('omeka_root.owner', $this->user->getId())
-                );
-            }
-            $subQb->andWhere($constraints);
-        }
+        // In the previous version, the query builder was the orm qb. It is now
+        // the dbal qb, so it doesn't manage entities.
+        // Anyway, the output is only scalar ids.
+        // To avoid issues with parameters of the sub-qb, get ids from here.
+        // TODO Do a real subquery as before instead of a double query. Most of the time (facets), it should be cached by doctrine.
+        // Use an api request.
+        $ids = $this->api->search($resourceName, $mainQuery, ['returnScalar' => 'id'])->getContent();
 
         // There is no colision: the adapter query uses alias "omeka_" + index.
         $qb
-            ->andWhere($expr->in('resource.id', $subQb->getDQL()));
-
-        $subParams = $subQb->getParameters();
-        foreach ($subParams as $parameter) {
-            $qb
-                ->setParameter(
-                    $parameter->getName(),
-                    $parameter->getValue(),
-                    $parameter->getType()
-                );
-        }
-
-        return $this;
-    }
-
-    /**
-     * Manage full text search.
-     *
-     * Full text search is not managed by adapters, but by a special event.
-     *
-     * This is an adaptation of the core method, except rights check.
-     * @see \Omeka\Module::searchFulltext()
-     * @see \Folksonomy\View\Helper\TagCloud
-     */
-    protected function buildFullTextSearchQuery(QueryBuilder $qb, AbstractResourceEntityAdapter $adapter): self
-    {
-        if (!($adapter instanceof \Omeka\Api\Adapter\FulltextSearchableInterface)) {
-            return $this;
-        }
-
-        if (!isset($this->query['fulltext_search']) || ('' === trim($this->query['fulltext_search']))) {
-            return $this;
-        }
-
-        $searchAlias = $adapter->createAlias();
-
-        $match = sprintf(
-            'MATCH(%s.title, %s.text) AGAINST (%s)',
-            $searchAlias,
-            $searchAlias,
-            $adapter->createNamedParameter($qb, $this->query['fulltext_search'])
-        );
-        $joinConditions = sprintf(
-            '%s.id = omeka_root.id AND %s.resource = %s',
-            $searchAlias,
-            $searchAlias,
-            $adapter->createNamedParameter($qb, $adapter->getResourceName())
-        );
-
-        $qb
-            ->innerJoin(\Omeka\Entity\FulltextSearch::class, $searchAlias, Join::WITH, $joinConditions)
-            // Filter out resources with no similarity.
-            ->andWhere(sprintf('%s > 0', $match))
-            // Order by the relevance. Note the use of orderBy() and not
-            // addOrderBy(). This should ensure that ordering by relevance
-            // is the first thing being ordered.
-            ->orderBy($match, 'DESC');
+            ->andWhere($qb->expr()->in('resource.id', ':resource_ids'))
+            ->setParameter('resource_ids', array_keys($ids), Connection::PARAM_INT_ARRAY);
 
         return $this;
     }
@@ -2413,6 +2274,21 @@ class References extends AbstractPlugin
             'resources' => \Omeka\Entity\Resource::class,
         ];
         return $resourceEntityMap[$resourceName] ?? \Omeka\Entity\Resource::class;
+    }
+
+    /**
+     * Normalize the resource name as a database table.
+     */
+    protected function mapResourceNameToTable($resourceName): string
+    {
+        $resourceTableMap = [
+            null => 'resource',
+            'items' => 'item',
+            'item_sets' => 'item_set',
+            'media' => 'media',
+            'resources' => 'resource',
+        ];
+        return $resourceTableMap[$resourceName] ?? 'resource';
     }
 
     /**
