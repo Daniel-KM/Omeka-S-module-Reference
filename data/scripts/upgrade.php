@@ -25,26 +25,42 @@ $entityManager = $services->get('Omeka\EntityManager');
 
 $defaultConfig = require dirname(dirname(__DIR__)) . '/config/module.config.php';
 
-// The reference plugin is not available during upgrade, so prepare it.
-include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/References.php';
-include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/ReferenceTree.php';
+if (version_compare($oldVersion, '3.4.7', '<')) {
+    // The reference plugin is not available during upgrade, so prepare it.
+    include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/References.php';
+    include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/ReferenceTree.php';
 
-/** @var \Omeka\Module\Manager $moduleManager */
-$moduleManager = $services->get('Omeka\ModuleManager');
-$module = $moduleManager->getModule('AdvancedSearch');
-$hasAdvancedSearch = $module
-    && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
-$referencesPlugin = new Mvc\Controller\Plugin\References(
-    $services->get('Omeka\EntityManager'),
-    $services->get('Omeka\ApiAdapterManager'),
-    $services->get('Omeka\Acl'),
-    $services->get('Omeka\AuthenticationService')->getIdentity(),
-    $api,
-    $services->get('ControllerPluginManager')->get('translate'),
-    false,
-    $hasAdvancedSearch
-);
-$referenceTreePlugin = new Mvc\Controller\Plugin\ReferenceTree($api, $referencesPlugin);
+    if (version_compare($oldVersion, '3.4.43', '<')) {
+        /** @var \Omeka\Module\Manager $moduleManager */
+        $moduleManager = $services->get('Omeka\ModuleManager');
+        $module = $moduleManager->getModule('AdvancedSearch');
+        $hasAdvancedSearch = $module
+            && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
+        $referencesPlugin = new Mvc\Controller\Plugin\References(
+            $services->get('Omeka\EntityManager'),
+            $services->get('Omeka\ApiAdapterManager'),
+            $services->get('Omeka\Acl'),
+            $services->get('Omeka\AuthenticationService')->getIdentity(),
+            $services->get('ControllerPluginManager')->get('api'),
+            $services->get('ControllerPluginManager')->get('translate'),
+            false,
+            $hasAdvancedSearch
+        );
+        $referenceTreePlugin = new Mvc\Controller\Plugin\ReferenceTree($api, $referencesPlugin);
+    } else {
+        $referencesPlugin = new Mvc\Controller\Plugin\References(
+            $services->get('Omeka\EntityManager'),
+            $services->get('Omeka\Connection'),
+            $services->get('Omeka\ApiAdapterManager'),
+            $services->get('Omeka\Acl'),
+            $services->get('Omeka\AuthenticationService')->getIdentity(),
+            $services->get('Omeka\ApiManager'),
+            $plugins->get('translate'),
+            false
+        );
+        $referenceTreePlugin = new Mvc\Controller\Plugin\ReferenceTree($api, $referencesPlugin);
+    }
+}
 
 if (version_compare($oldVersion, '3.4.5', '<')) {
     $referenceSlugs = $settings->get('reference_slugs');
@@ -437,6 +453,13 @@ if (version_compare($oldVersion, '3.4.35.3', '<')) {
     $messenger->addWarning($message);
     $message = new Message(
         'It is possible now to get a specific number of initials, for example to get the list of years from standard dates.' // @translate
+    );
+    $messenger->addSuccess($message);
+}
+
+if (version_compare($oldVersion, '3.4.43', '<')) {
+    $message = new Message(
+        'Many improvements were done to output references and facets a lot more quickly, in particular for big bases.' // @translate
     );
     $messenger->addSuccess($message);
 }
