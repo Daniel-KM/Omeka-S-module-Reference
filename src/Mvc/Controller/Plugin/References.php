@@ -1232,10 +1232,8 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    // TODO Extract the title via Omeka v2.0.
-                    // FIXME List of initials of item sets.
                     // TODO Doctrine orm doesn't manage left() and convert(), but we may not need to convert: only for diacritics.
-                    "UPPER(LEFT(resource_item_set.id, {$this->options['_initials']})) AS val",
+                    "UPPER(LEFT(resource_item_set.title, {$this->options['_initials']})) AS val",
                     'COUNT(resource.id) AS total'
                 );
         } else {
@@ -1336,8 +1334,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    // FIXME List of initials of sites.
-                    "UPPER(LEFT(site.slug, {$this->options['_initials']})) AS val",
+                    "UPPER(LEFT(site.title, {$this->options['_initials']})) AS val",
                     'COUNT(resource.id) AS total'
                 );
         } else {
@@ -1884,7 +1881,7 @@ class References extends AbstractPlugin
 
             if ($this->options['fields']) {
                 $fields = array_fill_keys($this->options['fields'], true);
-                // FIXME Api call inside a loop. Use the new table reference_metadata.
+                // FIXME Fix the api call inside a loop. Use the new table reference_metadata.
                 $result = array_map(function ($v) use ($fields) {
                     // Check required when a locale is used or for debug.
                     if (empty($v['resources'])) {
