@@ -1351,7 +1351,8 @@ class References extends AbstractPlugin
             ->distinct(true)
             ->from('resource', 'resource')
             ->innerJoin('resource', 'item', 'res', $expr->eq('res.id', 'resource.id'))
-            ->leftJoin('res', 'item_site', 'site', $expr->eq('site.item_id', 'resource.id'))
+            ->leftJoin('res', 'item_site', 'res_site', $expr->eq('res_site.item_id', 'resource.id'))
+            ->leftJoin('res_site', 'site', 'site', $expr->eq('site.id', 'res_site.site_id'))
             ->groupBy('val')
         ;
 
