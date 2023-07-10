@@ -415,6 +415,8 @@ class References extends AbstractPlugin
          *
          * Nevertheless, this solution requires to check visibility manually for
          * resource and value, but user and sites too.
+         *
+         * @todo Remove coalesce: use reference_metadata.
          */
 
         $isAssociative = $this->options['output'] === 'associative';
@@ -609,7 +611,6 @@ class References extends AbstractPlugin
      * Get the initials (first or more characters) of values for a field.
      *
      * The filters "begin" / "end" are skipped from the query.
-     * @todo Some options are not yet managed: initials of item sets, sites.
      *
      * The option "initial" allows to set the number of characters by "initial"
      * (default 1).
@@ -1592,8 +1593,8 @@ class References extends AbstractPlugin
                 ->addSelect(
                     // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? "ANY_VALUE(UPPER(LEFT(resource.title, {$this->options['_initials']}))) AS val"
-                        : "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val"
+                        ? "ANY_VALUE(UPPER(LEFT(resource.title, {$this->options['initial']}))) AS initial"
+                        : "UPPER(LEFT(resource.title, {$this->options['initial']})) AS initial"
                 );
         }
 
@@ -1603,8 +1604,8 @@ class References extends AbstractPlugin
                 ->addSelect(
                     // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? "ANY_VALUE(UPPER(LEFT(COALESCE(value.value, value_resource.title, value.uri), {$this->options['_initials']}))) AS val"
-                        : "UPPER(LEFT(COALESCE(value.value, value_resource.title, value.uri), {$this->options['_initials']})) AS val"
+                        ? "ANY_VALUE(UPPER(LEFT(COALESCE(value.value, value_resource.title, value.uri), {$this->options['initial']}))) AS initial"
+                        : "UPPER(LEFT(COALESCE(value.value, value_resource.title, value.uri), {$this->options['initial']})) AS initial"
                 );
         }
 
