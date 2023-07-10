@@ -23,7 +23,7 @@ $connection = $services->get('Omeka\Connection');
 $messenger = $plugins->get('messenger');
 $entityManager = $services->get('Omeka\EntityManager');
 
-$defaultConfig = require dirname(dirname(__DIR__)) . '/config/module.config.php';
+$defaultConfig = require dirname(__DIR__, 2) . '/config/module.config.php';
 
 if (version_compare($oldVersion, '3.4.7', '<')) {
     // The reference plugin is not available during upgrade, so prepare it.
@@ -204,7 +204,7 @@ if (version_compare($oldVersion, '3.4.23.3', '<')) {
             foreach ($sites as $site) {
                 // Check if the site page slug exists.
                 $sitePageSlug = $api->searchOne('site_pages', ['site_id' => $site->getId(), 'slug' => 'reference-tree'])->getContent();
-                $sitePageSlug = $sitePageSlug ? 'reference-tree-' . random_int(10000, 99999): 'reference-tree';
+                $sitePageSlug = $sitePageSlug ? 'reference-tree-' . random_int(10000, 99999) : 'reference-tree';
 
                 $page = new \Omeka\Entity\SitePage();
                 $page->setSite($site);

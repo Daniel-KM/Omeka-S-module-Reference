@@ -402,13 +402,16 @@ class References extends AbstractPlugin
          * big bases, in particular with the old version of the module Annotate
          * that created four sub-resources to manage annotations, parts, bodies
          * and targets.
+         *
          * The issue with "resource" is that many classes are joined to it, even
          * when it is useless. Here, this is always useless, because only the id
          * and title are needed. So each time a resource is queried, multiple
-         * left join are appended (item, item set, media, value annotation,
-         * annotation value,
+         * left joins are appended (item, item set, media, value annotation,
+         * annotation value, etc.).
+         *
          * @see https://github.com/doctrine/orm/issues/5961
          * @see https://github.com/doctrine/orm/issues/5980
+         * @see https://github.com/doctrine/orm/pull/8704
          *
          * Nevertheless, this solution requires to check visibility manually for
          * resource and value, but user and sites too.
@@ -1499,7 +1502,7 @@ class References extends AbstractPlugin
             // some non-reproductible cases. Db version related?
             $hasEmptyLanguage = in_array('', $this->options['filters']['languages']);
             $in = $expr->in('value.lang', ':languages');
-            $filter = $hasEmptyLanguage ? $expr->orX( $in, $expr->isNull('value.lang')) : $in;
+            $filter = $hasEmptyLanguage ? $expr->orX($in, $expr->isNull('value.lang')) : $in;
             $qb
                 ->andWhere($filter)
                 ->setParameter('languages', $this->options['filters']['languages'], Connection::PARAM_STR_ARRAY);
@@ -1541,7 +1544,7 @@ class References extends AbstractPlugin
                     if ($firstFilter === '0-9') {
                         $qb
                             ->andWhere("REGEXP($column, :filter_09) = false")
-                            ->setParameter('filter_09', $filter === 'begin' ? '^[[:alpha:]]' :  '[[:alpha:]]$', ParameterType::STRING);
+                            ->setParameter('filter_09', $filter === 'begin' ? '^[[:alpha:]]' : '[[:alpha:]]$', ParameterType::STRING);
                     } else {
                         $qb
                             ->andWhere($expr->like($column, ":filter_$filter"))
@@ -1563,7 +1566,7 @@ class References extends AbstractPlugin
                             );
                     }
                     $qb
-                        ->andWhere($expr->orX( ...$orX));
+                        ->andWhere($expr->orX(...$orX));
                 } else {
                     $regexp = implode('|', array_map('preg_quote', $this->options['filters'][$filter]));
                     $qb
@@ -1679,7 +1682,6 @@ class References extends AbstractPlugin
                             $expr->eq("ress_$strLocale.lang", ':locale_' . $strLocale)
                         ))
                         ->setParameter('locale_' . $strLocale, $locale, ParameterType::STRING);
-                    ;
                 }
                 $coalesce[] = 'ress.text';
                 $ressText = $this->supportAnyValue
@@ -1806,7 +1808,7 @@ class References extends AbstractPlugin
     {
         $result = $qb->execute()->fetchAllAssociative();
         if (!count($result)) {
-            return $result;
+            return [];
         }
 
         if ($this->options['output'] === 'associative') {

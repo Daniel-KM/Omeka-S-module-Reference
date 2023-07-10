@@ -18,7 +18,7 @@ class ReferenceController extends AbstractActionController
         // Get used types (resource classes or properties) to simplify display.
         $types = [];
         foreach ($slugs as &$slugData) {
-            list(, $local) = explode(':', $slugData['term']);
+            [, $local] = explode(':', $slugData['term']);
             $first = mb_substr($local, 0, 1);
             $type = ucfirst($first) === $first ? 'resource_classes' : 'properties';
             $slugData['type'] = $type;
