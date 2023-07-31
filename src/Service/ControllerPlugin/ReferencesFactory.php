@@ -19,6 +19,7 @@ class ReferencesFactory implements FactoryInterface
             $services->get('Omeka\AuthenticationService')->getIdentity(),
             $services->get('Omeka\ApiManager'),
             $plugins->get('translate'),
+            $plugins->has('accessLevel'),
             $this->supportAnyValue($services)
         );
     }

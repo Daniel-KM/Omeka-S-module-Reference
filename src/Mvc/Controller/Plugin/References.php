@@ -53,6 +53,11 @@ class References extends AbstractPlugin
     /**
      * @param bool
      */
+    protected $hasAccess;
+
+    /**
+     * @param bool
+     */
     protected $supportAnyValue;
 
     /**
@@ -133,6 +138,7 @@ class References extends AbstractPlugin
         ?User $user,
         ApiManager $api,
         Translate $translate,
+        bool $hasAccess,
         $supportAnyValue
     ) {
         $this->entityManager = $entityManager;
@@ -142,6 +148,7 @@ class References extends AbstractPlugin
         $this->user = $user;
         $this->api = $api;
         $this->translate = $translate;
+        $this->hasAccess = $hasAccess;
         $this->supportAnyValue = $supportAnyValue;
     }
 
@@ -547,6 +554,26 @@ class References extends AbstractPlugin
                     }
                     break;
 
+                // Module Access.
+                case 'access':
+                    if ($this->hasAccess) {
+                        $values = $this->listAccesses();
+                        if ($isAssociative) {
+                            $result[$keyResult]['o:references'] = $values;
+                        } else {
+                            foreach (array_filter($values) as $valueData) {
+                                $meta = [
+                                    '@type' => 'o:AccessStatus',
+                                    'o-status:level' => $valueData['val'],
+                                ];
+                                $result[$keyResult]['o:references'][] = $meta + $valueData;
+                            }
+                        }
+                    } else {
+                        $result[$keyResult]['o:references'] = [];
+                    }
+                    break;
+
                 // Unknown.
                 default:
                     $result[$keyResult]['o:references'] = [];
@@ -558,7 +585,8 @@ class References extends AbstractPlugin
     }
 
     /**
-     * Count the total of distinct values for a term, a template or an item set.
+     * Count the total of distinct values for a property, a class, a template or
+     * an item set.
      *
      * If total is not correct, reindex the references in main settings.
      *
@@ -710,7 +738,13 @@ class References extends AbstractPlugin
                     $result[$keyResult]['o:references'] = $values;
                     break;
 
-                    // Unknown.
+                // Module Access.
+                case 'access':
+                    $values = $this->listAccesses();
+                    $result[$keyResult]['o:references'] = $values;
+                    break;
+
+                // Unknown.
                 default:
                     $result[$keyResult]['o:references'] = [];
                     break;
@@ -1365,6 +1399,60 @@ class References extends AbstractPlugin
             ->outputMetadata($qb, 'o:site');
     }
 
+    /**
+     * Get the list of accesses, the total for each one and the first resource.
+     *
+     * The module Access should be already checked.
+     *
+     * @return array Associative list of references, with the total, the first
+     * record, and the first character, according to the parameters.
+     */
+    protected function listAccesses()
+    {
+        $qb = $this->connection->createQueryBuilder();
+        $expr = $qb->expr();
+
+        /*
+        SELECT access_status.level AS val, MIN(resource.id) AS val2, COUNT(resource.id) AS total
+        FROM resource resource
+        INNER JOIN item item ON item.id = resource.id
+        LEFT JOIN access_status ON access_status.id = resource.id
+        GROUP BY val;
+         */
+
+        // This is useless, but possible nevertheless.
+        if ($this->process === 'initials') {
+            $qb
+                ->select(
+                    "UPPER(LEFT(access_status.level, {$this->options['_initials']})) AS val",
+                    'COUNT(resource.id) AS total'
+                );
+        } else {
+            $qb
+                ->select(
+                    'access_status.level AS val',
+                    'COUNT(resource.id) AS total'
+                );
+        }
+        $qb
+            ->distinct(true)
+            ->from('resource', 'resource')
+            ->innerJoin('resource', 'access_status', 'access_status', $expr->eq('access_status.id', 'resource.id'))
+            ->groupBy('val')
+        ;
+
+        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+            $qb
+                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
+                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
+        }
+
+        return $this
+            ->filterByVisibility($qb, 'access')
+            ->manageOptions($qb, 'access')
+            ->outputMetadata($qb, 'access');
+    }
+
     protected function limitItemSetsToSite(QueryBuilder $qb): self
     {
         // @see \Omeka\Api\Adapter\ItemSetAdapter::buildQuery()
@@ -1419,6 +1507,7 @@ class References extends AbstractPlugin
             case 'o:resource_template':
             case 'o:owner':
             case 'o:site':
+            case 'access':
                 $qb
                     ->andWhere('resource.is_public = 1');
                 break;
@@ -1457,6 +1546,7 @@ class References extends AbstractPlugin
             case 'o:resource_template':
             case 'o:owner':
             case 'o:site':
+            case 'access':
                 $qb
                     ->andWhere($expr->orX(
                         'resource.is_public = 1',
@@ -1595,6 +1685,17 @@ class References extends AbstractPlugin
                     $this->supportAnyValue
                         ? "ANY_VALUE(UPPER(LEFT(resource.title, {$this->options['initial']}))) AS initial"
                         : "UPPER(LEFT(resource.title, {$this->options['initial']})) AS initial"
+                );
+        }
+
+        if ($type === 'access' && $this->options['initial']) {
+            // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
+            $qb
+                ->addSelect(
+                    // 'CONVERT(UPPER(LEFT(COALESCE(access_status.level, {$this->options['initial']}), 1)) USING latin1) AS initial',
+                    $this->supportAnyValue
+                        ? "ANY_VALUE(UPPER(LEFT(access_status.level, {$this->options['initial']}))) AS initial"
+                        : "UPPER(LEFT(access_status.level, {$this->options['initial']})) AS initial"
                 );
         }
 
@@ -1765,6 +1866,11 @@ class References extends AbstractPlugin
                     $qb
                         ->andWhere($expr->in('site.id', ':ids'))
                         ->setParameter('ids', array_map('intval', $this->options['values']), Connection::PARAM_INT_ARRAY);
+                    break;
+                case 'access':
+                    $qb
+                        ->andWhere($expr->in('access_status.level', ':values'))
+                        ->setParameter('values', $this->options['values'], Connection::PARAM_STR_ARRAY);
                     break;
                 default:
                     break;
@@ -2150,6 +2256,8 @@ class References extends AbstractPlugin
             'o:owner' => 'owners',
             // Sites is only for items.
             'o:site' => 'sites',
+            // Module Access.
+            'access' => 'access',
         ];
 
         $isSingle = !is_array($fields);
@@ -2171,6 +2279,7 @@ class References extends AbstractPlugin
                 'o:item_set' => $translate('Item sets'), // @translate
                 'o:owner' => $translate('Owners'), // @translate
                 'o:site' => $translate('Sites'), // @translate
+                'access' => $translate('Access'), // @translate
             ];
             return [
                 'type' => $field,
