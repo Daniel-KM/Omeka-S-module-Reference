@@ -789,7 +789,7 @@ class References extends AbstractPlugin
             $qb
                 ->innerJoin('value', 'resource', 'resource', $expr->andX($expr->eq('resource.id', 'value.resource_id'), $expr->eq('resource.resource_type', ':entity_class')))
                 ->innerJoin('value', 'resource', 'value_resource', $expr->andX($expr->eq('value_resource.id', 'value.resource_id'), $expr->eq('value_resource.resource_type', ':entity_class')))
-                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
+                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
         }
 
         if ($this->process === 'initials') {
@@ -889,7 +889,7 @@ class References extends AbstractPlugin
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
+                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -939,7 +939,7 @@ class References extends AbstractPlugin
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
+                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -1038,7 +1038,7 @@ class References extends AbstractPlugin
             ->distinct(true)
             ->from('resource', 'resource')
             ->where($expr->eq('resource.resource_type', ':entity_class'))
-            ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING)
+            ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING)
             ->groupBy('val')
         ;
 
@@ -1097,7 +1097,7 @@ class References extends AbstractPlugin
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
+                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -1157,7 +1157,7 @@ class References extends AbstractPlugin
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
+                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -1202,7 +1202,7 @@ class References extends AbstractPlugin
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
+                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -1311,7 +1311,7 @@ class References extends AbstractPlugin
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
+                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -1462,7 +1462,7 @@ class References extends AbstractPlugin
                         'resource.is_public = 1',
                         'resource.owner_id = :user_id'
                     ))
-                    ->setParameter('user_id', (int) $this->user->getId(), \Doctrine\DBAL\ParameterType::INTEGER)
+                    ->setParameter('user_id', (int) $this->user->getId(), ParameterType::INTEGER)
                 ;
                 break;
             case 'properties':
@@ -1476,7 +1476,7 @@ class References extends AbstractPlugin
                         'value.is_public = 1',
                         'value.resource_id = (SELECT r.id FROM resource r WHERE r.owner_id = :user_id AND r.id = value.resource_id)'
                     ))
-                    ->setParameter('user_id', (int) $this->user->getId(), \Doctrine\DBAL\ParameterType::INTEGER)
+                    ->setParameter('user_id', (int) $this->user->getId(), ParameterType::INTEGER)
                 ;
                 break;
             default:
@@ -1964,7 +1964,7 @@ class References extends AbstractPlugin
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
+                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
         }
 
         $this->searchQuery($qb);
@@ -1998,7 +1998,7 @@ class References extends AbstractPlugin
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
+                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
         }
 
         $this->searchQuery($qb);
@@ -2032,7 +2032,7 @@ class References extends AbstractPlugin
         if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], \Doctrine\DBAL\ParameterType::STRING);
+                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
         }
 
         $this->searchQuery($qb);
