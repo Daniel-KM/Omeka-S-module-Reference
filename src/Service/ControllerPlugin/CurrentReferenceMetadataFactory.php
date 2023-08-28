@@ -11,6 +11,7 @@ class CurrentReferenceMetadataFactory implements FactoryInterface
     public function __invoke(ContainerInterface $services, $name, array $options = null)
     {
         return new CurrentReferenceMetadata(
+            $services->get('Omeka\EntityManager'),
             $services->get('Omeka\Logger')
         );
     }

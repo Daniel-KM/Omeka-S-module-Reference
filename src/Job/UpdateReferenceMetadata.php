@@ -6,7 +6,7 @@ use Doctrine\ORM\EntityManager;
 use Omeka\Job\AbstractJob;
 
 /**
- * @see \BulkCheck\Job\DbResourceTitle
+ * @see \EasyAdmin\Job\DbResourceTitle
  */
 class UpdateReferenceMetadata extends AbstractJob
 {
@@ -33,11 +33,11 @@ class UpdateReferenceMetadata extends AbstractJob
         $this->logger = $services->get('Omeka\Logger');
         $this->logger->addProcessor($referenceIdProcessor);
 
-        // Because this is an indexer that is used in background, another entity
-        // manager is used to avoid conflicts with the main entity manager, for
-        // example when the job is run in foreground or multiple resources are
-        // imported in bulk, so a flush() or a clear() will not be applied on
-        // the imported resources but only on the indexed resources.
+        // Because this is an indexer, another entity manager is used to avoid
+        // conflicts with the main entity manager, for example when the job is
+        // run in foreground or multiple resources are imported in bulk, so a
+        // flush() or a clear() will not be applied on the imported resources
+        // but only on the indexed resources.
         $this->connection = $services->get('Omeka\Connection');
         $this->entityManager = $this->getNewEntityManager($services->get('Omeka\EntityManager'));
         $this->resourceRepository = $this->entityManager->getRepository(\Omeka\Entity\Resource::class);

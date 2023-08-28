@@ -2,6 +2,7 @@
 
 namespace Reference\Mvc\Controller\Plugin;
 
+use Doctrine\ORM\EntityManager;
 use Laminas\Log\Logger;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Entity\Resource;
@@ -10,64 +11,57 @@ use Reference\Entity\Metadata as ReferenceMetadata;
 class CurrentReferenceMetadata extends AbstractPlugin
 {
     /**
+     * @var \Doctrine\ORM\EntityManager
+     */
+    protected $entityManager;
+
+    /**
      * @var \Laminas\Log\Logger
      */
     protected $logger;
 
-    public function __construct(Logger $logger)
+    public function __construct(EntityManager $entityManager, Logger $logger)
     {
+        $this->entityManager = $entityManager;
         $this->logger = $logger;
     }
 
     /**
-     * Get the references metadata of a resource from it.
+     * Get the references metadata of a resource from it. They are not flushed.
      *
-     * @internal
+     * @internal Use internally only.
+     *
      * @return \Reference\Entity\Metadata[]
      */
     public function __invoke(Resource $resource): array
     {
-        static $templateDataIds = [];
-
         $referenceMetadatas = [];
 
-        // Add the core main fields (title and description).
-        $template = $resource->getResourceTemplate();
-        if ($template) {
-            $templateId = $template->getId();
-            if (!isset($templateDataIds[$templateId])) {
-                $propertyId = $template->getTitleProperty();
-                $templateDataIds[$templateId]['title'] = $propertyId ? $propertyId->getId() : 1;
-                $propertyId = $template->getDescriptionProperty();
-                $templateDataIds[$templateId]['description'] = $propertyId ? $propertyId->getId() : 4;
-            }
-            $titlePropertyId = $templateDataIds[$templateId]['title'];
-            $descriptionPropertyId = $templateDataIds[$templateId]['description'];
-        } else {
-            $titlePropertyId = 1;
-            $descriptionPropertyId = 4;
-        }
-        $coreFields = [
-            ['field' => 'display_title', 'property_id' => $titlePropertyId],
-            ['field' => 'display_description', 'property_id' => $descriptionPropertyId],
-        ];
+        $coreFields = $this->getCoreFields($resource);
+
+        // Use references to avoid doctrine issue "A new entity was found".
+        $resourceRef = $this->entityManager->getReference($resource->getResourceId(), $resource->getId());
+
         // Unlike standard values, only first value in each language is
         // stored, but a value resource can have multiple languages.
         foreach ($coreFields as $fieldData) {
             $languages = [];
             $privateLanguages = [];
+            /** @var \Omeka\Entity\Value $value*/
             foreach ($resource->getValues() as $value) {
                 if ($value->getProperty()->getId() !== $fieldData['property_id']) {
                     continue;
                 }
+                // Use references to avoid doctrine issue "A new entity was found".
+                $valueRef = $this->entityManager->getReference(\Omeka\Entity\Value::class, $value->getId());
                 $isPublic = $value->getIsPublic();
                 $langTexts = $this->getValueResourceLangTexts($value, $isPublic);
                 $langTexts = array_diff_key($langTexts, $isPublic ? $languages : $privateLanguages);
                 foreach ($langTexts as $lang => $text) {
                     $metadata = new ReferenceMetadata();
                     $metadata
-                        ->setResource($resource)
-                        ->setValue($value)
+                        ->setResource($resourceRef)
+                        ->setValue($valueRef)
                         ->setField($fieldData['field'])
                         ->setLang($lang)
                         ->setIsPublic($isPublic)
@@ -81,7 +75,10 @@ class CurrentReferenceMetadata extends AbstractPlugin
             }
         }
 
+        /** @var \Omeka\Entity\Value $value*/
         foreach ($resource->getValues() as $value) {
+            // Use references to avoid doctrine issue "A new entity was found".
+            $valueRef = $this->entityManager->getReference(\Omeka\Entity\Value::class, $value->getId());
             $property = $value->getProperty();
             $field = $property->getVocabulary()->getPrefix() . ':' . $property->getLocalName();
             $isPublic = $value->getIsPublic();
@@ -89,8 +86,8 @@ class CurrentReferenceMetadata extends AbstractPlugin
             foreach ($langTexts as $lang => $text) {
                 $metadata = new ReferenceMetadata();
                 $metadata
-                    ->setResource($resource)
-                    ->setValue($value)
+                    ->setResource($resourceRef)
+                    ->setValue($valueRef)
                     ->setField($field)
                     ->setLang($lang)
                     ->setIsPublic($isPublic)
@@ -151,11 +148,11 @@ class CurrentReferenceMetadata extends AbstractPlugin
 
         ++$count;
 
+        // The resource is already stored and just the title is needed.
+
         // Get the property title of the valueResource.
-        $template = $valueResource->getResourceTemplate();
-        $titlePropertyId = $template && ($property = $template->getTitleProperty())
-            ? $property->getId()
-            : 1;
+        $vrCoreFields = $this->getCoreFields($valueResource);
+        $titlePropertyId = $vrCoreFields[0]['property_id'];
         foreach ($valueResource->getValues() as $subValue) {
             if ($subValue->getProperty()->getId() !== $titlePropertyId) {
                 continue;
@@ -165,26 +162,58 @@ class CurrentReferenceMetadata extends AbstractPlugin
                 continue;
             }
             $subValueResource = $subValue->getValueResource();
-            if ($subValueResource && $count > 10) {
-                $this->logger->warn(sprintf(
-                    'Resource #%d has a recursive title.', // @translate
-                    // TODO Ideally, get initial source value id. Probably very rare anyway above one or two levels.
-                    $value->getResource()->getId()
-                ));
-                $lang = '';
-                $text = $subValueResource->getTitle();
-                $isPublicSubValueResource = $isPublicSubValue && $subValueResource->isPublic();
-                if (($isPublic && $isPublicSubValueResource) || !$isPublic) {
-                    if (!isset($langTexts[$lang])) {
-                        $langTexts[$lang] = $text;
+            if ($subValueResource) {
+                if ($count > 10) {
+                    $this->logger->warn(sprintf(
+                        'Resource #%d has a recursive title.', // @translate
+                        // TODO Ideally, get initial source value id. Anyway, this case never occurs above one or two levels in real life.
+                        $value->getResource()->getId()
+                    ));
+                    $lang = '';
+                    $text = $subValueResource->getTitle();
+                    $isPublicSubValueResource = $isPublicSubValue && $subValueResource->isPublic();
+                    if (($isPublic && $isPublicSubValueResource) || !$isPublic) {
+                        if (!isset($langTexts[$lang])) {
+                            $langTexts[$lang] = $text;
+                        }
                     }
+                    continue;
                 }
-            } else {
-                $subLangTexts = $this->getValueResourceLangTexts($subValue, $isPublic, $count, $langTexts);
-                $langTexts += $subLangTexts;
             }
+            $subLangTexts = $this->getValueResourceLangTexts($subValue, $isPublic, $count, $langTexts);
+            $langTexts += $subLangTexts;
         }
 
         return $langTexts;
+    }
+
+    protected function getCoreFields(Resource $resource): array
+    {
+        static $templateDataIds = [];
+
+        // Add the core main fields (title and description).
+        $template = $resource->getResourceTemplate();
+
+        if ($template) {
+            $templateId = $template->getId();
+            if (!isset($templateDataIds[$templateId])) {
+                $propertyId = $template->getTitleProperty();
+                $templateDataIds[$templateId]['title'] = $propertyId ? $propertyId->getId() : 1;
+                $propertyId = $template->getDescriptionProperty();
+                $templateDataIds[$templateId]['description'] = $propertyId ? $propertyId->getId() : 4;
+            }
+            $titlePropertyId = $templateDataIds[$templateId]['title'];
+            $descriptionPropertyId = $templateDataIds[$templateId]['description'];
+        } else {
+            $titlePropertyId = 1;
+            $descriptionPropertyId = 4;
+        }
+
+        $coreFields = [
+            ['field' => 'display_title', 'property_id' => $titlePropertyId],
+            ['field' => 'display_description', 'property_id' => $descriptionPropertyId],
+        ];
+
+        return $coreFields;
     }
 }

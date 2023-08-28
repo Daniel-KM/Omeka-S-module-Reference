@@ -94,12 +94,12 @@ class Module extends AbstractModule
             $sharedEventManager->attach(
                 $adapter,
                 'api.create.post',
-                [$this, 'updateReferenceMetadataApiPost']
+                [$this, 'updateReferenceMetadataApiCreatePost']
             );
             // $sharedEventManager->attach(
             //     $adapter,
             //     'api.update.post',
-            //     [$this, 'updateReferenceMetadataApiPost']
+            //     [$this, 'updateReferenceMetadataApiCreatePost']
             // );
         }
         // $sharedEventManager->attach(
@@ -211,22 +211,52 @@ class Module extends AbstractModule
         $messenger->addSuccess($message);
     }
 
-    public function updateReferenceMetadataApiPost(Event $event): void
+    /**
+     * This method should be created for "create" only.
+     */
+    public function updateReferenceMetadataApiCreatePost(Event $event): void
     {
         /** @var \Omeka\Entity\Resource $resource */
         $resource = $event->getParam('response')->getContent();
 
         $services = $this->getServiceLocator();
         $currentReferenceMetadata = $services->get('ControllerPluginManager')->get('currentReferenceMetadata');
+
+        /** @var \Reference\Entity\Metadata[] $referenceMetadatas */
         $referenceMetadatas = $currentReferenceMetadata($resource);
         if (!count($referenceMetadatas)) {
             return;
         }
 
+        // Because this is an indexer, another entity manager is used to avoid
+        // conflicts with the main entity manager, for example when the job is
+        // run in foreground or multiple resources are imported in bulk, so a
+        // flush() or a clear() will not be applied on the imported resources
+        // but only on the indexed resources.
+        /** @var \Doctrine\ORM\EntityManager $entityManager */
         $entityManager = $services->get('Omeka\EntityManager');
-        foreach ($referenceMetadatas as $metadata) {
-            $entityManager->persist($metadata);
+        $entityManager = \Doctrine\ORM\EntityManager::create(
+            $entityManager->getConnection(),
+            $entityManager->getConfiguration(),
+            $entityManager->getEventManager()
+        );
+
+        foreach ($referenceMetadatas as $referenceMetadata) {
+            // Use references to avoid doctrine issue "A new entity was found".
+            // It should be done here even if already done in CurrentReferenceMetadata,
+            // because it is not the same entity manager.
+            // Reference for resource.
+            $referenceResource = $referenceMetadata->getResource();
+            $referenceResourceRef = $entityManager->getReference($referenceResource->getResourceId(), $referenceResource->getId());
+            $referenceMetadata->setResource($referenceResourceRef);
+            // Reference for value.
+            $referenceValue = $referenceMetadata->getValue();
+            $referenceValueRef = $entityManager->getReference(\Omeka\Entity\Value::class, $referenceValue->getId());
+            $referenceMetadata->setValue($referenceValueRef);
+            // Persist without issue.
+            $entityManager->persist($referenceMetadata);
         }
+
         $entityManager->flush();
     }
 
@@ -248,10 +278,23 @@ class Module extends AbstractModule
         // so use only sql.
         // See commit #eb068cc the explanation of the foreach instead of the
         // single query (possible memory issue with extracted text).
-        // TODO Improve the query to avoid a loop on query. Check using doctrine dql.
         $connection = $this->getServiceLocator()->get('Omeka\Connection');
+        // TODO Improve the query to avoid a loop on query. Check using doctrine dql.
+        // Use an insert, because all existing references are removed above.
+        $sql = <<<'SQL'
+INSERT INTO `reference_metadata` (`resource_id`, `value_id`, `field`, `lang`, `is_public`, `text`)
+VALUES (:resource_id, :value_id, :field, :lang, :is_public, :text);
+SQL;
+        // No field is nullable, so types are known.
+        $types = [
+            'resource_id' => \Doctrine\DBAL\ParameterType::INTEGER,
+            'value_id' => \Doctrine\DBAL\ParameterType::INTEGER,
+            'field' => \Doctrine\DBAL\ParameterType::STRING,
+            'lang' => \Doctrine\DBAL\ParameterType::STRING,
+            'is_public' => \Doctrine\DBAL\ParameterType::INTEGER,
+            'text' => \Doctrine\DBAL\ParameterType::STRING,
+        ];
         foreach ($referenceMetadatas as $metadata) {
-            $sql = "INSERT INTO `reference_metadata` (`resource_id`, `value_id`, `field`, `lang`, `is_public`, `text`) VALUES (:resource_id, :value_id, :field, :lang, :is_public, :text)";
             $parameters = [
                 'resource_id' => (int) $metadata->getResource()->getId(),
                 'value_id' => (int) $metadata->getValue()->getId(),
@@ -260,7 +303,7 @@ class Module extends AbstractModule
                 'is_public' => (int) $metadata->getIsPublic(),
                 'text' => (string) $metadata->getText(),
             ];
-            $connection->executeStatement($sql, $parameters);
+            $connection->executeStatement($sql, $parameters, $types);
         }
     }
 
@@ -270,8 +313,9 @@ class Module extends AbstractModule
     protected function deleteReferenceMetadataResource(\Omeka\Entity\Resource $resource): void
     {
         $this->getServiceLocator()->get('Omeka\Connection')->executeStatement(
-            'DELETE FROM `reference_metadata` WHERE `resource_id` = :resource',
-            ['resource' => $resource->getId()]
+            'DELETE FROM `reference_metadata` WHERE `resource_id` = :resource_id',
+            ['resource_id' => $resource->getId()],
+            ['resource_id' => \Doctrine\DBAL\ParameterType::INTEGER]
         );
     }
 
@@ -289,7 +333,7 @@ ORDER BY id ASC;
 SQL;
 
         $connection = $this->getServiceLocator()->get('Omeka\Connection');
-        $result = $connection->executeQuery($sql, ['class' => $class])->fetchAllAssociative();
+        $result = $connection->executeQuery($sql, ['class' => $class], ['class' => \Doctrine\DBAL\ParameterType::STRING])->fetchAllAssociative();
 
         // Unselect processes without pid.
         foreach ($result as $id => $row) {
