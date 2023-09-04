@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-03-07 00:00+0000\n"
+"POT-Creation-Date: 2023-09-04 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,49 +21,50 @@ msgstr ""
 msgid "Method Not Allowed"
 msgstr ""
 
-#: src/Generic/AbstractModule.php:66 src/Generic/AbstractModule.php:740
+#: src/Generic/AbstractModule.php:80 src/Generic/AbstractModule.php:88
+#: src/Generic/AbstractModule.php:890
 #, php-format
 msgid "This module requires the module \"%s\"."
 msgstr ""
 
-#: src/Generic/AbstractModule.php:73
+#: src/Generic/AbstractModule.php:93
 #, php-format
 msgid "This module requires modules \"%s\"."
 msgstr ""
 
-#: src/Generic/AbstractModule.php:80
+#: src/Generic/AbstractModule.php:101
 msgid "This module has resources that cannot be installed."
 msgstr ""
 
-#: src/Generic/AbstractModule.php:87
+#: src/Generic/AbstractModule.php:108
 msgid ""
 "This module cannot install its tables, because they exist already. Try to "
 "remove them first."
 msgstr ""
 
-#: src/Generic/AbstractModule.php:328
+#: src/Generic/AbstractModule.php:398
 #, php-format
 msgid "The module removed tables \"%s\" from a previous broken install."
 msgstr ""
 
-#: src/Generic/AbstractModule.php:735
+#: src/Generic/AbstractModule.php:885
 #, php-format
-msgid "This module requires the module \"%s\", version %s or above."
+msgid "This module requires the module \"%1$s\", version %2$s or above."
 msgstr ""
 
-#: src/Generic/AbstractModule.php:832
+#: src/Generic/AbstractModule.php:982
 #, php-format
 msgid ""
 "The module \"%s\" was automatically deactivated because the dependencies are "
 "unavailable."
 msgstr ""
 
-#: src/Mvc/Controller/Plugin/References.php:2180
+#: src/Mvc/Controller/Plugin/References.php:2336
 msgid "Owners"
 msgstr ""
 
-#: src/Mvc/Controller/Plugin/References.php:2216
-msgid "[Unknown]"
+#: src/Mvc/Controller/Plugin/References.php:2338
+msgid "Access"
 msgstr ""
 
 #: src/Site/BlockLayout/Reference.php:147
@@ -81,17 +82,17 @@ msgid ""
 msgstr ""
 
 #: view/common/block-layout/reference-index.phtml:19
-#: view/common/block-layout/reference-tree.phtml:26
-#: view/common/block-layout/reference.phtml:23
+#: view/common/block-layout/reference-tree.phtml:27
+#: view/common/block-layout/reference.phtml:26
 msgid "There is no references."
 msgstr ""
 
-#: view/common/reference-index.phtml:29
+#: view/common/reference-index.phtml:30
 #, php-format
 msgid "%s (%d)"
 msgstr ""
 
-#: view/common/reference-index.phtml:32 view/common/reference-index.phtml:41
+#: view/common/reference-index.phtml:33 view/common/reference-index.phtml:42
 #: view/reference/site/reference/browse.phtml:38
 #: view/reference/site/reference/browse.phtml:67
 #, php-format
@@ -125,69 +126,164 @@ msgstr ""
 msgid "There is no references for \"%s\"."
 msgstr ""
 
-#: data/scripts/upgrade.php:355
+#: data/scripts/upgrade.php:373
 msgid ""
 "It is possible now to limit the list of references, for example only the of "
 "subjects starting with \"a\" with argument \"filters[begin]=a\"."
 msgstr ""
 
-#: data/scripts/upgrade.php:360
+#: data/scripts/upgrade.php:378
 msgid ""
 "It is possible now to list not only references, but resources by reference, "
 "for example all documents of an author or all items with each subject."
 msgstr ""
 
-#: data/scripts/upgrade.php:368
+#: data/scripts/upgrade.php:385
 msgid "It is possible now to aggregate properties (api and helper)."
 msgstr ""
 
-#: data/scripts/upgrade.php:376
+#: data/scripts/upgrade.php:392
 msgid "It is possible now to filter references by data types."
 msgstr ""
 
-#: data/scripts/upgrade.php:386
+#: data/scripts/upgrade.php:401
 msgid "It is possible now to get translated linked resource."
 msgstr ""
 
-#: data/scripts/upgrade.php:391 Module.php:58
+#: data/scripts/upgrade.php:406 Module.php:58
 msgid "Translated linked resource metadata should be indexed in main settings."
 msgstr ""
 
-#: data/scripts/upgrade.php:431
+#: data/scripts/upgrade.php:447
 msgid ""
 "It is possible now to aggregate properties in references, for example to get "
 "list of people from properties dcterms:creator and dcterms:contributor."
 msgstr ""
 
-#: data/scripts/upgrade.php:435
+#: data/scripts/upgrade.php:451
 msgid ""
 "Warning: the name of the source properties or classes \"term\" has been "
 "replace by \"fields\" in pages, so check your theme templates if you updated "
 "the default ones of the module."
 msgstr ""
 
-#: data/scripts/upgrade.php:439
+#: data/scripts/upgrade.php:455
 msgid ""
 "It is possible now to get a specific number of initials, for example to get "
 "the list of years from standard dates."
+msgstr ""
+
+#: data/scripts/upgrade.php:462
+msgid ""
+"Many improvements were done to output references and facets a lot more "
+"quickly, in particular for big bases."
 msgstr ""
 
 #: Module.php:54
 msgid "The translated and linked resource metadata are currently indexing."
 msgstr ""
 
-#: Module.php:159
+#: Module.php:170
 #, php-format
 msgid ""
-"Another job is running for the same process (job %1$s#%2$d%3$s, "
-"%4$slogs%3$s)."
+"Another job is running for the same process (job %1$s#%2$d%3$s, %4$slogs"
+"%3$s)."
 msgstr ""
 
-#: Module.php:184
+#: Module.php:195
 #, php-format
 msgid ""
-"Indexing translated and linked resource metadata in background (job "
-"%1$s#%2$d%3$s, %4$slogs%3$s)."
+"Indexing translated and linked resource metadata in background (job %1$s#%2$d"
+"%3$s, %4$slogs%3$s)."
+msgstr ""
+
+#: src/Mvc/Controller/Plugin/CurrentReferenceMetadata.php:168
+#, php-format
+msgid "Resource #%d has a recursive title."
+msgstr ""
+
+#: src/Mvc/Controller/Plugin/References.php:457
+msgid ""
+"This output format is deprecated. Set a string key to metadata to use the "
+"new format or append option \"single_reference_format\" to remove this "
+"warning."
+msgstr ""
+
+#: src/Job/UpdateReferenceMetadata.php:46
+msgid "Starting creation of reference metadata."
+msgstr ""
+
+#: src/Job/UpdateReferenceMetadata.php:53
+msgid "No resource to process."
+msgstr ""
+
+#: src/Job/UpdateReferenceMetadata.php:73
+msgid "{processed}/{total} resources processed."
+msgstr ""
+
+#: src/Job/UpdateReferenceMetadata.php:78
+msgid "The job was stopped."
+msgstr ""
+
+#: src/Job/UpdateReferenceMetadata.php:110
+msgid "End of process: {processed}/{total} processed."
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:15 src/Form/SettingsFieldset.php:13
+#: src/Site/BlockLayout/Reference.php:37
+msgid "Reference"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:31
+msgid "Title of the page [deprecated: use page block]"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:43
+msgid "Resources to link [deprecated: use page block]"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:44 src/Form/ReferenceTreeFieldset.php:73
+#: src/Form/ReferenceIndexFieldset.php:63 src/Form/ReferenceFieldset.php:62
+msgid "value_options"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:63
+msgid "Display [deprecated: use page block]"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:66
+msgid "Headings"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:67
+msgid "Skip links"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:68
+msgid "Individual total"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:69 src/Form/ReferenceTreeFieldset.php:124
+#: src/Form/ReferenceFieldset.php:155
+msgid "Link to single records"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:70
+msgid "Custom url for single records"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:84
+msgid ""
+"Reference pages for selected classes and properties [deprecated: use page "
+"block]"
+msgstr ""
+
+#: src/Form/SettingsFieldset.php:29
+msgid "Index reference metadata"
+msgstr ""
+
+#: src/Form/SettingsFieldset.php:30
+msgid "To use some features of module Reference, an index is required."
 msgstr ""
 
 #: src/Form/ReferenceTreeFieldset.php:18
@@ -225,11 +321,6 @@ msgid ""
 "- Japan\n"
 msgstr ""
 
-#: src/Form/ReferenceTreeFieldset.php:73 src/Form/ReferenceIndexFieldset.php:63
-#: src/Form/SiteSettingsFieldset.php:25 src/Form/ReferenceFieldset.php:62
-msgid "value_options"
-msgstr ""
-
 #: src/Form/ReferenceTreeFieldset.php:92 src/Form/ReferenceFieldset.php:97
 msgid "Search pool query"
 msgstr ""
@@ -251,11 +342,6 @@ msgstr ""
 
 #: src/Form/ReferenceTreeFieldset.php:111
 msgid "Contains"
-msgstr ""
-
-#: src/Form/ReferenceTreeFieldset.php:124 src/Form/SiteSettingsFieldset.php:48
-#: src/Form/ReferenceFieldset.php:155
-msgid "Link to single records"
 msgstr ""
 
 #: src/Form/ReferenceTreeFieldset.php:125 src/Form/ReferenceFieldset.php:156
@@ -304,19 +390,6 @@ msgid ""
 "start with \"reference-tree\"."
 msgstr ""
 
-#: src/Form/SettingsFieldset.php:13 src/Form/SiteSettingsFieldset.php:15
-#: src/Site/BlockLayout/Reference.php:37
-msgid "Reference"
-msgstr ""
-
-#: src/Form/SettingsFieldset.php:22
-msgid "Index reference metadata"
-msgstr ""
-
-#: src/Form/SettingsFieldset.php:23
-msgid "To use some features of module Reference, an index is required."
-msgstr ""
-
 #: src/Form/ReferenceIndexFieldset.php:43 src/Form/ReferenceFieldset.php:42
 msgid "Resource classes"
 msgstr ""
@@ -349,8 +422,7 @@ msgid ""
 "languages. Use \"||\" for values without language."
 msgstr ""
 
-#: src/Form/ReferenceIndexFieldset.php:122 src/Form/SiteSettingsFieldset.php:43
-#: src/Form/ReferenceFieldset.php:124
+#: src/Form/ReferenceIndexFieldset.php:122 src/Form/ReferenceFieldset.php:124
 msgid "Display"
 msgstr ""
 
@@ -358,30 +430,6 @@ msgstr ""
 msgid ""
 "Templates are in folder \"common/block-layout\" of the theme and should "
 "start with \"reference-index\"."
-msgstr ""
-
-#: src/Form/SiteSettingsFieldset.php:24
-msgid "Resources to link"
-msgstr ""
-
-#: src/Form/SiteSettingsFieldset.php:45
-msgid "Headings"
-msgstr ""
-
-#: src/Form/SiteSettingsFieldset.php:46
-msgid "Skip links"
-msgstr ""
-
-#: src/Form/SiteSettingsFieldset.php:47
-msgid "Individual total"
-msgstr ""
-
-#: src/Form/SiteSettingsFieldset.php:49
-msgid "Custom url for single records"
-msgstr ""
-
-#: src/Form/SiteSettingsFieldset.php:62
-msgid "Reference pages for selected classes and properties"
 msgstr ""
 
 #: src/Form/ReferenceFieldset.php:80
@@ -453,37 +501,11 @@ msgid ""
 "start with \"reference\"."
 msgstr ""
 
-#: src/Job/UpdateReferenceMetadata.php:41
-msgid "Starting creation of reference metadata."
-msgstr ""
-
-#: src/Job/UpdateReferenceMetadata.php:48
-msgid "No resource to process."
-msgstr ""
-
-#: src/Job/UpdateReferenceMetadata.php:68
-msgid "{processed}/{total} resources processed."
-msgstr ""
-
-#: src/Job/UpdateReferenceMetadata.php:73
-msgid "The job was stopped."
-msgstr ""
-
-#: src/Job/UpdateReferenceMetadata.php:105
-msgid "End of process: {processed}/{total} processed."
-msgstr ""
-
-#: src/Site/BlockLayout/Reference.php:56
-msgid ""
-"To create references, there must be one or more properties or resource "
-"classes."
-msgstr ""
-
 #: src/Site/BlockLayout/ReferenceTree.php:46
 msgid "Reference tree"
 msgstr ""
 
-#: src/Site/BlockLayout/ReferenceIndex.php:37 config/module.config.php:198
+#: src/Site/BlockLayout/ReferenceIndex.php:37 config/module.config.php:199
 msgid "Reference index"
 msgstr ""
 
@@ -492,22 +514,16 @@ msgid ""
 "To create a list of references, there must be properties or resource classes."
 msgstr ""
 
-#: src/Mvc/Controller/Plugin/CurrentReferenceMetadata.php:170
-#, php-format
-msgid "Resource #%d has a recursive title."
-msgstr ""
-
-#: src/Mvc/Controller/Plugin/References.php:410
+#: src/Site/BlockLayout/Reference.php:56
 msgid ""
-"This output format is deprecated. Set a string key to metadata to use the "
-"new format or append option \"single_reference_format\" to remove this "
-"warning."
+"To create references, there must be one or more properties or resource "
+"classes."
 msgstr ""
 
-#: config/module.config.php:174
+#: config/module.config.php:175
 msgid "Subjects"
 msgstr ""
 
-#: config/module.config.php:204
+#: config/module.config.php:205
 msgid "Tree of subjects"
 msgstr ""
