@@ -169,6 +169,9 @@ class References extends AbstractPlugin
      *     with a null, the string "null", or an empty string "" (deprecated).
      *     It is recommended to append it when a language is set. This option is
      *     used only for properties.
+     *   - "main_types": array with "literal", "uri", "resource". Filter property
+     *     values according to the main data type. Default is to search all data
+     *     types.
      *   - "datatypes": array Filter property values according to the data types.
      *     Default datatypes are "literal", "resource", "resource:item", "resource:itemset",
      *     "resource:media" and "uri"; other existing ones are managed.
@@ -281,6 +284,7 @@ class References extends AbstractPlugin
             'sort_order' => 'ASC',
             'filters' => [
                 'languages' => [],
+                'main_types' => [],
                 'datatypes' => [],
                 'begin' => [],
                 'end' => [],
@@ -364,6 +368,13 @@ class References extends AbstractPlugin
             }
             $this->options['filters']['languages'] = array_unique(array_map('trim', $this->options['filters']['languages']));
 
+            // May be an array or a string (literal, uri or resource, in this order).
+            if (!is_array($this->options['filters']['main_types'])) {
+                $this->options['filters']['main_types'] = explode('|', str_replace(',', '|', $this->options['filters']['main_types'] ?: ''));
+            }
+            $this->options['filters']['main_types'] = array_unique(array_filter(array_map('trim', $this->options['filters']['main_types'])));
+            $this->options['filters']['main_types'] = array_values(array_intersect(['value', 'uri', 'resource'], $this->options['filters']['main_types']));
+            $this->options['filters']['main_types'] = array_combine($this->options['filters']['main_types'], $this->options['filters']['main_types']);
             if (!is_array($this->options['filters']['datatypes'])) {
                 $this->options['filters']['datatypes'] = explode('|', str_replace(',', '|', $this->options['filters']['datatypes'] ?: ''));
             }
@@ -826,6 +837,20 @@ class References extends AbstractPlugin
                 ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
         }
 
+        // This filter is used by properties only and normally already included
+        // in the select, but it allows to simplify it.
+        $mainTypes = [
+            'value' => 'value.value',
+            'uri' => 'value.uri',
+            'resource' => 'value.value_resource_id',
+        ];
+        if ($this->options['filters']['main_types']) {
+            $mainTypes = array_intersect_key($mainTypes, $this->options['filters']['main_types']);
+        }
+        $mainTypesString = count($mainTypes) === 1
+            ? reset($mainTypes)
+            : 'COALESCE(' . implode(', ', $mainTypes) . ')';
+
         if ($this->process === 'initials') {
             if ($this->options['locale']) {
                 $qb
@@ -843,10 +868,10 @@ class References extends AbstractPlugin
                 // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
                 $qb
                     ->select(
-                        // 'CONVERT(UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), $this->options['_initials'])) USING latin1) AS val',
+                        // 'CONVERT(UPPER(LEFT($mainTypesString, $this->options['_initials'])) USING latin1) AS val',
                         $val = $this->supportAnyValue
-                            ? "ANY_VALUE(UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), {$this->options['_initials']}))) AS val"
-                            : "UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), {$this->options['_initials']})) AS val",
+                            ? "ANY_VALUE(UPPER(LEFT($mainTypesString, {$this->options['_initials']}))) AS val"
+                            : "UPPER(LEFT($mainTypesString, {$this->options['_initials']})) AS val",
                         'COUNT(resource.id) AS total'
                     )
                 ;
@@ -866,8 +891,8 @@ class References extends AbstractPlugin
                 $qb
                     ->select(
                         $val = $this->supportAnyValue
-                            ? 'ANY_VALUE(COALESCE(value.value, value.uri, value_resource.title)) AS val'
-                            : 'COALESCE(value.value, value.uri, value_resource.title) AS val',
+                            ? "ANY_VALUE($mainTypesString) AS val"
+                            : "$mainTypesString AS val",
                         'COUNT(resource.id) AS total'
                     )
                 ;
@@ -876,10 +901,11 @@ class References extends AbstractPlugin
 
         return $this
             ->filterByVisibility($qb, 'properties')
-            ->filterByDatatype($qb)
+            ->filterByMainType($qb)
+            ->filterByDataType($qb)
             ->filterByLanguage($qb)
             ->filterByBeginOrEnd($qb, substr($val, 0, -7))
-            ->manageOptions($qb, 'properties')
+            ->manageOptions($qb, 'properties', ['mainTypesString' => $mainTypesString])
             ->outputMetadata($qb, 'properties');
     }
 
@@ -1078,7 +1104,8 @@ class References extends AbstractPlugin
 
         return $this
             // TODO Improve filter for "o:title".
-            // ->filterByDatatype($qb)
+            // ->filterByMainType($qb)
+            // ->filterByDataType($qb)
             // ->filterByLanguage($qb)
             ->filterByVisibility($qb, 'resource_titles')
             ->filterByBeginOrEnd($qb, 'resource.title')
@@ -1575,7 +1602,30 @@ class References extends AbstractPlugin
         return $this;
     }
 
-    protected function filterByDatatype(QueryBuilder $qb): self
+    protected function filterByMainType(QueryBuilder $qb): self
+    {
+        // This filter is used by properties only and normally already included
+        // in the select, but it allows to simplify it.
+        if ($this->options['filters']['main_types'] && $this->options['filters']['main_types'] !== ['value', 'uri', 'resource']) {
+            $expr = $qb->expr();
+            if ($this->options['filters']['main_types'] === ['value']) {
+                $qb->andWhere($expr->isNotNull('value.value'));
+            } elseif ($this->options['filters']['main_types'] === ['uri']) {
+                $qb->andWhere($expr->isNotNull('value.uri'));
+            } elseif ($this->options['filters']['main_types'] === ['resource']) {
+                $qb->andWhere($expr->isNotNull('value.value_resource_id'));
+            } elseif ($this->options['filters']['main_types'] === ['value', 'uri']) {
+                $qb->andWhere($expr->or($expr->isNotNull('value.value'), $expr->isNotNull('value.uri')));
+            } elseif ($this->options['filters']['main_types'] === ['value', 'resource']) {
+                $qb->andWhere($expr->or($expr->isNotNull('value.value'), $expr->isNotNull('value.value_resource_id')));
+            } elseif ($this->options['filters']['main_types'] === ['uri', 'resource']) {
+                $qb->andWhere($expr->or($expr->isNotNull('value.uri'), $expr->isNotNull('value.value_resource_id')));
+            }
+        }
+        return $this;
+    }
+
+    protected function filterByDataType(QueryBuilder $qb): self
     {
         if ($this->options['filters']['datatypes']) {
             $expr = $qb->expr();
@@ -1670,7 +1720,7 @@ class References extends AbstractPlugin
         return $this;
     }
 
-    protected function manageOptions(QueryBuilder $qb, $type): self
+    protected function manageOptions(QueryBuilder $qb, $type, array $args = []): self
     {
         $expr = $qb->expr();
         if (in_array($type, ['resource_classes', 'resource_templates', 'item_sets', 'resource_titles'])
@@ -1705,8 +1755,8 @@ class References extends AbstractPlugin
                 ->addSelect(
                     // 'CONVERT(UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? "ANY_VALUE(UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), {$this->options['initial']}))) AS initial"
-                        : "UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), {$this->options['initial']})) AS initial"
+                        ? "ANY_VALUE(UPPER(LEFT({$args['mainTypesString']}, {$this->options['initial']}))) AS initial"
+                        : "UPPER(LEFT({$args['mainTypesString']}, {$this->options['initial']})) AS initial"
                 );
         }
 
