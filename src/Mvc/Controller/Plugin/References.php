@@ -2104,6 +2104,7 @@ class References extends AbstractPlugin
             return 0;
         }
 
+        /** @var \Doctrine\DBAL\Query\QueryBuilder $qb */
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
@@ -2127,7 +2128,7 @@ class References extends AbstractPlugin
 
         $this->searchQuery($qb);
 
-        return (int) $qb->getQuery()->getSingleScalarResult();
+        return (int) $qb->execute()->fetchOne();
     }
 
     /**
@@ -2141,6 +2142,7 @@ class References extends AbstractPlugin
             return 0;
         }
 
+        /** @var \Doctrine\DBAL\Query\QueryBuilder $qb */
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
@@ -2161,7 +2163,7 @@ class References extends AbstractPlugin
 
         $this->searchQuery($qb);
 
-        return (int) $qb->getQuery()->getSingleScalarResult();
+        return (int) $qb->execute()->fetchOne();
     }
 
     /**
@@ -2175,6 +2177,7 @@ class References extends AbstractPlugin
             return 0;
         }
 
+        /** @var \Doctrine\DBAL\Query\QueryBuilder $qb */
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
@@ -2195,7 +2198,7 @@ class References extends AbstractPlugin
 
         $this->searchQuery($qb);
 
-        return (int) $qb->getQuery()->getSingleScalarResult();
+        return (int) $qb->execute()->fetchOne();
     }
 
     /**
@@ -2209,6 +2212,7 @@ class References extends AbstractPlugin
             return 0;
         }
 
+        /** @var \Doctrine\DBAL\Query\QueryBuilder $qb */
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
@@ -2229,7 +2233,7 @@ class References extends AbstractPlugin
 
         $this->searchQuery($qb);
 
-        return (int) $qb->getQuery()->getSingleScalarResult();
+        return (int) $qb->execute()->fetchOne();
     }
 
     /**
