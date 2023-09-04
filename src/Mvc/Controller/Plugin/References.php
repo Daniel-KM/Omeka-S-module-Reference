@@ -169,9 +169,9 @@ class References extends AbstractPlugin
      *     with a null, the string "null", or an empty string "" (deprecated).
      *     It is recommended to append it when a language is set. This option is
      *     used only for properties.
-     *   - "main_types": array with "literal", "uri", "resource". Filter property
-     *     values according to the main data type. Default is to search all data
-     *     types.
+     *   - "main_types": array with "literal", "resource", or "uri".
+     *     Filter property values according to the main data type. Default is to
+     *     search all data types.
      *   - "datatypes": array Filter property values according to the data types.
      *     Default datatypes are "literal", "resource", "resource:item", "resource:itemset",
      *     "resource:media" and "uri"; other existing ones are managed.
@@ -373,7 +373,7 @@ class References extends AbstractPlugin
                 $this->options['filters']['main_types'] = explode('|', str_replace(',', '|', $this->options['filters']['main_types'] ?: ''));
             }
             $this->options['filters']['main_types'] = array_unique(array_filter(array_map('trim', $this->options['filters']['main_types'])));
-            $this->options['filters']['main_types'] = array_values(array_intersect(['value', 'uri', 'resource'], $this->options['filters']['main_types']));
+            $this->options['filters']['main_types'] = array_values(array_intersect(['value', 'resource', 'uri'], $this->options['filters']['main_types']));
             $this->options['filters']['main_types'] = array_combine($this->options['filters']['main_types'], $this->options['filters']['main_types']);
             if (!is_array($this->options['filters']['datatypes'])) {
                 $this->options['filters']['datatypes'] = explode('|', str_replace(',', '|', $this->options['filters']['datatypes'] ?: ''));
@@ -829,11 +829,11 @@ class References extends AbstractPlugin
         if ($this->options['is_base_resource']) {
             $qb
                 ->innerJoin('value', 'resource', 'resource', $expr->eq('resource.id', 'value.resource_id'))
-                ->innerJoin('value', 'resource', 'value_resource', $expr->eq('value_resource.id', 'value.resource_id'));
+                ->leftJoin('value', 'resource', 'value_resource', $expr->eq('value_resource.id', 'value.value_resource_id'));
         } else {
             $qb
                 ->innerJoin('value', 'resource', 'resource', $expr->andX($expr->eq('resource.id', 'value.resource_id'), $expr->eq('resource.resource_type', ':entity_class')))
-                ->innerJoin('value', 'resource', 'value_resource', $expr->andX($expr->eq('value_resource.id', 'value.resource_id'), $expr->eq('value_resource.resource_type', ':entity_class')))
+                ->leftJoin('value', 'resource', 'value_resource', $expr->andX($expr->eq('value_resource.id', 'value.value_resource_id'), $expr->eq('value_resource.resource_type', ':entity_class')))
                 ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
         }
 
@@ -841,8 +841,10 @@ class References extends AbstractPlugin
         // in the select, but it allows to simplify it.
         $mainTypes = [
             'value' => 'value.value',
+            // Output the linked resource title, not the linked resource id.
+            'resource' => 'value_resource.title',
+            // 'resource' => 'value.value_resource_id',
             'uri' => 'value.uri',
-            'resource' => 'value.value_resource_id',
         ];
         if ($this->options['filters']['main_types']) {
             $mainTypes = array_intersect_key($mainTypes, $this->options['filters']['main_types']);
@@ -1606,7 +1608,7 @@ class References extends AbstractPlugin
     {
         // This filter is used by properties only and normally already included
         // in the select, but it allows to simplify it.
-        if ($this->options['filters']['main_types'] && $this->options['filters']['main_types'] !== ['value', 'uri', 'resource']) {
+        if ($this->options['filters']['main_types'] && $this->options['filters']['main_types'] !== ['value', 'resource', 'uri']) {
             $expr = $qb->expr();
             if ($this->options['filters']['main_types'] === ['value']) {
                 $qb->andWhere($expr->isNotNull('value.value'));
