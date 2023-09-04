@@ -141,6 +141,7 @@ return [
     ],
     'reference' => [
         'site_settings' => [
+            'reference_page_title' => '',
             'reference_resource_name' => 'items',
             'reference_options' => [
                 'headings',

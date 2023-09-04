@@ -23,7 +23,7 @@ $query = empty($query) ? ['site_id' => $site->id()] : $query;
 ?>
 
 <div id="primary" class="reference">
-    <h2><?= $translate('References') ?></h2>
+    <h2><?= $this->siteSetting('reference_page_title') ?: $translate('References') ?></h2>
     <?php if (empty($types)): ?>
         <p><?= $translate('No references available.') ?></p>
     <?php else: ?>

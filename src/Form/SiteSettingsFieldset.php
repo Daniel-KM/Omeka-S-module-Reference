@@ -24,6 +24,18 @@ class SiteSettingsFieldset extends Fieldset
             ->setAttribute('id', 'reference')
             ->setOption('element_groups', $this->elementGroups)
             ->add([
+                'name' => 'reference_page_title',
+                'type' => Element\Text::class,
+                'options' => [
+                    'element_group' => 'references',
+                    'label' => 'Title of the page [deprecated: use page block]', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'reference_page_title',
+                    'placeholder' => 'References', // @translate
+                ],
+            ])
+            ->add([
                 'name' => 'reference_resource_name',
                 'type' => Element\Radio::class,
                 'options' => [
