@@ -843,10 +843,10 @@ class References extends AbstractPlugin
                 // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
                 $qb
                     ->select(
-                        // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), $this->options['_initials'])) USING latin1) AS val',
+                        // 'CONVERT(UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), $this->options['_initials'])) USING latin1) AS val',
                         $val = $this->supportAnyValue
-                            ? "ANY_VALUE(UPPER(LEFT(COALESCE(value.value, value_resource.title, value.uri), {$this->options['_initials']}))) AS val"
-                            : "UPPER(LEFT(COALESCE(value.value, value_resource.title, value.uri), {$this->options['_initials']})) AS val",
+                            ? "ANY_VALUE(UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), {$this->options['_initials']}))) AS val"
+                            : "UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), {$this->options['_initials']})) AS val",
                         'COUNT(resource.id) AS total'
                     )
                 ;
@@ -866,8 +866,8 @@ class References extends AbstractPlugin
                 $qb
                     ->select(
                         $val = $this->supportAnyValue
-                            ? 'ANY_VALUE(COALESCE(value.value, value_resource.title, value.uri)) AS val'
-                            : 'COALESCE(value.value, value_resource.title, value.uri) AS val',
+                            ? 'ANY_VALUE(COALESCE(value.value, value.uri, value_resource.title)) AS val'
+                            : 'COALESCE(value.value, value.uri, value_resource.title) AS val',
                         'COUNT(resource.id) AS total'
                     )
                 ;
@@ -1703,10 +1703,10 @@ class References extends AbstractPlugin
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
             $qb
                 ->addSelect(
-                    // 'CONVERT(UPPER(LEFT(COALESCE(value.value, $linkedResourceTitle), 1)) USING latin1) AS initial',
+                    // 'CONVERT(UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? "ANY_VALUE(UPPER(LEFT(COALESCE(value.value, value_resource.title, value.uri), {$this->options['initial']}))) AS initial"
-                        : "UPPER(LEFT(COALESCE(value.value, value_resource.title, value.uri), {$this->options['initial']})) AS initial"
+                        ? "ANY_VALUE(UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), {$this->options['initial']}))) AS initial"
+                        : "UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), {$this->options['initial']})) AS initial"
                 );
         }
 
