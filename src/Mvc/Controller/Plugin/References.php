@@ -304,7 +304,8 @@ class References extends AbstractPlugin
             'output' => 'list',
         ];
         if ($options) {
-            $resourceName = in_array(@$options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
+            $resourceName = isset($options['resource_name'])
+                && in_array($options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
                 ? $options['resource_name']
                 : $defaults['resource_name'];
             $first = !empty($options['first']);
@@ -349,7 +350,7 @@ class References extends AbstractPlugin
                 'include_without_meta' => !empty($options['include_without_meta']),
                 'single_reference_format' => !empty($options['single_reference_format']),
                 'locale' => $locales,
-                'output' => @$options['output'] === 'associative' && !$first && !$listByMax && !$initial && !$distinct && !$datatype && !$lang
+                'output' => isset($options['output']) && $options['output'] === 'associative' && !$first && !$listByMax && !$initial && !$distinct && !$datatype && !$lang
                     ? 'associative'
                     : 'list',
             ];
