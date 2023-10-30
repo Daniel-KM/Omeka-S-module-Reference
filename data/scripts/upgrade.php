@@ -463,3 +463,14 @@ if (version_compare($oldVersion, '3.4.43', '<')) {
     );
     $messenger->addSuccess($message);
 }
+
+if (version_compare($oldVersion, '3.4.47', '<')) {
+    $sql = <<<'SQL'
+ALTER TABLE `reference_metadata` ADD INDEX `idx_is_public` (`is_public`);
+SQL;
+    try {
+        $connection->executeStatement($sql);
+    } catch (\Exception $e) {
+        // Index exists.
+    }
+}
