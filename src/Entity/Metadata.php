@@ -53,6 +53,10 @@ use Omeka\Entity\Value;
  *             columns={"resource_id", "field"}
  *         ),
  *         @Index(
+ *             name="idx_is_public",
+ *             columns={"is_public"}
+ *         ),
+ *         @Index(
  *             name="idx_text",
  *             columns={"text"},
  *             options={"lengths":{190}}
