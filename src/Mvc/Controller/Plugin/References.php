@@ -203,8 +203,9 @@ class References extends AbstractPlugin
      *   resources with no metadata).
      * - single_reference_format: false (default), or true to keep the old output
      *   without the deprecated warning for single references without named key.
-     * - output: "list" (default) or "associative" (possible only without added
-     *   options: first, initial, distinct, datatype, or lang).
+     * - output: "list" (default), "associative" or "values". When options
+     *   "first", "list_by_max", "initial", "distinct", "datatype", or "lang"
+     *   are used, the output is forced to "list".
      * Some options and some combinations are not managed for some metadata.
      * @return self
      */
@@ -350,8 +351,8 @@ class References extends AbstractPlugin
                 'include_without_meta' => !empty($options['include_without_meta']),
                 'single_reference_format' => !empty($options['single_reference_format']),
                 'locale' => $locales,
-                'output' => isset($options['output']) && $options['output'] === 'associative' && !$first && !$listByMax && !$initial && !$distinct && !$datatype && !$lang
-                    ? 'associative'
+                'output' => isset($options['output']) && in_array($options['output'], ['associative', 'values']) && !$first && !$listByMax && !$initial && !$distinct && !$datatype && !$lang
+                    ? $options['output']
                     : 'list',
             ];
 
@@ -438,7 +439,10 @@ class References extends AbstractPlugin
          * @todo Remove coalesce: use reference_metadata.
          */
 
-        $isAssociative = $this->options['output'] === 'associative';
+        $isOutputAssociative = $this->options['output'] === 'associative';
+        $isOutputValues = $this->options['output'] === 'values';
+        $isOutputSimple = $isOutputAssociative || $isOutputValues;
+        $isOutputList = !$isOutputSimple;
 
         // TODO Convert all queries into a single or two sql queries (at least for properties and classes).
         // TODO Return all needed columns.
@@ -451,7 +455,7 @@ class References extends AbstractPlugin
 
             if ($dataFields['is_single']
                 && (empty($keyOrLabel) || is_numeric($keyOrLabel))
-                && !$isAssociative
+                && $isOutputList
             ) {
                 $result[$keyResult] = reset($dataFields['output']['o:request']['o:field']);
                 if (!$this->options['single_reference_format']) {
@@ -489,7 +493,7 @@ class References extends AbstractPlugin
 
                 case 'o:property':
                     $values = $this->listProperties();
-                    if ($isAssociative) {
+                    if ($isOutputSimple) {
                         $result[$keyResult]['o:references'] = $values;
                     } else {
                         foreach (array_filter($values) as $valueData) {
@@ -502,7 +506,7 @@ class References extends AbstractPlugin
 
                 case 'o:resource_class':
                     $values = $this->listResourceClasses();
-                    if ($isAssociative) {
+                    if ($isOutputSimple) {
                         $result[$keyResult]['o:references'] = $values;
                     } else {
                         foreach (array_filter($values) as $valueData) {
@@ -515,7 +519,7 @@ class References extends AbstractPlugin
 
                 case 'o:resource_template':
                     $values = $this->listResourceTemplates();
-                    if ($isAssociative) {
+                    if ($isOutputSimple) {
                         $result[$keyResult]['o:references'] = $values;
                     } else {
                         foreach (array_filter($values) as $valueData) {
@@ -532,7 +536,7 @@ class References extends AbstractPlugin
                     } else {
                         $values = $this->listItemSets();
                     }
-                    if ($isAssociative) {
+                    if ($isOutputSimple) {
                         $result[$keyResult]['o:references'] = $values;
                     } else {
                         foreach (array_filter($values) as $valueData) {
@@ -544,7 +548,7 @@ class References extends AbstractPlugin
 
                 case 'o:owner':
                     $values = $this->listOwners();
-                    if ($isAssociative) {
+                    if ($isOutputSimple) {
                         $result[$keyResult]['o:references'] = $values;
                     } else {
                         foreach (array_filter($values) as $valueData) {
@@ -556,7 +560,7 @@ class References extends AbstractPlugin
 
                 case 'o:site':
                     $values = $this->listSites();
-                    if ($isAssociative) {
+                    if ($isOutputSimple) {
                         $result[$keyResult]['o:references'] = $values;
                     } else {
                         foreach (array_filter($values) as $valueData) {
@@ -570,7 +574,7 @@ class References extends AbstractPlugin
                 case 'access':
                     if ($this->hasAccess) {
                         $values = $this->listAccesses();
-                        if ($isAssociative) {
+                        if ($isOutputSimple) {
                             $result[$keyResult]['o:references'] = $values;
                         } else {
                             foreach (array_filter($values) as $valueData) {
@@ -677,6 +681,7 @@ class References extends AbstractPlugin
         $this->options['datatype'] = false;
         $this->options['lang'] = false;
         $this->options['fields'] = [];
+        // TODO Use option "values" instead of "associative"?
         $this->options['output'] = 'associative';
 
         // Internal option to specify the number of characters of each "initial".
@@ -860,8 +865,7 @@ class References extends AbstractPlugin
                     ->select(
                         // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert. Anyway convert should be only for diacritics.
                         // 'CONVERT(UPPER(LEFT(refmeta.text, 1)) USING latin1) AS val',
-                        $val = "UPPER(LEFT(refmeta.text, {$this->options['_initials']})) AS val",
-                        'COUNT(esource.id) AS total'
+                        $val = "UPPER(LEFT(refmeta.text, {$this->options['_initials']})) AS val"
                     )
                     ->innerJoin('value', 'reference_metadata', 'refmeta', $expr->eq('refmeta.value_id', 'value.id'))
                     ->andWhere($expr->in('refmeta.lang', ':locales'))
@@ -874,8 +878,7 @@ class References extends AbstractPlugin
                         // 'CONVERT(UPPER(LEFT($mainTypesString, $this->options['_initials'])) USING latin1) AS val',
                         $val = $this->supportAnyValue
                             ? "ANY_VALUE(UPPER(LEFT($mainTypesString, {$this->options['_initials']}))) AS val"
-                            : "UPPER(LEFT($mainTypesString, {$this->options['_initials']})) AS val",
-                        'COUNT(resource.id) AS total'
+                            : "UPPER(LEFT($mainTypesString, {$this->options['_initials']})) AS val"
                     )
                 ;
             }
@@ -883,8 +886,7 @@ class References extends AbstractPlugin
             if ($this->options['locale']) {
                 $qb
                     ->select(
-                        $val = 'refmeta.text AS val',
-                        'COUNT(resource.id) AS total'
+                        $val = 'refmeta.text AS val'
                     )
                     ->innerJoin('value', 'reference_metadata', 'refmeta', $expr->eq('refmeta.value_id', 'value.id'))
                     ->andWhere($expr->in('refmeta.lang', ':locales'))
@@ -895,11 +897,15 @@ class References extends AbstractPlugin
                     ->select(
                         $val = $this->supportAnyValue
                             ? "ANY_VALUE($mainTypesString) AS val"
-                            : "$mainTypesString AS val",
-                        'COUNT(resource.id) AS total'
+                            : "$mainTypesString AS val"
                     )
                 ;
             }
+        }
+
+        if ($this->options['output'] !== 'values') {
+            $qb
+                ->addSelect('COUNT(resource.id) AS total');
         }
 
         return $this
@@ -932,16 +938,20 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val",
-                    'COUNT(resource.id) AS total'
+                    "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val"
                 );
         } else {
             $qb
                 ->select(
-                    'resource.title AS val',
-                    'COUNT(resource.id) AS total'
+                    'resource.title AS val'
                 );
         }
+
+        if ($this->options['output'] !== 'values') {
+            $qb
+                ->addSelect('COUNT(resource.id) AS total');
+        }
+
         $qb
             ->distinct(true)
             ->from('resource', 'resource')
@@ -982,16 +992,20 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val",
-                    'COUNT(resource.id) AS total'
+                    "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val"
                 );
         } else {
             $qb
                 ->select(
-                    'resource.title AS val',
-                    'COUNT(resource.id) AS total'
+                    'resource.title AS val'
                 );
         }
+
+        if ($this->options['output'] !== 'values') {
+            $qb
+                ->addSelect('COUNT(resource.id) AS total');
+        }
+
         $qb
             ->distinct(true)
             ->from('resource', 'resource')
@@ -1036,16 +1050,20 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val",
-                    'COUNT(resource.id) AS total'
+                    "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val"
                 );
         } else {
             $qb
                 ->select(
-                    'resource.title AS val',
-                    'COUNT(resource.id) AS total'
+                    'resource.title AS val'
                 );
         }
+
+        if ($this->options['output'] !== 'values') {
+            $qb
+                ->addSelect('COUNT(resource.id) AS total');
+        }
+
         $qb
             ->distinct(true)
             ->from('resource', 'resource')
@@ -1083,18 +1101,22 @@ class References extends AbstractPlugin
                 ->select(
                     $this->supportAnyValue
                         ? "ANY_VALUE(UPPER(LEFT(resource.title, {$this->options['_initials']}))) AS val"
-                        : "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val",
-                    'COUNT(resource.id) AS total'
+                        : "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val"
                 );
         } else {
             $qb
                 ->select(
                     $this->supportAnyValue
                         ? 'ANY_VALUE(resource.title) AS val'
-                        : 'resource.title AS val',
-                    'COUNT(resource.id) AS total'
+                        : 'resource.title AS val'
                 );
         }
+
+        if ($this->options['output'] !== 'values') {
+            $qb
+                ->addSelect('COUNT(resource.id) AS total');
+        }
+
         $qb
             // "Distinct" avoids to count duplicate values in properties in a
             // resource: we count resources, not properties.
@@ -1134,18 +1156,22 @@ class References extends AbstractPlugin
                 ->select(
                     // 'property.label AS val',
                     // Important: use single quote for string ":", else doctrine fails in ORM.
-                    "UPPER(LEFT(CONCAT(vocabulary.prefix, ':', property.local_name), {$this->options['_initials']})) AS val",
-                    'COUNT(value.resource_id) AS total'
+                    "UPPER(LEFT(CONCAT(vocabulary.prefix, ':', property.local_name), {$this->options['_initials']})) AS val"
                 );
         } else {
             $qb
                 ->select(
                     // 'property.label AS val',
                     // Important: use single quote for string ":", else doctrine fails in ORM.
-                    "CONCAT(vocabulary.prefix, ':', property.local_name) AS val",
-                    'COUNT(value.resource_id) AS total'
+                    "CONCAT(vocabulary.prefix, ':', property.local_name) AS val"
                 );
         }
+
+        if ($this->options['output'] !== 'values') {
+            $qb
+                ->addSelect('COUNT(value.resource_id) AS total');
+        }
+
         $qb
             // "Distinct" avoids to count resources with multiple values
             // multiple times for the same property: we count resources, not
@@ -1197,18 +1223,22 @@ class References extends AbstractPlugin
                 ->select(
                     // 'resource_class.label AS val',
                     // Important: use single quote for string ":", else doctrine orm fails.
-                    "UPPER(LEFT(CONCAT(vocabulary.prefix, ':', property.local_name), {$this->options['_initials']})) AS val",
-                    'COUNT(resource.id) AS total'
+                    "UPPER(LEFT(CONCAT(vocabulary.prefix, ':', property.local_name), {$this->options['_initials']})) AS val"
                 );
         } else {
             $qb
                 ->select(
                     // 'resource_class.label AS val',
                     // Important: use single quote for string ":", else doctrine orm fails.
-                    "CONCAT(vocabulary.prefix, ':', resource_class.local_name) AS val",
-                    'COUNT(resource.id) AS total'
+                    "CONCAT(vocabulary.prefix, ':', resource_class.local_name) AS val"
                 );
         }
+
+        if ($this->options['output'] !== 'values') {
+            $qb
+                ->addSelect('COUNT(resource.id) AS total');
+        }
+
         $qb
             ->distinct(true)
             ->from('resource', 'resource')
@@ -1245,16 +1275,20 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(resource_template.label, {$this->options['_initials']})) AS val",
-                    'COUNT(resource.id) AS total'
+                    "UPPER(LEFT(resource_template.label, {$this->options['_initials']})) AS val"
                 );
         } else {
             $qb
                 ->select(
-                    'resource_template.label AS val',
-                    'COUNT(resource.id) AS total'
-                );
+                    'resource_template.label AS val'
+               );
         }
+
+        if ($this->options['output'] !== 'values') {
+            $qb
+                ->addSelect('COUNT(resource.id) AS total');
+        }
+
         $qb
             ->distinct(true)
             ->from('resource', 'resource')
@@ -1301,16 +1335,20 @@ class References extends AbstractPlugin
             $qb
                 ->select(
                     // TODO Doctrine orm doesn't manage left() and convert(), but we may not need to convert: only for diacritics.
-                    "UPPER(LEFT(resource_item_set.title, {$this->options['_initials']})) AS val",
-                    'COUNT(resource.id) AS total'
+                    "UPPER(LEFT(resource_item_set.title, {$this->options['_initials']})) AS val"
                 );
         } else {
             $qb
                 ->select(
-                    'item_set.item_set_id AS val',
-                    'COUNT(resource.id) AS total'
+                    'item_set.item_set_id AS val'
                 );
         }
+
+        if ($this->options['output'] !== 'values') {
+            $qb
+                ->addSelect('COUNT(resource.id) AS total');
+        }
+
         $qb
             ->distinct(true)
             ->from('resource', 'resource')
@@ -1355,16 +1393,20 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(user.name, {$this->options['_initials']})) AS val",
-                    'COUNT(resource.id) AS total'
+                    "UPPER(LEFT(user.name, {$this->options['_initials']})) AS val"
                 );
         } else {
             $qb
                 ->select(
-                    'user.name AS val',
-                    'COUNT(resource.id) AS total'
+                    'user.name AS val'
                 );
         }
+
+        if ($this->options['output'] !== 'values') {
+            $qb
+                ->addSelect('COUNT(resource.id) AS total');
+        }
+
         $qb
             ->distinct(true)
             ->from('resource', 'resource')
@@ -1402,16 +1444,20 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(site.title, {$this->options['_initials']})) AS val",
-                    'COUNT(resource.id) AS total'
+                    "UPPER(LEFT(site.title, {$this->options['_initials']})) AS val"
                 );
         } else {
             $qb
                 ->select(
-                    'site.slug AS val',
-                    'COUNT(resource.id) AS total'
+                    'site.slug AS val'
                 );
         }
+
+        if ($this->options['output'] !== 'values') {
+            $qb
+                ->addSelect('COUNT(resource.id) AS total');
+        }
+
         $qb
             ->distinct(true)
             ->from('resource', 'resource')
@@ -1454,16 +1500,20 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(access_status.level, {$this->options['_initials']})) AS val",
-                    'COUNT(resource.id) AS total'
+                    "UPPER(LEFT(access_status.level, {$this->options['_initials']})) AS val"
                 );
         } else {
             $qb
                 ->select(
-                    'access_status.level AS val',
-                    'COUNT(resource.id) AS total'
+                    'access_status.level AS val'
                 );
         }
+
+        if ($this->options['output'] !== 'values') {
+            $qb
+                ->addSelect('COUNT(resource.id) AS total');
+        }
+
         $qb
             ->distinct(true)
             ->from('resource', 'resource')
@@ -1967,7 +2017,12 @@ class References extends AbstractPlugin
 
     protected function outputMetadata(QueryBuilder $qb, $type): array
     {
+        if ($this->options['output'] === 'values') {
+            return $qb->execute()->fetchFirstColumn() ?: [];
+        }
+
         $result = $qb->execute()->fetchAllAssociative();
+
         if (!count($result)) {
             return [];
         }
@@ -2242,6 +2297,8 @@ class References extends AbstractPlugin
      *
      * The query is generally the site query, but may be complex with advanced
      * search, in particular for facets in module AdvancedSearch.
+     *
+     * @fixme The method searchQuery() is working fine, but has a performance issue with big database to get the list of all ids. But in that case, Solr is used.
      */
     protected function searchQuery(QueryBuilder $qb, ?string $type = null): self
     {
@@ -2278,7 +2335,7 @@ class References extends AbstractPlugin
         // Use an api request.
         $ids = $this->api->search($resourceName, $mainQuery, ['returnScalar' => 'id'])->getContent();
 
-        // There is no colision: the adapter query uses alias "omeka_" + index.
+        // There is no collision: the adapter query uses alias "omeka_" + index.
         $qb
             ->andWhere($qb->expr()->in('resource.id', ':resource_ids'))
             ->setParameter('resource_ids', array_keys($ids), Connection::PARAM_INT_ARRAY);
