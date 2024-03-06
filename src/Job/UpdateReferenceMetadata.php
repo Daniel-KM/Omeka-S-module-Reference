@@ -84,7 +84,7 @@ class UpdateReferenceMetadata extends AbstractJob
             $ids = [];
             foreach ($resources as $resource) {
                 $ids[] = (int) $resource->getId();
-                $referenceMetadatas = $currentReferenceMetadata($resource);
+                $referenceMetadatas = $currentReferenceMetadata($resource, $this->entityManager);
                 foreach ($referenceMetadatas as $metadata) {
                     $this->entityManager->persist($metadata);
                 }

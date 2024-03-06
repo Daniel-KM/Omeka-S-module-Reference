@@ -33,14 +33,18 @@ class CurrentReferenceMetadata extends AbstractPlugin
      *
      * @return \Reference\Entity\Metadata[]
      */
-    public function __invoke(Resource $resource): array
+    public function __invoke(Resource $resource, EntityManager $entityManager = null): array
     {
+        if (!$entityManager) {
+            $entityManager = $this->entityManager;
+        }
+
         $referenceMetadatas = [];
 
         $coreFields = $this->getCoreFields($resource);
 
         // Use references to avoid doctrine issue "A new entity was found".
-        $resourceRef = $this->entityManager->getReference($resource->getResourceId(), $resource->getId());
+        $resourceRef = $entityManager->getReference($resource->getResourceId(), $resource->getId());
 
         // Unlike standard values, only first value in each language is
         // stored, but a value resource can have multiple languages.
@@ -53,7 +57,7 @@ class CurrentReferenceMetadata extends AbstractPlugin
                     continue;
                 }
                 // Use references to avoid doctrine issue "A new entity was found".
-                $valueRef = $this->entityManager->getReference(\Omeka\Entity\Value::class, $value->getId());
+                $valueRef = $entityManager->getReference(\Omeka\Entity\Value::class, $value->getId());
                 $isPublic = $value->getIsPublic();
                 $langTexts = $this->getValueResourceLangTexts($value, $isPublic);
                 $langTexts = array_diff_key($langTexts, $isPublic ? $languages : $privateLanguages);
@@ -78,7 +82,7 @@ class CurrentReferenceMetadata extends AbstractPlugin
         /** @var \Omeka\Entity\Value $value*/
         foreach ($resource->getValues() as $value) {
             // Use references to avoid doctrine issue "A new entity was found".
-            $valueRef = $this->entityManager->getReference(\Omeka\Entity\Value::class, $value->getId());
+            $valueRef = $entityManager->getReference(\Omeka\Entity\Value::class, $value->getId());
             $property = $value->getProperty();
             $field = $property->getVocabulary()->getPrefix() . ':' . $property->getLocalName();
             $isPublic = $value->getIsPublic();
