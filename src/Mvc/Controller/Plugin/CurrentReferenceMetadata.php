@@ -53,11 +53,15 @@ class CurrentReferenceMetadata extends AbstractPlugin
             $privateLanguages = [];
             /** @var \Omeka\Entity\Value $value*/
             foreach ($resource->getValues() as $value) {
+                $valueId = $value->getId();
+                if (!$valueId) {
+                    continue;
+                }
                 if ($value->getProperty()->getId() !== $fieldData['property_id']) {
                     continue;
                 }
                 // Use references to avoid doctrine issue "A new entity was found".
-                $valueRef = $entityManager->getReference(\Omeka\Entity\Value::class, $value->getId());
+                $valueRef = $entityManager->getReference(\Omeka\Entity\Value::class, $valueId);
                 $isPublic = $value->getIsPublic();
                 $langTexts = $this->getValueResourceLangTexts($value, $isPublic);
                 $langTexts = array_diff_key($langTexts, $isPublic ? $languages : $privateLanguages);
@@ -81,8 +85,12 @@ class CurrentReferenceMetadata extends AbstractPlugin
 
         /** @var \Omeka\Entity\Value $value*/
         foreach ($resource->getValues() as $value) {
+            $valueId = $value->getId();
+            if (!$valueId) {
+                continue;
+            }
             // Use references to avoid doctrine issue "A new entity was found".
-            $valueRef = $entityManager->getReference(\Omeka\Entity\Value::class, $value->getId());
+            $valueRef = $entityManager->getReference(\Omeka\Entity\Value::class, $valueId);
             $property = $value->getProperty();
             $field = $property->getVocabulary()->getPrefix() . ':' . $property->getLocalName();
             $isPublic = $value->getIsPublic();
