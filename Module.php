@@ -253,7 +253,7 @@ class Module extends AbstractModule
                     'link_job' => sprintf('<a href="%s">', $urlHelper('admin/id', ['controller' => 'job', 'id' => $jobId])),
                     'job_id' => $jobId,
                     'link_end' => '</a>',
-                    'link_log' => sprintf('<a href="%1$s">', class_exists('Log\Module')
+                    'link_log' => sprintf('<a href="%1$s">', class_exists('Log\Module', false)
                         ? $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $jobId]])
                         : $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $jobId])),
                 ]
@@ -273,7 +273,7 @@ class Module extends AbstractModule
                 'link_job' => sprintf('<a href="%s">', $urlHelper('admin/id', ['controller' => 'job', 'id' => $jobId])),
                 'job_id' => $jobId,
                 'link_end' => '</a>',
-                'link_log' => sprintf('<a href="%1$s">', class_exists('Log\Module')
+                'link_log' => sprintf('<a href="%1$s">', class_exists('Log\Module', false)
                     ? $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $jobId]])
                     : $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $jobId])
                 )
