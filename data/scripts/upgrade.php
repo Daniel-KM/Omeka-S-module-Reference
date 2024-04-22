@@ -2,7 +2,7 @@
 
 namespace Reference;
 
-use Omeka\Stdlib\Message;
+use Common\Stdlib\PsrMessage;
 
 /**
  * @var Module $this
@@ -19,6 +19,7 @@ use Omeka\Stdlib\Message;
 $plugins = $services->get('ControllerPluginManager');
 $api = $plugins->get('api');
 $settings = $services->get('Omeka\Settings');
+$translate = $plugins->get('translate');
 $connection = $services->get('Omeka\Connection');
 $messenger = $plugins->get('messenger');
 $entityManager = $services->get('Omeka\EntityManager');
@@ -191,11 +192,11 @@ if (version_compare($oldVersion, '3.4.16', '<')) {
 }
 
 if (version_compare($oldVersion, '3.4.23.3', '<')) {
-    $message = new Message(
+    $message = new PsrMessage(
         'This release changed some features, so check your theme: the config has been moved to each site; the key "o-module-reference:values" is replaced by "o:references"; the helper $this->reference() is deprecated and is now an alias of $this->references().'
     );
     $messenger->addWarning($message);
-    $message = new Message(
+    $message = new PsrMessage(
         'If you want to keep old features, use release 3.4.22.3.'
     );
     $messenger->addWarning($message);
@@ -245,14 +246,14 @@ if (version_compare($oldVersion, '3.4.23.3', '<')) {
                 // Flush below.
             }
 
-            $message = new Message(
+            $message = new PsrMessage(
                 'The main tree of references (/reference-tree) is now available only as a page block, not as a special page.'
             );
             $messenger->addWarning($message);
             if (count($sites)) {
-                $message = new Message(
-                    'A new page with the tree of references (/page/reference-tree) has been added to %d sites with the existing config.',
-                    count($sites)
+                $message = new PsrMessage(
+                    'A new page with the tree of references (/page/reference-tree) has been added to {count} sites with the existing config.',
+                    ['count' => count($sites)]
                 );
                 $messenger->addSuccess($message);
             }
@@ -377,26 +378,26 @@ if (version_compare($oldVersion, '3.4.23.3', '<')) {
 }
 
 if (version_compare($oldVersion, '3.4.24.3', '<')) {
-    $message = new Message(
+    $message = new PsrMessage(
         'It is possible now to limit the list of references, for example only the of subjects starting with "a" with argument "filters[begin]=a".' // @translate
     );
     $messenger->addSuccess($message);
 
-    $message = new Message(
+    $message = new PsrMessage(
         'It is possible now to list not only references, but resources by reference, for example all documents of an author or all items with each subject.' // @translate
     );
     $messenger->addSuccess($message);
 }
 
 if (version_compare($oldVersion, '3.4.32.3', '<')) {
-    $message = new Message(
+    $message = new PsrMessage(
         'It is possible now to aggregate properties (api and helper).' // @translate
     );
     $messenger->addSuccess($message);
 }
 
 if (version_compare($oldVersion, '3.4.33.3', '<')) {
-    $message = new Message(
+    $message = new PsrMessage(
         'It is possible now to filter references by data types.' // @translate
     );
     $messenger->addSuccess($message);
@@ -405,12 +406,12 @@ if (version_compare($oldVersion, '3.4.33.3', '<')) {
 if (version_compare($oldVersion, '3.4.34.3', '<')) {
     $this->execSqlFromFile($this->modulePath() . '/data/install/schema.sql');
 
-    $message = new Message(
+    $message = new PsrMessage(
         'It is possible now to get translated linked resource.' // @translate
     );
     // Job is not available during upgrade.
     $messenger->addSuccess($message);
-    $message = new Message(
+    $message = new PsrMessage(
         'Translated linked resource metadata should be indexed in main settings.' // @translate
     );
     $messenger->addWarning($message);
@@ -451,22 +452,22 @@ if (version_compare($oldVersion, '3.4.35.3', '<')) {
     }
     $entityManager->flush();
 
-    $message = new Message(
+    $message = new PsrMessage(
         'It is possible now to aggregate properties in references, for example to get list of people from properties dcterms:creator and dcterms:contributor.' // @translate
     );
     $messenger->addSuccess($message);
-    $message = new Message(
+    $message = new PsrMessage(
         'Warning: the name of the source properties or classes "term" has been replace by "fields" in pages, so check your theme templates if you updated the default ones of the module.' // @translate
     );
     $messenger->addWarning($message);
-    $message = new Message(
+    $message = new PsrMessage(
         'It is possible now to get a specific number of initials, for example to get the list of years from standard dates.' // @translate
     );
     $messenger->addSuccess($message);
 }
 
 if (version_compare($oldVersion, '3.4.43', '<')) {
-    $message = new Message(
+    $message = new PsrMessage(
         'Many improvements were done to output references and facets a lot more quickly, in particular for big bases.' // @translate
     );
     $messenger->addSuccess($message);
@@ -481,4 +482,12 @@ SQL;
     } catch (\Exception $e) {
         // Index exists.
     }
+}
+
+if (version_compare($oldVersion, '3.4.48', '<')) {
+    $sql = <<<'SQL'
+ALTER TABLE `reference_metadata`
+CHANGE `lang` `lang` varchar(190) NOT NULL DEFAULT '' AFTER `field`;
+SQL;
+    $connection->executeStatement($sql);
 }
