@@ -121,6 +121,7 @@ class Metadata
      *
      * @Column(
      *     nullable=false,
+     *     length=190,
      *     options={
      *         "default": ""
      *     }
