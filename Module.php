@@ -129,6 +129,18 @@ class Module extends AbstractModule
             'entity.update.post',
             [$this, 'updateReferenceMetadata']
         );
+
+        // Add a job to upgrade structure from v3.
+        $sharedEventManager->attach(
+            \EasyAdmin\Form\CheckAndFixForm::class,
+            'form.add_elements',
+            [$this, 'handleEasyAdminJobsForm']
+            );
+        $sharedEventManager->attach(
+            \EasyAdmin\Controller\CheckAndFixController::class,
+            'easyadmin.job',
+            [$this, 'handleEasyAdminJobs']
+        );
     }
 
     protected function initDataToPopulate(SettingsInterface $settings, string $settingsType, $id = null): bool
@@ -364,6 +376,29 @@ SQL;
                 'text' => (string) $metadata->getText(),
             ];
             $connection->executeStatement($sql, $parameters, $types);
+        }
+    }
+
+    public function handleEasyAdminJobsForm(Event $event): void
+    {
+        /**
+         * @var \EasyAdmin\Form\CheckAndFixForm $form
+         * @var \Laminas\Form\Element\Radio $process
+         */
+        $form = $event->getTarget();
+        $fieldset = $form->get('module_tasks');
+        $process = $fieldset->get('process');
+        $valueOptions = $process->getValueOptions();
+        $valueOptions['reference_index'] = 'Reference: Index fields'; // @translate
+        $process->setValueOptions($valueOptions);
+    }
+
+    public function handleEasyAdminJobs(Event $event): void
+    {
+        $process = $event->getParam('process');
+        if ($process === 'reference_index') {
+            $event->setParam('job', \Reference\Job\UpdateReferenceMetadata::class);
+            $event->setParam('args', []);
         }
     }
 
