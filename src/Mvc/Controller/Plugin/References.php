@@ -2707,6 +2707,7 @@ class References extends AbstractPlugin
             // Here, the dbal query builder is used.
             $qb = $connection->createQueryBuilder();
             $qb
+                // TODO Remove all "distinct" and replace them by "groupby".
                 ->select(
                     'DISTINCT CONCAT(vocabulary.prefix, ":", property.local_name) AS "o:term"',
                     'property.label AS "o:label"',

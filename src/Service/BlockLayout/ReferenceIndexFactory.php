@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Reference\Service\BlockLayout;
 
 use Interop\Container\ContainerInterface;
@@ -10,13 +11,12 @@ class ReferenceIndexFactory implements FactoryInterface
     /**
      * Create the Reference index block layout service.
      *
-     * @return ReferenceIndex
+     * @return \Reference\Site\BlockLayout\ReferenceIndex
      */
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $plugins = $services->get('ControllerPluginManager');
         return new ReferenceIndex(
-            $plugins->get('api')
+            $services->get('EasyMeta')
         );
     }
 }

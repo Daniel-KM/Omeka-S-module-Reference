@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Reference\Service\ViewHelper;
 
 use Interop\Container\ContainerInterface;

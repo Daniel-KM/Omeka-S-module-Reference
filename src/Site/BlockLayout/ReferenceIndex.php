@@ -2,12 +2,12 @@
 
 namespace Reference\Site\BlockLayout;
 
+use Common\Stdlib\EasyMeta;
 use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Api\Representation\SitePageBlockRepresentation;
 use Omeka\Api\Representation\SitePageRepresentation;
 use Omeka\Api\Representation\SiteRepresentation;
 use Omeka\Entity\SitePageBlock;
-use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
 use Omeka\Stdlib\ErrorStore;
 
@@ -19,17 +19,14 @@ class ReferenceIndex extends AbstractBlockLayout
     const PARTIAL_NAME = 'common/block-layout/reference-index';
 
     /**
-     * @var Api
+     * @var \Common\Stdlib\EasyMeta
      */
-    protected $api;
+    protected $easyMeta;
 
-    /**
-     * @param Api $api
-     */
     public function __construct(
-        Api $api
-    ) {
-        $this->api = $api;
+        EasyMeta $easyMeta
+        ) {
+            $this->easyMeta = $easyMeta;
     }
 
     public function getLabel()
@@ -116,7 +113,7 @@ class ReferenceIndex extends AbstractBlockLayout
         }
 
         foreach ($data['args']['fields'] as $term) {
-            if ($this->isResourceClass($term)) {
+            if ($this->easyMeta->resourceClassTerm($term)) {
                 $data['args']['resource_classes'][] = $term;
             } else {
                 $data['args']['properties'][] = $term;
@@ -184,17 +181,5 @@ class ReferenceIndex extends AbstractBlockLayout
         return $template !== self::PARTIAL_NAME && $view->resolver($template)
             ? $view->partial($template, $vars)
             : $view->partial(self::PARTIAL_NAME, $vars);
-    }
-
-    protected function isResourceClass($term)
-    {
-        static $resourceClasses;
-        if (is_null($resourceClasses)) {
-            $resourceClasses = [];
-            foreach ($this->api->search('resource_classes')->getContent() as $resourceClass) {
-                $resourceClasses[$resourceClass->term()] = true;
-            }
-        }
-        return isset($resourceClasses[$term]);
     }
 }

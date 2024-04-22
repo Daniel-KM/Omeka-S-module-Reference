@@ -2,16 +2,16 @@
 
 namespace Reference;
 
-if (!class_exists(\Generic\AbstractModule::class)) {
-    require file_exists(dirname(__DIR__) . '/Generic/AbstractModule.php')
-        ? dirname(__DIR__) . '/Generic/AbstractModule.php'
-        : __DIR__ . '/src/Generic/AbstractModule.php';
+if (!class_exists(\Common\TraitModule::class)) {
+    require_once dirname(__DIR__) . '/Common/TraitModule.php';
 }
 
-use Generic\AbstractModule;
+use Common\Stdlib\PsrMessage;
+use Common\TraitModule;
 use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\Mvc\MvcEvent;
+use Omeka\Module\AbstractModule;
 use Omeka\Settings\SettingsInterface;
 
 /**
@@ -25,6 +25,8 @@ use Omeka\Settings\SettingsInterface;
  */
 class Module extends AbstractModule
 {
+    use TraitModule;
+
     const NAMESPACE = __NAMESPACE__;
 
     public function onBootstrap(MvcEvent $event): void
@@ -43,6 +45,21 @@ class Module extends AbstractModule
             );
     }
 
+    protected function preInstall(): void
+    {
+        $services = $this->getServiceLocator();
+        $plugins = $services->get('ControllerPluginManager');
+        $translate = $plugins->get('translate');
+
+        if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.56')) {
+            $message = new \Omeka\Stdlib\Message(
+                $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
+                'Common', '3.4.56'
+            );
+            throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+        }
+    }
+
     protected function postInstall(): void
     {
         $services = $this->getServiceLocator();
@@ -50,11 +67,11 @@ class Module extends AbstractModule
         try {
             $services->get(\Omeka\Job\Dispatcher::class)
                 ->dispatch(\Reference\Job\UpdateReferenceMetadata::class);
-            $message = new \Omeka\Stdlib\Message(
+            $message = new PsrMessage(
                 'The translated and linked resource metadata are currently indexing.' // @translate
             );
         } catch (\Exception $e) {
-            $message = new \Omeka\Stdlib\Message(
+            $message = new PsrMessage(
                 'Translated linked resource metadata should be indexed in main settings.' // @translate
             );
         }
@@ -114,7 +131,7 @@ class Module extends AbstractModule
         );
     }
 
-    protected function initDataToPopulate(SettingsInterface $settings, string $settingsType, $id = null, iterable $values = []): bool
+    protected function initDataToPopulate(SettingsInterface $settings, string $settingsType, $id = null): bool
     {
         // Check site settings, because array options cannot be set by default
         // automatically.
@@ -126,7 +143,59 @@ class Module extends AbstractModule
                 $settings->set('reference_slugs', $config['reference']['site_settings']['reference_slugs']);
             }
         }
-        return parent::initDataToPopulate($settings, $settingsType, $id, $values);
+
+        // Copy of the trait method: a trait method cannot be called when
+        // overridden.
+
+        // This method is not in the interface, but is set for config, site and
+        // user settings.
+        if (!method_exists($settings, 'getTableName')) {
+            return false;
+        }
+
+        $config = $this->getConfig();
+        $space = strtolower(static::NAMESPACE);
+        if (empty($config[$space][$settingsType])) {
+            return false;
+        }
+
+        /** @var \Doctrine\DBAL\Connection $connection */
+        $services = $this->getServiceLocator();
+        $connection = $services->get('Omeka\Connection');
+        if ($id) {
+            if (!method_exists($settings, 'getTargetIdColumnName')) {
+                return false;
+            }
+            $sql = sprintf('SELECT id, value FROM %s WHERE %s = :target_id', $settings->getTableName(), $settings->getTargetIdColumnName());
+            $stmt = $connection->executeQuery($sql, ['target_id' => $id]);
+        } else {
+            $sql = sprintf('SELECT id, value FROM %s', $settings->getTableName());
+            $stmt = $connection->executeQuery($sql);
+        }
+
+        $translator = $services->get('MvcTranslator');
+
+        $currentSettings = $stmt->fetchAllKeyValue();
+        $defaultSettings = $config[$space][$settingsType];
+        // Skip settings that are arrays, because the fields "multi-checkbox"
+        // and "multi-select" are removed when no value are selected, so it's
+        // not possible to determine if it's a new setting or an old empty
+        // setting currently. So fill them via upgrade in that case or fill the
+        // values.
+        // TODO Find a way to save empty multi-checkboxes and multi-selects (core fix).
+        $defaultSettings = array_filter($defaultSettings, function ($v) {
+            return !is_array($v);
+        });
+        $missingSettings = array_diff_key($defaultSettings, $currentSettings);
+
+        foreach ($missingSettings as $name => $value) {
+            $settings->set(
+                $name,
+                $this->isSettingTranslatable($settingsType, $name) ? $translator->translate($value) : $value
+            );
+        }
+
+        return true;
     }
 
     public function handleMainSettings(Event $event): void
@@ -166,21 +235,16 @@ class Module extends AbstractModule
         // Check if a zip job is already running before running a new one.
         $jobId = $this->checkJob(\Reference\Job\UpdateReferenceMetadata::class);
         if ($jobId) {
-            $message = new \Omeka\Stdlib\Message(
-                'Another job is running for the same process (job %1$s#%2$d%3$s, %4$slogs%3$s).', // @translate
-                sprintf(
-                    '<a href="%s">',
-                    htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $jobId]))
-                ),
-                $jobId,
-                '</a>',
-                sprintf(
-                    '<a href="%s">',
-                    // Check if module Log is enabled (avoid issue when disabled).
-                    htmlspecialchars(class_exists(\Log\Stdlib\PsrMessage::class)
-                        ? $urlHelper('admin/log/default', [], ['query' => ['job_id' => $jobId]])
-                        : $urlHelper('admin/id', ['controller' => 'job', 'id' => $jobId, 'action' => 'log'])
-                ))
+            $message = new PsrMessage(
+                'Another job is running for the same process (job {link_job}#{job_id}{link_end} ({link_log}logs{link_end}).', // @translate
+                [
+                    'link_job' => sprintf('<a href="%s">', $urlHelper('admin/id', ['controller' => 'job', 'id' => $jobId])),
+                    'job_id' => $jobId,
+                    'link_end' => '</a>',
+                    'link_log' => sprintf('<a href="%1$s">', class_exists('Log\Module')
+                        ? $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $jobId]])
+                        : $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $jobId])),
+                ]
             );
             $message->setEscapeHtml(false);
             $messenger->addWarning($message);
@@ -191,21 +255,17 @@ class Module extends AbstractModule
             ->dispatch(\Reference\Job\UpdateReferenceMetadata::class);
         $jobId = $job->getId();
 
-        $message = new \Omeka\Stdlib\Message(
-            'Indexing translated and linked resource metadata in background (job %1$s#%2$d%3$s, %4$slogs%3$s).', // @translate
-            sprintf(
-                '<a href="%s">',
-                htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $jobId]))
-            ),
-            $jobId,
-            '</a>',
-            sprintf(
-                '<a href="%s">',
-                // Check if module Log is enabled (avoid issue when disabled).
-                htmlspecialchars(class_exists(\Log\Stdlib\PsrMessage::class)
-                    ? $urlHelper('admin/log/default', [], ['query' => ['job_id' => $jobId]])
-                    : $urlHelper('admin/id', ['controller' => 'job', 'id' => $jobId, 'action' => 'log'])
-            ))
+        $message = new PsrMessage(
+            'Indexing translated and linked resource metadata in background (job {link_job}#{job_id}{link_end} ({link_log}logs{link_end}).', // @translate
+            [
+                'link_job' => sprintf('<a href="%s">', $urlHelper('admin/id', ['controller' => 'job', 'id' => $jobId])),
+                'job_id' => $jobId,
+                'link_end' => '</a>',
+                'link_log' => sprintf('<a href="%1$s">', class_exists('Log\Module')
+                    ? $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $jobId]])
+                    : $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $jobId])
+                )
+            ]
         );
         $message->setEscapeHtml(false);
         $messenger->addSuccess($message);

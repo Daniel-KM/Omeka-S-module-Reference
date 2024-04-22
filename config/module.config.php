@@ -25,10 +25,6 @@ return [
         'factories' => [
             'references' => Service\ViewHelper\ReferencesFactory::class,
         ],
-        'aliases' => [
-            /** @deprecated Since release for Omeka 3. */
-            'reference' => 'references',
-        ],
     ],
     'block_layouts' => [
         'factories' => [
@@ -40,16 +36,11 @@ return [
     'form_elements' => [
         'invokables' => [
             Form\Element\DoubleArrayTextarea::class => Form\Element\DoubleArrayTextarea::class,
-            Form\Element\OptionalMultiCheckbox::class => Form\Element\OptionalMultiCheckbox::class,
             Form\SettingsFieldset::class => Form\SettingsFieldset::class,
             Form\SiteSettingsFieldset::class => Form\SiteSettingsFieldset::class,
             Form\ReferenceFieldset::class => Form\ReferenceFieldset::class,
             Form\ReferenceIndexFieldset::class => Form\ReferenceIndexFieldset::class,
             Form\ReferenceTreeFieldset::class => Form\ReferenceTreeFieldset::class,
-        ],
-        'aliases' => [
-            'DoubleArrayTextarea' => Form\Element\DoubleArrayTextarea::class,
-            'OptionalMultiCheckbox' => Form\Element\OptionalMultiCheckbox::class,
         ],
     ],
     'controllers' => [

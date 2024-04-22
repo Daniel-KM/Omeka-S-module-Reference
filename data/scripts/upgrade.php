@@ -25,6 +25,14 @@ $entityManager = $services->get('Omeka\EntityManager');
 
 $defaultConfig = require dirname(__DIR__, 2) . '/config/module.config.php';
 
+if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.56')) {
+    $message = new \Omeka\Stdlib\Message(
+        $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
+        'Common', '3.4.56'
+    );
+    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+}
+
 if (version_compare($oldVersion, '3.4.7', '<')) {
     // The reference plugin is not available during upgrade, so prepare it.
     include_once dirname(__DIR__, 2) . '/src/Mvc/Controller/Plugin/References.php';

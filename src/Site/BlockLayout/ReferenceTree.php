@@ -7,7 +7,6 @@ use Omeka\Api\Representation\SitePageBlockRepresentation;
 use Omeka\Api\Representation\SitePageRepresentation;
 use Omeka\Api\Representation\SiteRepresentation;
 use Omeka\Entity\SitePageBlock;
-use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
 use Omeka\Stdlib\ErrorStore;
 use Reference\Mvc\Controller\Plugin\ReferenceTree as ReferenceTreePlugin;
@@ -20,24 +19,13 @@ class ReferenceTree extends AbstractBlockLayout
     const PARTIAL_NAME = 'common/block-layout/reference-tree';
 
     /**
-     * @var Api
-     */
-    protected $api;
-
-    /**
      * @var ReferenceTreePlugin
      */
     protected $referenceTreePlugin;
 
-    /**
-     * @param Api $api
-     * @param ReferenceTreePlugin $ReferenceTreePlugin
-     */
     public function __construct(
-        Api $api,
         ReferenceTreePlugin $ReferenceTreePlugin
     ) {
-        $this->api = $api;
         $this->referenceTreePlugin = $ReferenceTreePlugin;
     }
 

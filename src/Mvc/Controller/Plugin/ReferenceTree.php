@@ -3,30 +3,18 @@
 namespace Reference\Mvc\Controller\Plugin;
 
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
-use Omeka\Mvc\Controller\Plugin\Api;
 use Reference\Mvc\Controller\Plugin\References as ReferencesPlugin;
 
 class ReferenceTree extends AbstractPlugin
 {
     /**
-     * @param Api
-     */
-    protected $api;
-
-    /**
      * @param ReferencesPlugin
      */
     protected $references;
 
-    /**
-     * @param Api $api
-     * @param ReferencesPlugin $references
-     */
     public function __construct(
-        Api $api,
         ReferencesPlugin $references
     ) {
-        $this->api = $api;
         $this->references = $references;
     }
 

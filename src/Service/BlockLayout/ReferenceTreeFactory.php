@@ -17,7 +17,6 @@ class ReferenceTreeFactory implements FactoryInterface
     {
         $controllerPluginManager = $services->get('ControllerPluginManager');
         return new ReferenceTree(
-            $controllerPluginManager->get('api'),
             $controllerPluginManager->get('referenceTree')
         );
     }
