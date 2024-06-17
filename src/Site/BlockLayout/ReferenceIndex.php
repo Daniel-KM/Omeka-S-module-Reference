@@ -137,7 +137,7 @@ class ReferenceIndex extends AbstractBlockLayout
         $fieldset->prepare();
 
         $html = '<p>' . $view->translate('Choose a list of property or resource class.');
-        $html = ' ' . $view->translate('The pages for the selected terms should be created manually with the terms as slug, with the ":" replaced by a "-".') . '</p>';
+        $html .= ' ' . $view->translate('The pages for the selected terms should be created manually with the terms as slug, with the ":" replaced by a "-".') . '</p>';
         $html .= $view->formCollection($fieldset);
         return $html;
     }
