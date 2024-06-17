@@ -8,10 +8,11 @@ use Omeka\Api\Representation\SitePageRepresentation;
 use Omeka\Api\Representation\SiteRepresentation;
 use Omeka\Entity\SitePageBlock;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
+use Omeka\Site\BlockLayout\TemplateableBlockLayoutInterface;
 use Omeka\Stdlib\ErrorStore;
 use Reference\Mvc\Controller\Plugin\ReferenceTree as ReferenceTreePlugin;
 
-class ReferenceTree extends AbstractBlockLayout
+class ReferenceTree extends AbstractBlockLayout implements TemplateableBlockLayoutInterface
 {
     /**
      * The default partial view script.
@@ -107,11 +108,13 @@ class ReferenceTree extends AbstractBlockLayout
     public function prepareRender(PhpRenderer $view): void
     {
         $assetUrl = $view->plugin('assetUrl');
-        $view->headLink()->appendStylesheet($assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));
-        $view->headScript()->appendFile($assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'), 'text/javascript', ['defer' => 'defer']);
+        $view->headLink()
+            ->appendStylesheet($assetUrl('vendor/jquery-simplefolders/main.css', 'Reference'));
+        $view->headScript()
+            ->appendFile($assetUrl('vendor/jquery-simplefolders/main.js', 'Reference'), 'text/javascript', ['defer' => 'defer']);
     }
 
-    public function render(PhpRenderer $view, SitePageBlockRepresentation $block)
+    public function render(PhpRenderer $view, SitePageBlockRepresentation $block, $templateViewScript = self::PARTIAL_NAME)
     {
         $options = $block->data() + [
             'heading' => '',
@@ -124,9 +127,6 @@ class ReferenceTree extends AbstractBlockLayout
         $query = $options['query'];
         unset($options['heading'], $options['tree']);
 
-        $template = $options['template'] ?? self::PARTIAL_NAME;
-        unset($options['template']);
-
         $vars = [
             'block' => $block,
             'heading' => $heading,
@@ -136,8 +136,6 @@ class ReferenceTree extends AbstractBlockLayout
             'options' => $options,
         ];
 
-        return $template !== self::PARTIAL_NAME && $view->resolver($template)
-            ? $view->partial($template, $vars)
-            : $view->partial(self::PARTIAL_NAME, $vars);
+        return $view->partial($templateViewScript, $vars);
     }
 }

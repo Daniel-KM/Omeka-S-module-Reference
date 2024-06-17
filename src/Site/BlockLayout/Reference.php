@@ -9,9 +9,10 @@ use Omeka\Api\Representation\SitePageRepresentation;
 use Omeka\Api\Representation\SiteRepresentation;
 use Omeka\Entity\SitePageBlock;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
+use Omeka\Site\BlockLayout\TemplateableBlockLayoutInterface;
 use Omeka\Stdlib\ErrorStore;
 
-class Reference extends AbstractBlockLayout
+class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutInterface
 {
     /**
      * The default partial view script.
@@ -152,7 +153,7 @@ class Reference extends AbstractBlockLayout
             ->appendStylesheet($view->assetUrl('css/reference.css', 'Reference'));
     }
 
-    public function render(PhpRenderer $view, SitePageBlockRepresentation $block)
+    public function render(PhpRenderer $view, SitePageBlockRepresentation $block, $templateViewScript = self::PARTIAL_NAME)
     {
         $data = $block->data();
         $args = $data['args'] + ['order' => ['alphabetic' => 'ASC']];
@@ -183,17 +184,12 @@ class Reference extends AbstractBlockLayout
         $options['sort_by'] = key($args['order']) === 'alphabetic' ? 'alphabetic' : 'total';
         $options['per_page'] = 0;
 
-        $template = $options['template'] ?? self::PARTIAL_NAME;
-        unset($options['template']);
-
         $vars = [
             'fields' => $fields,
             'query' => $query,
             'options' => $options,
         ];
 
-        return $template !== self::PARTIAL_NAME && $view->resolver($template)
-            ? $view->partial($template, $vars)
-            : $view->partial(self::PARTIAL_NAME, $vars);
+        return $view->partial($templateViewScript, $vars);
     }
 }

@@ -183,7 +183,6 @@ return [
                     'total' => true,
                     'list_by_max' => 0,
                     'subject_property' => null,
-                    'template' => '',
                 ],
             ],
             'referenceIndex' => [
@@ -200,7 +199,6 @@ return [
                 'options' => [
                     'heading' => 'Reference index', // @translate
                     'total' => true,
-                    'template' => '',
                 ],
             ],
             'referenceTree' => [
@@ -217,7 +215,6 @@ return [
                 'total' => true,
                 'branch' => false,
                 'expanded' => true,
-                'template' => '',
             ],
         ],
     ],

@@ -231,23 +231,6 @@ class ReferenceFieldset extends Form
                 ],
             ]);
 
-        if (class_exists('BlockPlus\Form\Element\TemplateSelect')) {
-            $optionsFieldset
-                ->add([
-                    'name' => 'template',
-                    'type' => \BlockPlus\Form\Element\TemplateSelect::class,
-                    'options' => [
-                        'label' => 'Template to display', // @translate
-                        'info' => 'Templates are in folder "common/block-layout" of the theme and should start with "reference".', // @translate
-                        'template' => 'common/block-layout/reference',
-                    ],
-                    'attributes' => [
-                        'id' => 'reference-options-template',
-                        'class' => 'chosen-select',
-                    ],
-                ]);
-        }
-
         $inputFilter = $this->getInputFilter();
         $inputFilter
             ->add([

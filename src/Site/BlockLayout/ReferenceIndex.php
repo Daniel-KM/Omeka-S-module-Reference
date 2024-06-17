@@ -9,9 +9,10 @@ use Omeka\Api\Representation\SitePageRepresentation;
 use Omeka\Api\Representation\SiteRepresentation;
 use Omeka\Entity\SitePageBlock;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
+use Omeka\Site\BlockLayout\TemplateableBlockLayoutInterface;
 use Omeka\Stdlib\ErrorStore;
 
-class ReferenceIndex extends AbstractBlockLayout
+class ReferenceIndex extends AbstractBlockLayout implements TemplateableBlockLayoutInterface
 {
     /**
      * The default partial view script.
@@ -142,7 +143,7 @@ class ReferenceIndex extends AbstractBlockLayout
         return $html;
     }
 
-    public function render(PhpRenderer $view, SitePageBlockRepresentation $block)
+    public function render(PhpRenderer $view, SitePageBlockRepresentation $block, $templateViewScript = self::PARTIAL_NAME)
     {
         $data = $block->data();
         $args = $data['args'];
@@ -168,9 +169,6 @@ class ReferenceIndex extends AbstractBlockLayout
         $options['sort_by'] = key($args['order']) === 'alphabetic' ? 'alphabetic' : 'total';
         $options['per_page'] = 0;
 
-        $template = $options['template'] ?? self::PARTIAL_NAME;
-        unset($options['template']);
-
         $vars = [
             'block' => $block,
             'fields' => $fields,
@@ -178,8 +176,6 @@ class ReferenceIndex extends AbstractBlockLayout
             'options' => $options,
         ];
 
-        return $template !== self::PARTIAL_NAME && $view->resolver($template)
-            ? $view->partial($template, $vars)
-            : $view->partial(self::PARTIAL_NAME, $vars);
+        return $view->partial($templateViewScript, $vars);
     }
 }
