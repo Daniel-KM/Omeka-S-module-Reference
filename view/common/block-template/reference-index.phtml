@@ -7,7 +7,8 @@
  * @var array $options
  */
 
-$translate = $this->plugin('translate');
+$plugins = $this->getHelperPluginManager();
+$translate = $plugins->get('translate');
 ?>
 
 <div class="reference-block">
@@ -18,13 +19,11 @@ $translate = $this->plugin('translate');
     <?php if (empty($fields)): ?>
     <p><?= $translate('There is no references.') ?></p>
     <?php else: ?>
-    <?php
-    echo $this->partial('common/reference-index', [
+    <?= $this->partial('common/reference-index', [
         'site' => $block->page()->site(),
         'fields' => $fields,
         'query' => $query,
         'options' => $options,
-    ]);
-    ?>
+    ]) ?>
     <?php endif; ?>
 </div>

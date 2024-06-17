@@ -36,11 +36,13 @@ return [
     'page_templates' => [
     ],
     'block_templates' => [
+        'reference' => [
+            'reference-index' => 'Reference (index)', // @translate
+        ],
     ],
     'block_layouts' => [
         'factories' => [
             'reference' => Service\BlockLayout\ReferenceFactory::class,
-            'referenceIndex' => Service\BlockLayout\ReferenceIndexFactory::class,
             'referenceTree' => Service\BlockLayout\ReferenceTreeFactory::class,
         ],
     ],
@@ -50,7 +52,6 @@ return [
             Form\SettingsFieldset::class => Form\SettingsFieldset::class,
             Form\SiteSettingsFieldset::class => Form\SiteSettingsFieldset::class,
             Form\ReferenceFieldset::class => Form\ReferenceFieldset::class,
-            Form\ReferenceIndexFieldset::class => Form\ReferenceIndexFieldset::class,
             Form\ReferenceTreeFieldset::class => Form\ReferenceTreeFieldset::class,
         ],
     ],
@@ -183,22 +184,6 @@ return [
                     'total' => true,
                     'list_by_max' => 0,
                     'subject_property' => null,
-                ],
-            ],
-            'referenceIndex' => [
-                'args' => [
-                    'fields' => [
-                        'dcterms:subject',
-                    ],
-                    'type' => 'properties',
-                    'resource_name' => 'items',
-                    'order' => ['alphabetic' => 'ASC'],
-                    'query' => '',
-                    'languages' => [],
-                ],
-                'options' => [
-                    'heading' => 'Reference index', // @translate
-                    'total' => true,
                 ],
             ],
             'referenceTree' => [

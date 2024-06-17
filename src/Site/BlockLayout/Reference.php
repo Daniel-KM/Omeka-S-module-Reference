@@ -54,9 +54,11 @@ class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutIn
             $errorStore->addError('properties', 'To create references, there must be one or more properties or resource classes.'); // @translate
             return;
         }
+
         if (empty($data['args']['resource_name'])) {
             $data['args']['resource_name'] = 'items';
         }
+
         $query = [];
         parse_str(ltrim((string) $data['args']['query'], "? \t\n\r\0\x0B"), $query);
         $data['args']['query'] = $query;
@@ -143,6 +145,7 @@ class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutIn
         $fieldset->prepare();
 
         $html = '<p>' . $view->translate('Choose one or more properties or one or more resource classes.') . '</p>';
+        $html .= '<p>' . $view->translate('With the layout template "Reference Index", the pages for the selected terms should be created manually with the terms as slug, with the ":" replaced by a "-".') . '</p>';
         $html .= $view->formCollection($fieldset);
         return $html;
     }
@@ -185,6 +188,7 @@ class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutIn
         $options['per_page'] = 0;
 
         $vars = [
+            'block' => $block,
             'fields' => $fields,
             'query' => $query,
             'options' => $options,
