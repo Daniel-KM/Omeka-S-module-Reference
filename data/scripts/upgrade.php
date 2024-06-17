@@ -20,6 +20,7 @@ $plugins = $services->get('ControllerPluginManager');
 $api = $plugins->get('api');
 $settings = $services->get('Omeka\Settings');
 $translate = $plugins->get('translate');
+$translator = $services->get('MvcTranslator');
 $connection = $services->get('Omeka\Connection');
 $messenger = $plugins->get('messenger');
 $entityManager = $services->get('Omeka\EntityManager');
@@ -490,4 +491,88 @@ ALTER TABLE `reference_metadata`
 CHANGE `lang` `lang` varchar(190) NOT NULL DEFAULT '' AFTER `field`;
 SQL;
     $connection->executeStatement($sql);
+}
+
+if (version_compare($oldVersion, '3.4.49', '<')) {
+    // Check for themes with templates to move.
+    $globPath = 'themes/*/view/common/block-layout/reference*';
+    $globPath = OMEKA_PATH . '/' . $globPath;
+    $paths = glob($globPath);
+    if ($paths) {
+        $start = mb_strlen(OMEKA_PATH . '/');
+        $result = [];
+        foreach ($paths as $filepath) {
+            // Check exception for reference and reference-tree.
+            $filename = basename($filepath);
+            if (in_array($filename, ['reference.phtml', 'reference-tree.phtml'])) {
+                continue;
+            }
+            $result[] = mb_substr($filepath, $start);
+        }
+
+        if ($result) {
+            $message = new PsrMessage(
+                'Because of the integration of block templates in Omeka S v4.1, you should move custom templates before upgrading the module: move following files from directory "view/common/block-layout/" to "view/common/block-template/" of each theme, except the default files "reference.phtml" and "reference-tree.phtml". Then, you should add all templates from the directory "view/common/block-template/" at the bottom of the file "config/theme.ini" of each theme, for example `block_templates.reference.reference-index = "Reference index custom"`. This process can be done automatically via a task of the module Easy Admin before upgrading the module (important: backup your themes first). Matching files: {json}', // @translate
+                ['json' => json_encode($result, 448)]
+            );
+            throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message->setTranslator($translator));
+        }
+    }
+
+    /** @see /BlockPlus/data/scripts/upgrade.php */
+
+    $pageRepository = $entityManager->getRepository(\Omeka\Entity\SitePage::class);
+    $blocksRepository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
+
+    $logger = $services->get('Omeka\Logger');
+
+    /**
+     * Replace filled settings "template" by the new layout data for reference.
+     *
+     * @var \Omeka\Entity\SitePageBlock $block
+     */
+
+    $pagesUpdated = [];
+    foreach ($blocksRepository->findBy(['layout' => 'referenceIndex']) as $block) {
+        $data = $block->getData();
+        $block->setLayout('reference');
+        $template = $data['options']['template'] ?? null;
+        if ($template && $template !== 'common/block-layout/reference') {
+            $layoutData = $block->getLayoutData();
+            $layoutData['template_name'] = pathinfo($template, PATHINFO_FILENAME);
+            $block->setLayoutData($layoutData);
+            $pagesUpdated[$block->getPage()->getSite()->getSlug()][$block->getPage()->getSlug()] = $block->getPage()->getSlug();
+        }
+        unset($data['options']['template']);
+        $block->setData($data);
+    }
+
+    $entityManager->flush();
+
+    if ($pagesUpdated) {
+        $result = array_map('array_values', $pagesUpdated);
+        $message = new PsrMessage(
+            'The block Reference Index was replaced by a template layout of block Reference. You may check pages: {json}', // @translate
+            ['json' => json_encode($result, 448)]
+        );
+        $messenger->addWarning($message);
+        $logger->warn($message->getMessage(), $message->getContext());
+    }
+
+    /**
+     * Added a warning for default style.
+     */
+    $pagesUpdated = [];
+    foreach ($blocksRepository->findBy(['layout' => 'reference']) as $block) {
+        $pagesUpdated[$block->getPage()->getSite()->getSlug()][$block->getPage()->getSlug()] = $block->getPage()->getSlug();
+    }
+    if ($pagesUpdated) {
+        $result = array_map('array_values', $pagesUpdated);
+        $message = new PsrMessage(
+            'The default heading is now <h2>. Check your theme if you customized it. You may check pages: {json}', // @translate
+            ['json' => json_encode($result, 448)]
+        );
+        $messenger->addWarning($message);
+        $logger->warn($message->getMessage(), $message->getContext());
+    }
 }
