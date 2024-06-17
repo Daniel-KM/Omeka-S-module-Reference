@@ -55,7 +55,7 @@ class ReferenceTree extends AbstractBlockLayout implements TemplateableBlockLayo
         parse_str(trim(ltrim((string) $data['query'], "? \t\n\r\0\x0B\u{a0}\u{202f}")), $query);
         $data['query'] = $query;
 
-        // Normalize options.
+        // Normalize options one time.
         $data['link_to_single'] = (bool) ($data['link_to_single'] ?? true);
         $data['custom_url'] = (bool) $data['custom_url'];
         $data['total'] = (bool) $data['total'];

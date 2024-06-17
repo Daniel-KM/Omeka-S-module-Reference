@@ -17,15 +17,11 @@ $references = $plugins->get('references');
 
 <div class="reference-block">
     <?php if (!empty($heading)): ?>
-    <h3><?= $escape($heading) ?></h3>
+    <h2><?= $escape($heading) ?></h2>
     <?php endif; ?>
-    <?php
-    if ($total):
-        echo $references->displayTree($tree, $query, $options);
-    else:
-    ?>
+    <?php if ($total): ?>
+    <?= $references->displayTree($tree, $query, $options) ?>
+    <?php else: ?>
     <p><?= $translate('There is no references.') ?></p>
-    <?php
-    endif;
-    ?>
+    <?php endif; ?>
 </div>

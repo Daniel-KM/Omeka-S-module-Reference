@@ -71,7 +71,7 @@ class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutIn
             ? array_unique(array_map('trim', explode('|', $data['args']['languages'])))
             : [];
 
-        // Normalize options.
+        // Normalize options one time.
         $data['options']['by_initial'] = !empty($data['options']['by_initial']);
         $data['options']['link_to_single'] = !empty($data['options']['link_to_single']);
         $data['options']['custom_url'] = !empty($data['options']['custom_url']);
