@@ -123,9 +123,26 @@ class References extends AbstractPlugin
     protected $query = [];
 
     /**
+     * Normalized options.
+     * Specific options for metadata are set with key "meta_options".
+     *
      * @var array
      */
     protected $options = [];
+
+    /**
+     * Normalized options by metadata key. Default ones use key "__default".
+     *
+     * @var array
+     */
+    protected $optionsByMeta = [];
+
+    /**
+     * Normalized options for the metadata that are currently processing.
+     *
+     * @var array
+     */
+    protected $optionsCurrent = [];
 
     /**
      * Options by default.
@@ -160,7 +177,8 @@ class References extends AbstractPlugin
         'single_reference_format' => false,
         'locale' => [],
         'output' => 'list',
-        // Not options, but used internally and simpler to set here.
+        'meta_options' => [],
+        // Not options, but used internally and simpler to set here for now.
         'entity_class' => \Omeka\Entity\Item::class,
         'resource_table' => 'item',
         'is_base_resource' => false,
@@ -268,6 +286,7 @@ class References extends AbstractPlugin
      *
      * @todo Option locale: Use locale first or any locale (so all results preferably in the specified locale).
      * @todo Option locale: Check if the option include_without_meta is still needed with data types.
+     * @todo Replace "resource_name" by "resource_type"?
      */
     public function __invoke($metadata = [], ?array $query = [], ?array $options = []): self
     {
@@ -350,156 +369,27 @@ class References extends AbstractPlugin
      */
     public function setOptions(?array $options): self
     {
-        if (!$options) {
-            $this->options = $this->optionsDefaults;
-            return $this;
+        $this->options = $this->prepareOptions($options);
+        $metaOptions = $options['meta_options'] ?? [];
+        foreach ($metaOptions as $key => $subMetaOptions) {
+            $metaOptions[$key] = $this->prepareOptions($subMetaOptions, true);
         }
-
-        if (isset($options['values'])) {
-            $options['filters']['values'] ??= $options['values'];
-            $this->logger->err(
-                'To get references, to pass the option "values" as main key is deprecated. it should be set as a sub-key of filters.' // @ŧranslate
-            );
-        }
-
-        if (isset($options['datatype'])) {
-            $options['data_type'] ??= $options['datatype'];
-            $this->logger->err(
-                'To get references, to pass the option "data" as main key is deprecated in favor of "data_type".' // @ŧranslate
-            );
-        }
-
-        if (isset($options['filters']['datatypes'])) {
-            $options['filters']['data_types'] ??= $options['filters']['datatypes'];
-            $this->logger->err(
-                'To get references, to pass the option "datatypes" in filters is deprecated in favor of "data_types".' // @ŧranslate
-            );
-        }
-
-        $options += $this->optionsDefaults;
-
-        $resourceName = in_array($options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
-            ? $options['resource_name']
-            : $this->optionsDefaults['resource_name'];
-        $first = !empty($options['first']);
-        $listByMax = empty($options['list_by_max']) ? 0 : (int) $options['list_by_max'];
-        $fields = empty($options['fields']) ? [] : $options['fields'];
-        $initial = empty($options['initial']) ? false : (int) $options['initial'];
-        $distinct = !empty($options['distinct']);
-        $dataType = !empty($options['data_type']);
-        $lang = !empty($options['lang']);
-        // Currently, only one locale can be used, but it is managed as
-        // array internally.
-        if (empty($options['locale'])) {
-            $locales = [];
-        } else {
-            $locales = is_array($options['locale']) ? $options['locale'] : [$options['locale']];
-            $locales = array_filter(array_unique(array_map('trim', array_map('strval', $locales))), fn ($v) => ctype_alnum(str_replace(['-', '_'], ['', ''], $v)));
-            if (($pos = array_search('null', $locales)) !== false) {
-                $locales[$pos] = '';
-            }
-        }
-        $entityClass = $this->mapResourceNameToEntityClass($resourceName);
-        $this->options = [
-            // Options to filter, limit and sort results (used for sql).
-            'resource_name' => $resourceName,
-            'sort_by' => $options['sort_by'] ?? 'alphabetic',
-            'sort_order' => strtoupper((string) $options['sort_order']) === 'DESC' ? 'DESC' : 'ASC',
-            'page' => !is_numeric($options['page']) || !(int) $options['page'] ? $this->optionsDefaults['page'] : (int) $options['page'],
-            'per_page' => !is_numeric($options['per_page']) || !(int) $options['per_page'] ? $this->optionsDefaults['per_page'] : (int) $options['per_page'],
-            'filters' => is_array($options['filters']) ? $options['filters'] + $this->optionsDefaults['filters'] : $this->optionsDefaults['filters'],
-            // Output options.
-            'first' => $first,
-            'list_by_max' => $listByMax,
-            'fields' => $fields,
-            'initial' => $initial,
-            'distinct' => $distinct,
-            'data_type' => $dataType,
-            'lang' => $lang,
-            'include_without_meta' => !empty($options['include_without_meta']),
-            'single_reference_format' => !empty($options['single_reference_format']),
-            'locale' => $locales,
-            'output' => in_array($options['output'], ['associative', 'values']) && !$first && !$listByMax && !$initial && !$distinct && !$dataType && !$lang
-                ? $options['output']
-                : 'list',
-            // Not options, but used internally and simpler to set here.
-            'entity_class' => $entityClass,
-            'resource_table' => $this->mapResourceNameToTable($resourceName),
-            'is_base_resource' => empty($entityClass) || $entityClass === \Omeka\Entity\Resource::class,
-        ];
-
-        // Set keys for all default filters.
-        $this->options['filters'] = array_intersect_key($this->options['filters'] + $this->optionsDefaults['filters'], $this->optionsDefaults['filters']);
-
-        // Explode with separator "|" if present, else ",". For complex cases,
-        // an array should be used.
-        $explode = fn($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
-
-        $clean = fn(array $array): array => array_unique(array_filter(array_map('trim', $array)));
-        $cleanAllow0 = fn(array $array): array => array_unique(array_filter(array_map('trim', $array), fn($v) => $v || $v === '0'));
-        $cleanNoTrim = fn(array $array): array => array_unique(array_filter($array));
-
-        // The check for length avoids to add a filter on values without any
-        // language. It should be specified as "||" (or leading/trailing "|").
-        // The value "null" can be used too and is recommended instead of an
-        // empty string.
-        if (!is_array($this->options['filters']['languages'])) {
-            $this->options['filters']['languages'] = $explode($this->options['filters']['languages']);
-        }
-        // Clean the empty language as empty string.
-        if (in_array('', $this->options['filters']['languages'], true)) {
-            $this->logger->warn(
-                'To get references, the empty string as option for languages is deprecated in favor of null or the string "null".' // @ŧranslate
-            );
-        }
-        $noEmptyLanguages = array_diff($this->options['filters']['languages'], ['null', null, '', 0, '0']);
-        if (count($noEmptyLanguages) !== count($this->options['filters']['languages'])) {
-            $this->options['filters']['languages'] = $noEmptyLanguages;
-            $this->options['filters']['languages'][] = '';
-        }
-        // No filter in order to manage the empty language.
-        $this->options['filters']['languages'] = array_unique(array_map('trim', $this->options['filters']['languages']));
-
-        // May be an array or a string (literal, uri or resource, in this order).
-        if (!is_array($this->options['filters']['main_types'])) {
-            $this->options['filters']['main_types'] = $explode($this->options['filters']['main_types']);
-        }
-        $this->options['filters']['main_types'] = $clean($this->options['filters']['main_types']);
-        $this->options['filters']['main_types'] = array_values(array_intersect(['value', 'resource', 'uri'], $this->options['filters']['main_types']));
-        $this->options['filters']['main_types'] = array_combine($this->options['filters']['main_types'], $this->options['filters']['main_types']);
-
-        if (!is_array($this->options['filters']['data_types'])) {
-            $this->options['filters']['data_types'] = $explode($this->options['filters']['data_types']);
-        }
-        $this->options['filters']['data_types'] = $clean($this->options['filters']['data_types']);
-
-        if (!is_array($this->options['filters']['values'])) {
-            $this->options['filters']['values'] = $explode($this->options['filters']['values']);
-        }
-        $this->options['filters']['values'] = $cleanAllow0($this->options['filters']['values']);
-
-        // No trim for begin/end.
-        if (!is_array($this->options['filters']['begin'])) {
-            $this->options['filters']['begin'] = $explode($this->options['filters']['begin']);
-        }
-        $this->options['filters']['begin'] = $cleanNoTrim($this->options['filters']['begin']);
-
-        if (!is_array($this->options['filters']['end'])) {
-            $this->options['filters']['end'] = $explode($this->options['filters']['end']);
-        }
-        $this->options['filters']['end'] = $cleanNoTrim($this->options['filters']['end']);
-
-        if (!is_array($this->options['fields'])) {
-            $this->options['fields'] = $explode($this->options['fields']);
-        }
-        $this->options['fields'] = $clean($this->options['fields']);
-
+        $this->optionsByMeta = ['__default' => $this->options] + $metaOptions;
+        // Don't set default options as meta options.
+        $this->options['meta_options'] = $metaOptions;
+        $this->optionsCurrent = [];
         return $this;
     }
 
-    public function getOptions(): array
+    /**
+     * @param null|string|int $key Allow to get option for a specific metadata.
+     * When the key does not exist, return the default options.
+     */
+    public function getOptions($key = null): array
     {
-        return $this->options;
+        return $key === null
+            ? $this->options
+            : ($this->optionsByMeta[$key] ?? $this->optionsByMeta['__default']);
     }
 
     /**
@@ -536,16 +426,17 @@ class References extends AbstractPlugin
          * @todo Remove coalesce: use reference_metadata.
          */
 
-        $isOutputAssociative = $this->options['output'] === 'associative';
-        $isOutputValues = $this->options['output'] === 'values';
-        $isOutputSimple = $isOutputAssociative || $isOutputValues;
-        $isOutputList = !$isOutputSimple;
-
         // TODO Convert all queries into a single or two sql queries (at least for properties and classes).
         // TODO Return all needed columns.
 
         $result = [];
         foreach ($fields as $keyOrLabel => $inputField) {
+            $this->optionsCurrent = $this->getOptions($keyOrLabel);
+            $isOutputAssociative = $this->optionsCurrent['output'] === 'associative';
+            $isOutputValues = $this->optionsCurrent['output'] === 'values';
+            $isOutputSimple = $isOutputAssociative || $isOutputValues;
+            $isOutputList = !$isOutputSimple;
+
             $dataFields = $this->prepareFields($inputField, $keyOrLabel);
 
             $keyResult = $dataFields['key_result'];
@@ -555,8 +446,10 @@ class References extends AbstractPlugin
                 && $isOutputList
             ) {
                 $result[$keyResult] = reset($dataFields['output']['o:request']['o:field']);
-                if (!$this->options['single_reference_format']) {
-                    $result[$keyResult] = ['deprecated' => 'This output format is deprecated. Set a string key to metadata to use the new format or append option "single_reference_format" to remove this warning.'] // @translate
+                if (!$this->optionsCurrent['single_reference_format']) {
+                    $result[$keyResult] = [
+                        'deprecated' => 'This output format is deprecated. Set a string key to metadata to use the new format or append option "single_reference_format" to remove this warning.', // @translate
+                        ]
                         + $result[$keyResult];
                 }
             } else {
@@ -628,7 +521,7 @@ class References extends AbstractPlugin
 
                 case 'o:item_set':
                     // Manage an exception for the resource "items".
-                    if ($dataFields['type'] === 'o:item_set' && $this->options['resource_name'] !== 'items') {
+                    if ($dataFields['type'] === 'o:item_set' && $this->optionsCurrent['resource_name'] !== 'items') {
                         $values = [];
                     } else {
                         $values = $this->listItemSets();
@@ -717,6 +610,7 @@ class References extends AbstractPlugin
 
         $result = [];
         foreach ($fields as $keyOrLabel => $inputField) {
+            $this->optionsCurrent = $this->getOptions($keyOrLabel);
             $dataFields = $this->prepareFields($inputField, $keyOrLabel);
 
             $keyResult = $dataFields['key_result'] ?: $keyOrLabel;
@@ -769,23 +663,23 @@ class References extends AbstractPlugin
         // Use the same requests than list(), except select / group and begin.
         $this->process = 'initials';
 
-        $currentOptions = $this->options;
-        $this->options['first'] = false;
-        $this->options['list_by_max'] = 0;
-        $this->options['initial'] = false;
-        // TODO Check options for initials.
-        $this->options['distinct'] = false;
-        $this->options['data_type'] = false;
-        $this->options['lang'] = false;
-        $this->options['fields'] = [];
-        // TODO Use option "values" instead of "associative"?
-        $this->options['output'] = 'associative';
-
-        // Internal option to specify the number of characters of each "initial".
-        $this->options['_initials'] = (int) $currentOptions['initial'] ?: 1;
-
         $result = [];
         foreach ($fields as $keyOrLabel => $inputField) {
+            $this->optionsCurrent = $this->getOptions($keyOrLabel);
+            $this->optionsCurrent['first'] = false;
+            $this->optionsCurrent['list_by_max'] = 0;
+            $this->optionsCurrent['initial'] = false;
+            // TODO Check options for initials.
+            $this->optionsCurrent['distinct'] = false;
+            $this->optionsCurrent['data_type'] = false;
+            $this->optionsCurrent['lang'] = false;
+            $this->optionsCurrent['fields'] = [];
+            // TODO Use option "values" instead of "associative"?
+            $this->optionsCurrent['output'] = 'associative';
+
+            // Internal option to specify the number of characters of each "initial".
+            $this->optionsCurrent['_initials'] = (int) $this->optionsCurrent['initial'] ?: 1;
+
             $dataFields = $this->prepareFields($inputField, $keyOrLabel);
 
             $keyResult = $dataFields['key_result'];
@@ -834,7 +728,7 @@ class References extends AbstractPlugin
 
                 case 'o:item_set':
                     // Manage an exception for the resource "items".
-                    if ($dataFields['type'] === 'o:item_set' && $this->options['resource_name'] !== 'items') {
+                    if ($dataFields['type'] === 'o:item_set' && $this->optionsCurrent['resource_name'] !== 'items') {
                         $values = [];
                     } else {
                         $values = $this->listItemSets();
@@ -888,8 +782,166 @@ class References extends AbstractPlugin
         }
 
         $this->process = null;
-        $this->options = $currentOptions;
         return $result;
+    }
+
+    protected function prepareOptions(?array $options, bool $isMetaOptions = false): array
+    {
+        $defaultOptions = $isMetaOptions ? $this->options : $this->optionsDefaults;
+
+        if (!$options) {
+            return $defaultOptions;
+        }
+
+        if (isset($options['values'])) {
+            $options['filters']['values'] ??= $options['values'];
+            $this->logger->err(
+                'To get references, to pass the option "values" as main key is deprecated. it should be set as a sub-key of filters.' // @ŧranslate
+            );
+        }
+
+        if (isset($options['datatype'])) {
+            $options['data_type'] ??= $options['datatype'];
+            $this->logger->err(
+                'To get references, to pass the option "data" as main key is deprecated in favor of "data_type".' // @ŧranslate
+            );
+        }
+
+        if (isset($options['filters']['datatypes'])) {
+            $options['filters']['data_types'] ??= $options['filters']['datatypes'];
+            $this->logger->err(
+                'To get references, to pass the option "datatypes" in filters is deprecated in favor of "data_types".' // @ŧranslate
+            );
+        }
+
+        // Explode with separator "|" if present, else ",".
+        // For complex cases, an array should be used.
+        $explode = fn($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
+
+        // Clean options filters in place.
+        $clean = fn(array $array): array => array_unique(array_filter(array_map('trim', $array)));
+        $cleanAllow0 = fn(array $array): array => array_unique(array_filter(array_map('trim', $array), fn($v) => $v || $v === '0'));
+        $cleanNoTrim = fn(array $array): array => array_unique(array_filter($array));
+
+        // Set keys for all keys and only them, keeping order.
+        $options += array_intersect_key(array_replace($defaultOptions, $options), $defaultOptions);
+        $options['filters'] = array_intersect_key(array_replace($defaultOptions['filters'], $options['filters'] ?? []), $defaultOptions['filters']);
+
+        // The option "meta_options" is managed separately.
+        if ($isMetaOptions) {
+            unset($options['meta_options']);
+        } else {
+            $options['meta_options'] = [];
+        }
+
+        $resourceName = in_array($options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
+            ? $options['resource_name']
+            : $defaultOptions['resource_name'];
+        $first = !empty($options['first']);
+        $listByMax = empty($options['list_by_max']) ? 0 : (int) $options['list_by_max'];
+        $fields = empty($options['fields']) ? [] : $options['fields'];
+        $initial = empty($options['initial']) ? false : (int) $options['initial'];
+        $distinct = !empty($options['distinct']);
+        $dataType = !empty($options['data_type']);
+        $lang = !empty($options['lang']);
+        // Currently, only one locale can be used, but it is managed as
+        // array internally.
+        if (empty($options['locale'])) {
+            $locales = [];
+        } else {
+            $locales = is_array($options['locale']) ? $options['locale'] : [$options['locale']];
+            $locales = array_filter(array_unique(array_map('trim', array_map('strval', $locales))), fn ($v) => ctype_alnum(str_replace(['-', '_'], ['', ''], $v)));
+            if (($pos = array_search('null', $locales)) !== false) {
+                $locales[$pos] = '';
+            }
+        }
+        $entityClass = $this->mapResourceNameToEntityClass($resourceName);
+
+        $options = [
+            // Options to filter, limit and sort results (used for sql).
+            'resource_name' => $resourceName,
+            'sort_by' => $options['sort_by'] ?? 'alphabetic',
+            'sort_order' => strcasecmp((string) $options['sort_order'], 'desc') === 0 ? 'DESC' : 'ASC',
+            'page' => !is_numeric($options['page']) || !(int) $options['page'] ? $defaultOptions['page'] : (int) $options['page'],
+            'per_page' => !is_numeric($options['per_page']) || !(int) $options['per_page'] ? $defaultOptions['per_page'] : (int) $options['per_page'],
+            'filters' => $options['filters'],
+            // Output options.
+            'first' => $first,
+            'list_by_max' => $listByMax,
+            'fields' => $fields,
+            'initial' => $initial,
+            'distinct' => $distinct,
+            'data_type' => $dataType,
+            'lang' => $lang,
+            'include_without_meta' => !empty($options['include_without_meta']),
+            'single_reference_format' => !empty($options['single_reference_format']),
+            'locale' => $locales,
+            'output' => in_array($options['output'], ['associative', 'values']) && !$first && !$listByMax && !$initial && !$distinct && !$dataType && !$lang
+                ? $options['output']
+                : 'list',
+            // Not options, but used internally and simpler to set here.
+            'entity_class' => $entityClass,
+            'resource_table' => $this->mapResourceNameToTable($resourceName),
+            'is_base_resource' => empty($entityClass) || $entityClass === \Omeka\Entity\Resource::class,
+        ];
+
+        if (!is_array($options['fields'])) {
+            $options['fields'] = $explode($options['fields']);
+        }
+        $options['fields'] = $clean($options['fields']);
+
+        // The check for length avoids to add a filter on values without any
+        // language. When set as string, it should be defined as string "null".
+        // The empty string to append values without languages ("||" or
+        // leading/trailing "|" when the list of languages is set as string) is
+        // deprecated.
+        if (!is_array($options['filters']['languages'])) {
+            $options['filters']['languages'] = $explode($options['filters']['languages']);
+        }
+        // Clean the empty language as empty string.
+        if (in_array('', $options['filters']['languages'], true)) {
+            $this->logger->warn(
+                'To get references, the empty string as option for languages is deprecated in favor of null or the string "null".' // @ŧranslate
+            );
+        }
+        $noEmptyLanguages = array_diff($options['filters']['languages'], ['null', null, '', 0, '0']);
+        if (count($noEmptyLanguages) !== count($options['filters']['languages'])) {
+            $options['filters']['languages'] = $noEmptyLanguages;
+            $options['filters']['languages'][] = '';
+        }
+        // No filter in order to manage the empty language.
+        $options['filters']['languages'] = array_unique(array_map('trim', $options['filters']['languages']));
+
+        // May be an array or a string (literal, uri or resource, in this order).
+        if (!is_array($options['filters']['main_types'])) {
+            $options['filters']['main_types'] = $explode($options['filters']['main_types']);
+        }
+        $options['filters']['main_types'] = $clean($options['filters']['main_types']);
+        $options['filters']['main_types'] = array_values(array_intersect(['value', 'resource', 'uri'], $options['filters']['main_types']));
+        $options['filters']['main_types'] = array_combine($options['filters']['main_types'], $options['filters']['main_types']);
+
+        if (!is_array($options['filters']['data_types'])) {
+            $options['filters']['data_types'] = $explode($options['filters']['data_types']);
+        }
+        $options['filters']['data_types'] = $clean($options['filters']['data_types']);
+
+        if (!is_array($options['filters']['values'])) {
+            $options['filters']['values'] = $explode($options['filters']['values']);
+        }
+        $options['filters']['values'] = $cleanAllow0($options['filters']['values']);
+
+        // No trim for begin/end.
+        if (!is_array($options['filters']['begin'])) {
+            $options['filters']['begin'] = $explode($options['filters']['begin']);
+        }
+        $options['filters']['begin'] = $cleanNoTrim($options['filters']['begin']);
+
+        if (!is_array($options['filters']['end'])) {
+            $options['filters']['end'] = $explode($options['filters']['end']);
+        }
+        $options['filters']['end'] = $cleanNoTrim($options['filters']['end']);
+
+        return $options;
     }
 
     /**
@@ -929,7 +981,7 @@ class References extends AbstractPlugin
         ;
 
         // The values should be distinct for each type.
-        if ($this->options['is_base_resource']) {
+        if ($this->optionsCurrent['is_base_resource']) {
             $qb
                 ->innerJoin('value', 'resource', 'resource', $expr->eq('resource.id', 'value.resource_id'))
                 ->leftJoin('value', 'resource', 'value_resource', $expr->eq('value_resource.id', 'value.value_resource_id'));
@@ -937,7 +989,7 @@ class References extends AbstractPlugin
             $qb
                 ->innerJoin('value', 'resource', 'resource', $expr->andX($expr->eq('resource.id', 'value.resource_id'), $expr->eq('resource.resource_type', ':entity_class')))
                 ->leftJoin('value', 'resource', 'value_resource', $expr->andX($expr->eq('value_resource.id', 'value.value_resource_id'), $expr->eq('value_resource.resource_type', ':entity_class')))
-                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
+                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
         }
 
         // This filter is used by properties only and normally already included
@@ -949,45 +1001,45 @@ class References extends AbstractPlugin
             // 'resource' => 'value.value_resource_id',
             'uri' => 'value.uri',
         ];
-        if ($this->options['filters']['main_types']) {
-            $mainTypes = array_intersect_key($mainTypes, $this->options['filters']['main_types']);
+        if ($this->optionsCurrent['filters']['main_types']) {
+            $mainTypes = array_intersect_key($mainTypes, $this->optionsCurrent['filters']['main_types']);
         }
         $mainTypesString = count($mainTypes) === 1
             ? reset($mainTypes)
             : 'COALESCE(' . implode(', ', $mainTypes) . ')';
 
         if ($this->process === 'initials') {
-            if ($this->options['locale']) {
+            if ($this->optionsCurrent['locale']) {
                 $qb
                     ->select(
                         // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert. Anyway convert should be only for diacritics.
                         // 'CONVERT(UPPER(LEFT(refmeta.text, 1)) USING latin1) AS val',
-                        $val = "UPPER(LEFT(refmeta.text, {$this->options['_initials']})) AS val"
+                        $val = "UPPER(LEFT(refmeta.text, {$this->optionsCurrent['_initials']})) AS val"
                     )
                     ->innerJoin('value', 'reference_metadata', 'refmeta', $expr->eq('refmeta.value_id', 'value.id'))
                     ->andWhere($expr->in('refmeta.lang', ':locales'))
-                    ->setParameter('locales', $this->options['locale'], Connection::PARAM_STR_ARRAY)
+                    ->setParameter('locales', $this->optionsCurrent['locale'], Connection::PARAM_STR_ARRAY)
                 ;
             } else {
                 // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
                 $qb
                     ->select(
-                        // 'CONVERT(UPPER(LEFT($mainTypesString, $this->options['_initials'])) USING latin1) AS val',
+                        // 'CONVERT(UPPER(LEFT($mainTypesString, $this->optionsCurrent['_initials'])) USING latin1) AS val',
                         $val = $this->supportAnyValue
-                            ? "ANY_VALUE(UPPER(LEFT($mainTypesString, {$this->options['_initials']}))) AS val"
-                            : "UPPER(LEFT($mainTypesString, {$this->options['_initials']})) AS val"
+                            ? "ANY_VALUE(UPPER(LEFT($mainTypesString, {$this->optionsCurrent['_initials']}))) AS val"
+                            : "UPPER(LEFT($mainTypesString, {$this->optionsCurrent['_initials']})) AS val"
                     )
                 ;
             }
         } else {
-            if ($this->options['locale']) {
+            if ($this->optionsCurrent['locale']) {
                 $qb
                     ->select(
                         $val = 'refmeta.text AS val'
                     )
                     ->innerJoin('value', 'reference_metadata', 'refmeta', $expr->eq('refmeta.value_id', 'value.id'))
                     ->andWhere($expr->in('refmeta.lang', ':locales'))
-                    ->setParameter('locales', $this->options['locale'], Connection::PARAM_STR_ARRAY)
+                    ->setParameter('locales', $this->optionsCurrent['locale'], Connection::PARAM_STR_ARRAY)
                 ;
             } else {
                 $qb
@@ -1000,7 +1052,7 @@ class References extends AbstractPlugin
             }
         }
 
-        if ($this->options['output'] !== 'values') {
+        if ($this->optionsCurrent['output'] !== 'values') {
             $qb
                 ->addSelect('COUNT(resource.id) AS total');
         }
@@ -1035,7 +1087,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val"
+                    "UPPER(LEFT(resource.title, {$this->optionsCurrent['_initials']})) AS val"
                 );
         } else {
             $qb
@@ -1044,7 +1096,7 @@ class References extends AbstractPlugin
                 );
         }
 
-        if ($this->options['output'] !== 'values') {
+        if ($this->optionsCurrent['output'] !== 'values') {
             $qb
                 ->addSelect('COUNT(resource.id) AS total');
         }
@@ -1056,10 +1108,10 @@ class References extends AbstractPlugin
             ->setParameter('resource_classes', array_map('intval', $resourceClassIds), Connection::PARAM_INT_ARRAY)
             ->groupBy('val');
 
-        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
+                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -1089,7 +1141,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val"
+                    "UPPER(LEFT(resource.title, {$this->optionsCurrent['_initials']})) AS val"
                 );
         } else {
             $qb
@@ -1098,7 +1150,7 @@ class References extends AbstractPlugin
                 );
         }
 
-        if ($this->options['output'] !== 'values') {
+        if ($this->optionsCurrent['output'] !== 'values') {
             $qb
                 ->addSelect('COUNT(resource.id) AS total');
         }
@@ -1110,10 +1162,10 @@ class References extends AbstractPlugin
             ->setParameter('resource_templates', array_map('intval', $resourceTemplateIds), Connection::PARAM_INT_ARRAY)
             ->groupBy('val');
 
-        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
+                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -1140,14 +1192,14 @@ class References extends AbstractPlugin
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
-        if ($this->options['entity_class'] !== \Omeka\Entity\Item::class) {
+        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Item::class) {
             return [];
         }
 
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val"
+                    "UPPER(LEFT(resource.title, {$this->optionsCurrent['_initials']})) AS val"
                 );
         } else {
             $qb
@@ -1156,7 +1208,7 @@ class References extends AbstractPlugin
                 );
         }
 
-        if ($this->options['output'] !== 'values') {
+        if ($this->optionsCurrent['output'] !== 'values') {
             $qb
                 ->addSelect('COUNT(resource.id) AS total');
         }
@@ -1197,8 +1249,8 @@ class References extends AbstractPlugin
             $qb
                 ->select(
                     $this->supportAnyValue
-                        ? "ANY_VALUE(UPPER(LEFT(resource.title, {$this->options['_initials']}))) AS val"
-                        : "UPPER(LEFT(resource.title, {$this->options['_initials']})) AS val"
+                        ? "ANY_VALUE(UPPER(LEFT(resource.title, {$this->optionsCurrent['_initials']}))) AS val"
+                        : "UPPER(LEFT(resource.title, {$this->optionsCurrent['_initials']})) AS val"
                 );
         } else {
             $qb
@@ -1209,7 +1261,7 @@ class References extends AbstractPlugin
                 );
         }
 
-        if ($this->options['output'] !== 'values') {
+        if ($this->optionsCurrent['output'] !== 'values') {
             $qb
                 ->addSelect('COUNT(resource.id) AS total');
         }
@@ -1220,7 +1272,7 @@ class References extends AbstractPlugin
             ->distinct(true)
             ->from('resource', 'resource')
             ->where($expr->eq('resource.resource_type', ':entity_class'))
-            ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING)
+            ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING)
             ->groupBy('val')
         ;
 
@@ -1253,7 +1305,7 @@ class References extends AbstractPlugin
                 ->select(
                     // 'property.label AS val',
                     // Important: use single quote for string ":", else doctrine fails in ORM.
-                    "UPPER(LEFT(CONCAT(vocabulary.prefix, ':', property.local_name), {$this->options['_initials']})) AS val"
+                    "UPPER(LEFT(CONCAT(vocabulary.prefix, ':', property.local_name), {$this->optionsCurrent['_initials']})) AS val"
                 );
         } else {
             $qb
@@ -1264,7 +1316,7 @@ class References extends AbstractPlugin
                 );
         }
 
-        if ($this->options['output'] !== 'values') {
+        if ($this->optionsCurrent['output'] !== 'values') {
             $qb
                 ->addSelect('COUNT(value.resource_id) AS total');
         }
@@ -1281,10 +1333,10 @@ class References extends AbstractPlugin
             ->innerJoin('property', 'vocabulary', 'vocabulary', $expr->eq('vocabulary.id', 'property.vocabulary_id'))
             ->groupBy('val')
         ;
-        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
+                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -1320,7 +1372,7 @@ class References extends AbstractPlugin
                 ->select(
                     // 'resource_class.label AS val',
                     // Important: use single quote for string ":", else doctrine orm fails.
-                    "UPPER(LEFT(CONCAT(vocabulary.prefix, ':', property.local_name), {$this->options['_initials']})) AS val"
+                    "UPPER(LEFT(CONCAT(vocabulary.prefix, ':', property.local_name), {$this->optionsCurrent['_initials']})) AS val"
                 );
         } else {
             $qb
@@ -1331,7 +1383,7 @@ class References extends AbstractPlugin
                 );
         }
 
-        if ($this->options['output'] !== 'values') {
+        if ($this->optionsCurrent['output'] !== 'values') {
             $qb
                 ->addSelect('COUNT(resource.id) AS total');
         }
@@ -1345,10 +1397,10 @@ class References extends AbstractPlugin
             ->innerJoin('resource_class', 'vocabulary', 'vocabulary', $expr->eq('vocabulary.id', 'resource_class.vocabulary_id'))
             ->groupBy('val')
         ;
-        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
+                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -1372,7 +1424,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(resource_template.label, {$this->options['_initials']})) AS val"
+                    "UPPER(LEFT(resource_template.label, {$this->optionsCurrent['_initials']})) AS val"
                 );
         } else {
             $qb
@@ -1381,7 +1433,7 @@ class References extends AbstractPlugin
                );
         }
 
-        if ($this->options['output'] !== 'values') {
+        if ($this->optionsCurrent['output'] !== 'values') {
             $qb
                 ->addSelect('COUNT(resource.id) AS total');
         }
@@ -1394,10 +1446,10 @@ class References extends AbstractPlugin
             ->leftJoin('resource', 'resource_template', 'resource_template', $expr->eq('resource_template.id', 'resource.resource_template_id'))
             ->groupBy('val')
         ;
-        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
+                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -1432,7 +1484,7 @@ class References extends AbstractPlugin
             $qb
                 ->select(
                     // TODO Doctrine orm doesn't manage left() and convert(), but we may not need to convert: only for diacritics.
-                    "UPPER(LEFT(resource_item_set.title, {$this->options['_initials']})) AS val"
+                    "UPPER(LEFT(resource_item_set.title, {$this->optionsCurrent['_initials']})) AS val"
                 );
         } else {
             $qb
@@ -1441,7 +1493,7 @@ class References extends AbstractPlugin
                 );
         }
 
-        if ($this->options['output'] !== 'values') {
+        if ($this->optionsCurrent['output'] !== 'values') {
             $qb
                 ->addSelect('COUNT(resource.id) AS total');
         }
@@ -1490,7 +1542,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(user.name, {$this->options['_initials']})) AS val"
+                    "UPPER(LEFT(user.name, {$this->optionsCurrent['_initials']})) AS val"
                 );
         } else {
             $qb
@@ -1499,7 +1551,7 @@ class References extends AbstractPlugin
                 );
         }
 
-        if ($this->options['output'] !== 'values') {
+        if ($this->optionsCurrent['output'] !== 'values') {
             $qb
                 ->addSelect('COUNT(resource.id) AS total');
         }
@@ -1511,10 +1563,10 @@ class References extends AbstractPlugin
             ->groupBy('val')
         ;
 
-        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
+                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -1541,7 +1593,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(site.title, {$this->options['_initials']})) AS val"
+                    "UPPER(LEFT(site.title, {$this->optionsCurrent['_initials']})) AS val"
                 );
         } else {
             $qb
@@ -1550,7 +1602,7 @@ class References extends AbstractPlugin
                 );
         }
 
-        if ($this->options['output'] !== 'values') {
+        if ($this->optionsCurrent['output'] !== 'values') {
             $qb
                 ->addSelect('COUNT(resource.id) AS total');
         }
@@ -1597,7 +1649,7 @@ class References extends AbstractPlugin
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(access_status.level, {$this->options['_initials']})) AS val"
+                    "UPPER(LEFT(access_status.level, {$this->optionsCurrent['_initials']})) AS val"
                 );
         } else {
             $qb
@@ -1606,7 +1658,7 @@ class References extends AbstractPlugin
                 );
         }
 
-        if ($this->options['output'] !== 'values') {
+        if ($this->optionsCurrent['output'] !== 'values') {
             $qb
                 ->addSelect('COUNT(resource.id) AS total');
         }
@@ -1618,10 +1670,10 @@ class References extends AbstractPlugin
             ->groupBy('val')
         ;
 
-        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
+                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
         }
 
         return $this
@@ -1756,19 +1808,19 @@ class References extends AbstractPlugin
     {
         // This filter is used by properties only and normally already included
         // in the select, but it allows to simplify it.
-        if ($this->options['filters']['main_types'] && $this->options['filters']['main_types'] !== ['value', 'resource', 'uri']) {
+        if ($this->optionsCurrent['filters']['main_types'] && $this->optionsCurrent['filters']['main_types'] !== ['value', 'resource', 'uri']) {
             $expr = $qb->expr();
-            if ($this->options['filters']['main_types'] === ['value']) {
+            if ($this->optionsCurrent['filters']['main_types'] === ['value']) {
                 $qb->andWhere($expr->isNotNull('value.value'));
-            } elseif ($this->options['filters']['main_types'] === ['uri']) {
+            } elseif ($this->optionsCurrent['filters']['main_types'] === ['uri']) {
                 $qb->andWhere($expr->isNotNull('value.uri'));
-            } elseif ($this->options['filters']['main_types'] === ['resource']) {
+            } elseif ($this->optionsCurrent['filters']['main_types'] === ['resource']) {
                 $qb->andWhere($expr->isNotNull('value.value_resource_id'));
-            } elseif ($this->options['filters']['main_types'] === ['value', 'uri']) {
+            } elseif ($this->optionsCurrent['filters']['main_types'] === ['value', 'uri']) {
                 $qb->andWhere($expr->or($expr->isNotNull('value.value'), $expr->isNotNull('value.uri')));
-            } elseif ($this->options['filters']['main_types'] === ['value', 'resource']) {
+            } elseif ($this->optionsCurrent['filters']['main_types'] === ['value', 'resource']) {
                 $qb->andWhere($expr->or($expr->isNotNull('value.value'), $expr->isNotNull('value.value_resource_id')));
-            } elseif ($this->options['filters']['main_types'] === ['uri', 'resource']) {
+            } elseif ($this->optionsCurrent['filters']['main_types'] === ['uri', 'resource']) {
                 $qb->andWhere($expr->or($expr->isNotNull('value.uri'), $expr->isNotNull('value.value_resource_id')));
             }
         }
@@ -1777,27 +1829,27 @@ class References extends AbstractPlugin
 
     protected function filterByDataType(QueryBuilder $qb): self
     {
-        if ($this->options['filters']['data_types']) {
+        if ($this->optionsCurrent['filters']['data_types']) {
             $expr = $qb->expr();
             $qb
                 ->andWhere($expr->in('value.type', ':data_types'))
-                ->setParameter('data_types', $this->options['filters']['data_types'], Connection::PARAM_STR_ARRAY);
+                ->setParameter('data_types', $this->optionsCurrent['filters']['data_types'], Connection::PARAM_STR_ARRAY);
         }
         return $this;
     }
 
     protected function filterByLanguage(QueryBuilder $qb): self
     {
-        if ($this->options['filters']['languages']) {
+        if ($this->optionsCurrent['filters']['languages']) {
             $expr = $qb->expr();
             // Note: For an unknown reason, doctrine may crash with "IS NULL" in
             // some non-reproductible cases. Db version related?
-            $hasEmptyLanguage = in_array('', $this->options['filters']['languages']);
+            $hasEmptyLanguage = in_array('', $this->optionsCurrent['filters']['languages']);
             $in = $expr->in('value.lang', ':languages');
             $filter = $hasEmptyLanguage ? $expr->orX($in, $expr->isNull('value.lang')) : $in;
             $qb
                 ->andWhere($filter)
-                ->setParameter('languages', $this->options['filters']['languages'], Connection::PARAM_STR_ARRAY);
+                ->setParameter('languages', $this->optionsCurrent['filters']['languages'], Connection::PARAM_STR_ARRAY);
         }
         return $this;
     }
@@ -1820,7 +1872,7 @@ class References extends AbstractPlugin
         $expr = $qb->expr();
         // This is a and by default.
         foreach (['begin', 'end'] as $filter) {
-            if ($this->options['filters'][$filter]) {
+            if ($this->optionsCurrent['filters'][$filter]) {
                 if ($filter === 'begin') {
                     $filterB = '';
                     $filterE = '%';
@@ -1831,8 +1883,8 @@ class References extends AbstractPlugin
 
                 // Use "or like" in most of the cases, else a regex (slower).
                 // TODO Add more checks and a php unit.
-                if (count($this->options['filters'][$filter]) === 1) {
-                    $firstFilter = reset($this->options['filters'][$filter]);
+                if (count($this->optionsCurrent['filters'][$filter]) === 1) {
+                    $firstFilter = reset($this->optionsCurrent['filters'][$filter]);
                     if ($firstFilter === '0-9') {
                         $qb
                             ->andWhere("REGEXP($column, :filter_09) = false")
@@ -1846,9 +1898,9 @@ class References extends AbstractPlugin
                                 ParameterType::STRING
                             );
                     }
-                } elseif (count($this->options['filters'][$filter]) <= 20) {
+                } elseif (count($this->optionsCurrent['filters'][$filter]) <= 20) {
                     $orX = [];
-                    foreach (array_values($this->options['filters'][$filter]) as $key => $string) {
+                    foreach (array_values($this->optionsCurrent['filters'][$filter]) as $key => $string) {
                         $orX[] = $expr->like($column, sprintf(':filter_%s_%d)', $filter, ++$key));
                         $qb
                             ->setParameter(
@@ -1860,7 +1912,7 @@ class References extends AbstractPlugin
                     $qb
                         ->andWhere($expr->orX(...$orX));
                 } else {
-                    $regexp = implode('|', array_map('preg_quote', $this->options['filters'][$filter]));
+                    $regexp = implode('|', array_map('preg_quote', $this->optionsCurrent['filters'][$filter]));
                     $qb
                         ->andWhere("REGEXP($column, :filter_filter) = true")
                         ->setParameter("filter_$filter", $regexp, ParameterType::STRING);
@@ -1874,7 +1926,7 @@ class References extends AbstractPlugin
     {
         $expr = $qb->expr();
         if (in_array($type, ['resource_classes', 'resource_templates', 'item_sets', 'resource_titles'])
-            && $this->options['initial']
+            && $this->optionsCurrent['initial']
         ) {
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
             // "initial" is a reserved word from the version 8.0.27 of Mysql,
@@ -1883,34 +1935,34 @@ class References extends AbstractPlugin
                 ->addSelect(
                     // 'CONVERT(UPPER(LEFT(value.value, 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? "ANY_VALUE(UPPER(LEFT(resource.title, {$this->options['initial']}))) AS initial"
-                        : "UPPER(LEFT(resource.title, {$this->options['initial']})) AS initial"
+                        ? "ANY_VALUE(UPPER(LEFT(resource.title, {$this->optionsCurrent['initial']}))) AS initial"
+                        : "UPPER(LEFT(resource.title, {$this->optionsCurrent['initial']})) AS initial"
                 );
         }
 
-        if ($type === 'access' && $this->options['initial']) {
+        if ($type === 'access' && $this->optionsCurrent['initial']) {
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
             $qb
                 ->addSelect(
-                    // 'CONVERT(UPPER(LEFT(COALESCE(access_status.level, {$this->options['initial']}), 1)) USING latin1) AS initial',
+                    // 'CONVERT(UPPER(LEFT(COALESCE(access_status.level, {$this->optionsCurrent['initial']}), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? "ANY_VALUE(UPPER(LEFT(access_status.level, {$this->options['initial']}))) AS initial"
-                        : "UPPER(LEFT(access_status.level, {$this->options['initial']})) AS initial"
+                        ? "ANY_VALUE(UPPER(LEFT(access_status.level, {$this->optionsCurrent['initial']}))) AS initial"
+                        : "UPPER(LEFT(access_status.level, {$this->optionsCurrent['initial']})) AS initial"
                 );
         }
 
-        if ($type === 'properties' && $this->options['initial']) {
+        if ($type === 'properties' && $this->optionsCurrent['initial']) {
             // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
             $qb
                 ->addSelect(
                     // 'CONVERT(UPPER(LEFT(COALESCE(value.value, value.uri, value_resource.title), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? "ANY_VALUE(UPPER(LEFT({$args['mainTypesString']}, {$this->options['initial']}))) AS initial"
-                        : "UPPER(LEFT({$args['mainTypesString']}, {$this->options['initial']})) AS initial"
+                        ? "ANY_VALUE(UPPER(LEFT({$args['mainTypesString']}, {$this->optionsCurrent['initial']}))) AS initial"
+                        : "UPPER(LEFT({$args['mainTypesString']}, {$this->optionsCurrent['initial']})) AS initial"
                 );
         }
 
-        if ($type === 'properties' && $this->options['distinct']) {
+        if ($type === 'properties' && $this->optionsCurrent['distinct']) {
             $qb
                 ->addSelect(
                     // TODO Warning with type "resource", that may be the same than "resource:item", etc.
@@ -1921,7 +1973,7 @@ class References extends AbstractPlugin
                 ->addGroupBy('uri');
         }
 
-        if ($type === 'properties' && $this->options['data_type']) {
+        if ($type === 'properties' && $this->optionsCurrent['data_type']) {
             $qb
                 ->addSelect(
                     $this->supportAnyValue
@@ -1931,28 +1983,28 @@ class References extends AbstractPlugin
             // No need to group by type: it is already managed with group by distinct "val,res,uri".
         }
 
-        if ($type === 'properties' && $this->options['lang']) {
+        if ($type === 'properties' && $this->optionsCurrent['lang']) {
             $qb
                 ->addSelect(
                     $this->supportAnyValue
                         ? 'ANY_VALUE(value.lang) AS lang'
                         : 'value.lang AS lang'
                 );
-            if ($this->options['distinct']) {
+            if ($this->optionsCurrent['distinct']) {
                 $qb
                     ->addGroupBy('lang');
             }
         }
 
         // Add the first resource id.
-        if ($this->options['first']) {
+        if ($this->optionsCurrent['first']) {
             $qb
                 ->addSelect(
                     'MIN(resource.id) AS first'
                 );
         }
 
-        if ($this->options['list_by_max']
+        if ($this->optionsCurrent['list_by_max']
             // TODO May be simplified for "resource_titles".
             && ($type === 'properties' || $type === 'resource_titles')
         ) {
@@ -1972,9 +2024,9 @@ class References extends AbstractPlugin
             // that could be a join with the table of the resources.
             // Most of the times, there are only one language anyway, and
             // rarely more than one fallback anyway.
-            if ($this->options['locale'] && $type !== 'resource_titles') {
+            if ($this->optionsCurrent['locale'] && $type !== 'resource_titles') {
                 $coalesce = [];
-                foreach ($this->options['locale'] as $locale) {
+                foreach ($this->optionsCurrent['locale'] as $locale) {
                     $strLocale = str_replace('-', '_', $locale);
                     $coalesce[] = "ress_$strLocale.text";
                     $qb
@@ -2022,32 +2074,32 @@ class References extends AbstractPlugin
             }
         }
 
-        if ($this->options['filters']['values']) {
+        if ($this->optionsCurrent['filters']['values']) {
             switch ($type) {
                 case 'properties':
                 case 'resource_classes':
                 case 'resource_templates':
                     $qb
                         ->andWhere($expr->in('value.value', ':values'))
-                        ->setParameter('values', $this->options['filters']['values'], Connection::PARAM_STR_ARRAY);
+                        ->setParameter('values', $this->optionsCurrent['filters']['values'], Connection::PARAM_STR_ARRAY);
                     break;
                 case 'resource_titles':
                     // TODO Nothing to filter for resource titles?
                     break;
                 case 'o:property':
-                    $values = $this->getPropertyIds($this->options['filters']['values']) ?: [0];
+                    $values = $this->getPropertyIds($this->optionsCurrent['filters']['values']) ?: [0];
                     $qb
                         ->andWhere($expr->in('property.id', ':ids'))
                         ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:resource_class':
-                    $values = $this->getResourceClassIds($this->options['filters']['values']) ?: [0];
+                    $values = $this->getResourceClassIds($this->optionsCurrent['filters']['values']) ?: [0];
                     $qb
                         ->andWhere($expr->in('resource_class.id', ':ids'))
                         ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:resource_template':
-                    $values = $this->getResourceTemplateIds($this->options['filters']['values']) ?: [0];
+                    $values = $this->getResourceTemplateIds($this->optionsCurrent['filters']['values']) ?: [0];
                     $qb
                         ->andWhere($expr->in('resource_template.id', ':ids'))
                         ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
@@ -2055,22 +2107,22 @@ class References extends AbstractPlugin
                 case 'o:item_set':
                     $qb
                         ->andWhere($expr->in('item_set.id', ':ids'))
-                        ->setParameter('ids', array_map('intval', $this->options['filters']['values']), Connection::PARAM_INT_ARRAY);
+                        ->setParameter('ids', array_map('intval', $this->optionsCurrent['filters']['values']), Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:owner':
                     $qb
                         ->andWhere($expr->in('user.id', ':ids'))
-                        ->setParameter('ids', array_map('intval', $this->options['filters']['values']), Connection::PARAM_INT_ARRAY);
+                        ->setParameter('ids', array_map('intval', $this->optionsCurrent['filters']['values']), Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:site':
                     $qb
                         ->andWhere($expr->in('site.id', ':ids'))
-                        ->setParameter('ids', array_map('intval', $this->options['filters']['values']), Connection::PARAM_INT_ARRAY);
+                        ->setParameter('ids', array_map('intval', $this->optionsCurrent['filters']['values']), Connection::PARAM_INT_ARRAY);
                     break;
                 case 'access':
                     $qb
                         ->andWhere($expr->in('access_status.level', ':values'))
-                        ->setParameter('values', $this->options['filters']['values'], Connection::PARAM_STR_ARRAY);
+                        ->setParameter('values', $this->optionsCurrent['filters']['values'], Connection::PARAM_STR_ARRAY);
                     break;
                 default:
                     break;
@@ -2083,8 +2135,8 @@ class References extends AbstractPlugin
         // Furthermore, it may break mySql 5.7.5 and later, where ONLY_FULL_GROUP_BY
         // is set by default and requires to be grouped.
 
-        $sortBy = $this->options['sort_by'];
-        $sortOrder = $this->options['sort_order'];
+        $sortBy = $this->optionsCurrent['sort_by'];
+        $sortOrder = $this->optionsCurrent['sort_order'];
         switch ($sortBy) {
             case 'total':
                 $qb
@@ -2101,10 +2153,10 @@ class References extends AbstractPlugin
                     ->orderBy($sortBy, $sortOrder);
         }
 
-        if ($this->options['per_page']) {
-            $qb->setMaxResults($this->options['per_page']);
-            if ($this->options['page'] > 1) {
-                $offset = ($this->options['page'] - 1) * $this->options['per_page'];
+        if ($this->optionsCurrent['per_page']) {
+            $qb->setMaxResults($this->optionsCurrent['per_page']);
+            if ($this->optionsCurrent['page'] > 1) {
+                $offset = ($this->optionsCurrent['page'] - 1) * $this->optionsCurrent['per_page'];
                 $qb->setFirstResult($offset);
             }
         }
@@ -2114,7 +2166,7 @@ class References extends AbstractPlugin
 
     protected function outputMetadata(QueryBuilder $qb, $type): array
     {
-        if ($this->options['output'] === 'values') {
+        if ($this->optionsCurrent['output'] === 'values') {
             return $qb->execute()->fetchFirstColumn() ?: [];
         }
 
@@ -2124,7 +2176,7 @@ class References extends AbstractPlugin
             return [];
         }
 
-        if ($this->options['output'] === 'associative') {
+        if ($this->optionsCurrent['output'] === 'associative') {
             // Array column cannot be used in one step, because the null value
             // (no title) should be converted to "", not to "0".
             // $result = array_column($result, 'total', 'val');
@@ -2133,7 +2185,7 @@ class References extends AbstractPlugin
                 array_column($result, 'total')
             );
 
-            if (!$this->options['include_without_meta']) {
+            if (!$this->optionsCurrent['include_without_meta']) {
                 unset($result['']);
             }
 
@@ -2141,7 +2193,7 @@ class References extends AbstractPlugin
         }
 
         $first = reset($result);
-        if ($this->options['initial']) {
+        if ($this->optionsCurrent['initial']) {
             if (extension_loaded('intl')) {
                 $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
                 $result = array_map(function ($v) use ($transliterator) {
@@ -2181,7 +2233,7 @@ class References extends AbstractPlugin
 
         $hasListBy = array_key_exists('resources', $first);
         if ($hasListBy) {
-            $listByMax = $this->options['list_by_max'];
+            $listByMax = $this->optionsCurrent['list_by_max'];
             $explodeResources = function (array $result) use ($listByMax) {
                 return array_map(function ($v) use ($listByMax) {
                     $list = explode(chr(0x1D), (string) $v['resources']);
@@ -2194,8 +2246,8 @@ class References extends AbstractPlugin
             };
             $result = $explodeResources($result);
 
-            if ($this->options['fields']) {
-                $fields = array_fill_keys($this->options['fields'], true);
+            if ($this->optionsCurrent['fields']) {
+                $fields = array_fill_keys($this->optionsCurrent['fields'], true);
                 // FIXME Fix the api call inside a loop. Use the new table reference_metadata.
                 $result = array_map(function ($v) use ($fields) {
                     // Check required when a locale is used or for debug.
@@ -2203,7 +2255,7 @@ class References extends AbstractPlugin
                         return $v;
                     }
                     // Search resources is not available.
-                    if ($this->options['resource_name'] === 'resource') {
+                    if ($this->optionsCurrent['resource_name'] === 'resource') {
                         $v['resources'] = array_map(function ($title, $id) use ($fields) {
                             try {
                                 return array_intersect_key(
@@ -2217,7 +2269,7 @@ class References extends AbstractPlugin
                             }
                         }, $v['resources'], array_keys($v['resources']));
                     } else {
-                        $resources = $this->api->search($this->options['resource_name'], ['id' => array_keys($v['resources']), 'sort_by' => 'title', 'sort_order' => 'asc'])->getContent();
+                        $resources = $this->api->search($this->optionsCurrent['resource_name'], ['id' => array_keys($v['resources']), 'sort_by' => 'title', 'sort_order' => 'asc'])->getContent();
                         $v['resources'] = array_map(function ($r) use ($fields) {
                             return array_intersect_key($r->jsonSerialize(), $fields);
                         }, $resources);
@@ -2227,7 +2279,7 @@ class References extends AbstractPlugin
             }
         }
 
-        if ($this->options['include_without_meta']) {
+        if ($this->optionsCurrent['include_without_meta']) {
             return $result;
         }
 
@@ -2273,10 +2325,10 @@ class References extends AbstractPlugin
             ->setParameter('properties', $this->getPropertyTerms($propertyIds), Connection::PARAM_STR_ARRAY)
         ;
 
-        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
+                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
         }
 
         $this->searchQuery($qb);
@@ -2308,10 +2360,10 @@ class References extends AbstractPlugin
             ->andWhere($expr->in('resource.resource_class_id', ':resource_classes'))
             ->setParameter('resource_classes', array_map('intval', $resourceClassIds), Connection::PARAM_INT_ARRAY);
 
-        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
+                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
         }
 
         $this->searchQuery($qb);
@@ -2343,10 +2395,10 @@ class References extends AbstractPlugin
             ->andWhere($expr->in('resource.resource_template_id', ':resource_templates'))
             ->setParameter('resource_templates', array_map('intval', $resourceTemplateIds), Connection::PARAM_INT_ARRAY);
 
-        if ($this->options['entity_class'] !== \Omeka\Entity\Resource::class) {
+        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
             $qb
                 ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->options['entity_class'], ParameterType::STRING);
+                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
         }
 
         $this->searchQuery($qb);
@@ -2369,7 +2421,7 @@ class References extends AbstractPlugin
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
-        if ($this->options['entity_class'] !== \Omeka\Entity\Item::class) {
+        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Item::class) {
             return 0;
         }
 
@@ -2404,11 +2456,11 @@ class References extends AbstractPlugin
         }
 
         // TODO Search in any resources in Omeka S v4.1.
-        if (empty($this->options['entity_class']) || $this->options['entity_class'] === \Omeka\Entity\Resource::class) {
+        if (empty($this->optionsCurrent['entity_class']) || $this->optionsCurrent['entity_class'] === \Omeka\Entity\Resource::class) {
             return $this;
         }
 
-        $resourceName = $this->mapEntityClassToResourceName($this->options['entity_class']);
+        $resourceName = $this->mapEntityClassToResourceName($this->optionsCurrent['entity_class']);
         if (empty($resourceName)) {
             return $this;
         }
