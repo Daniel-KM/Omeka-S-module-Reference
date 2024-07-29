@@ -43,57 +43,73 @@ class References extends AbstractHelper
     /**
      * Get the references.
      *
+     * @uses \Reference\Mvc\Controller\Plugin\References::__invoke()
      * @uses \Reference\Mvc\Controller\Plugin\References::list()
      *
-     * @param array|string $metadata Classes, properties terms, template names, or
-     * other Omeka metadata names. Similar types of metadata may be grouped to
-     * get aggregated references, for example ['Dates' => ['dcterms:date', 'dcterms:issued']],
-     * with the key used as key and label in the result.
-     * @param array $query An Omeka search query.
+     * @param array $metadata The list of metadata to get references for.
+     * Classes, properties terms, template names, or other Omeka metadata names.
+     * Similar types of metadata may be grouped to get aggregated references,
+     * for example ['Dates' => ['dcterms:date', 'dcterms:issued']], with the key
+     * used as key and label in the result. Each value may be a comma-separated
+     * list of metadata, that will be exploded to an array of metadata to group.
+     * @param array $query An Omeka search query to limit the base pool.
      * @param array $options Options for output.
-     * - resource_name: items (default), "item_sets", "media", "resources".
-     * - sort_by: "alphabetic" (default), "total", or any available column.
-     * - sort_order: "asc" (default) or "desc".
-     * - filters: array Limit values to the specified data. Currently managed:
-     *   - "languages": list of languages. Values without language are returned
-     *     with a null, the string "null", or an empty string "" (deprecated).
-     *     It is recommended to append it when a language is set. This option is
-     *     used only for properties.
-     *   - "datatypes": array Filter property values according to the data types.
-     *     Default datatypes are "literal", "resource", "resource:item", "resource:itemset",
-     *     "resource:media" and "uri"; other existing ones are managed.
-     *     Warning: "resource" is not the same than specific resources.
-     *     Use module Bulk Edit or Bulk Check to specify all resources automatically.
-     *   - "begin": array Filter property values that begin with these strings,
-     *     generally one or more initials.
-     *   - "end": array Filter property values that end with these strings.
-     * - values: array Allow to limit the answer to the specified values.
-     * - first: false (default), or true (get first resource).
-     * - list_by_max: 0 (default), or the max number of resources for each reference
-     *   The max number should be below 1024 (mysql limit for group_concat).
-     * - fields: the fields to use for the list of resources, if any. If not
-     *   set, the output is an associative array with id as key and title as
-     *   value. If set, value is an array of the specified fields.
-     * - initial: false (default), or true (get first letter of each result), or
-     *   integer (number of first characters to get for each "initial", useful
-     *   for example to extract years from iso 8601 dates).
-     * - distinct: false (default), or true (distinct values by type).
-     * - datatype: false (default), or true (include datatype of values).
-     * - lang: false (default), or true (include language of value to result).
-     * - locale: empty (default) or a string or an ordered array Allow to get the
-     *   returned values in the first specified language when a property has
-     *   translated values. Use "null" to get a value without language.
-     *   Unlike Omeka core, it get the translated title of linked resources.
-     * TODO Check if the option include_without_meta is still needed with data types.
-     * - include_without_meta: false (default), or true (include total of
-     *   resources with no metadata).
-     * - single_reference_format: false (default), or true to keep the old output
-     *   without the deprecated warning for single references without named key.
-     * - output: "list" (default) or "associative" (possible only without added
-     *   options: first, initial, distinct, datatype, or lang).
+     * - Options to specify, filter, limit and sort references:
+     *   - resource_name (string): items (default), "item_sets", "media",
+     *     "resources".
+     *   - page (int): the page to output, the first one in most of the cases.
+     *   - per_page (int): the number of references to output.
+     *   - sort_by (string): "alphabetic" (default), "total", or any available column.
+     *   - sort_order (string): "asc" (default) or "desc".
+     *   - filters (array): Limit values to the specified data:
+     *     - languages (array): list of languages. Values without language are
+     *       defined with a null or the string "null" (the empty string "" is
+     *       deprecated). It is recommended to append the empty language when a
+     *       language is set. This option is used only for properties.
+     *     - main_types (array): array with "literal", "resource", or "uri".
+     *       Filter property values according to the main data type. Default is
+     *       to search all data types.
+     *     - datatypes (array): Filter property values according to the data
+     *       types. Default datatypes are "literal", "resource", "resource:item",
+     *       "resource:itemset", "resource:media" and "uri". Data types from
+     *       other modules are managed too.
+     *       Warning: "resource" is not the same than specific resources.
+     *       Use module Bulk Edit or Easy Admin to specify all resources
+     *       automatically.
+     *     - begin (array): Filter property values that begin with these
+     *       strings, generally one or more initials.
+     *     - end (array): Filter property values that end with these strings.
+     *   - values (array): Allow to limit the answer to the specified values,
+     *     for example a short list of keywords.
+     * - Options for output:
+     *   - first (bool): Append the id of the first resource (default false).
+     *   - list_by_max (int): 0 (default), or the max number of resources for
+     *     each reference. The max number should be below 1024, that is the hard
+     *     coded database limit of mysql and mariadb for function group_concat.
+     *   - fields (array): the fields to use for the list of resources, if any.
+     *     If not set, the output is an associative array with id as key and
+     *     title as value. If set, value is an array of the specified fields.
+     *   - initial (int): If set and not 0 or false, append the specified first
+     *     letters of each result. It is useful for example to extract years
+     *     from iso 8601 dates.
+     *   - distinct (bool): Distinct values by type (default false).
+     *   - datatype (bool): Include the data type of values (default false).
+     *   - lang (bool): Include the language of value (default false).
+     *   - locale (string|array): Allow to get the returned values in the
+     *     specified languages when a property has translated values. Use "null"
+     *     to get a value without language.
+     *     Unlike Omeka core, it get the translated title of linked resources.
+     *   - include_without_meta (bool): Include the total of resources with no
+     *     metadata (default false).
+     *   - single_reference_format (bool): Use the old output format without the
+     *     deprecated warning for single references without named key.
+     *   - output (string): "list" (default), "associative" or "values". When
+     *     options "first", "list_by_max", "initial", "distinct", "datatype", or
+     *     "lang" are used, the output is forced to "list".
      * Some options and some combinations are not managed for some metadata.
-     * @return array Associative array with total and first record ids. When a
-     * string is set as metadata, only its references are returned.
+     * @return array Associative array with total and first record ids. Unlike
+     * controller plugin, when a string is set as metadata, only its references
+     * are returned.
      */
     public function list($metadata = null, ?array $query = [], ?array $options = []): array
     {
