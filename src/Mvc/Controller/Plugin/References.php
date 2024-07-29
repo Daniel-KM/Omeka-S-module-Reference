@@ -1108,13 +1108,8 @@ class References extends AbstractPlugin
             ->setParameter('resource_classes', array_map('intval', $resourceClassIds), Connection::PARAM_INT_ARRAY)
             ->groupBy('val');
 
-        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
-        }
-
         return $this
+            ->filterByResourceType($qb)
             ->filterByVisibility($qb, 'resource_classes')
             ->filterByBeginOrEnd($qb, 'resource.title')
             ->manageOptions($qb, 'resource_classes')
@@ -1162,13 +1157,8 @@ class References extends AbstractPlugin
             ->setParameter('resource_templates', array_map('intval', $resourceTemplateIds), Connection::PARAM_INT_ARRAY)
             ->groupBy('val');
 
-        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
-        }
-
         return $this
+            ->filterByResourceType($qb)
             ->filterByVisibility($qb, 'resource_templates')
             ->filterByBeginOrEnd($qb, 'resource.title')
             ->manageOptions($qb, 'resource_templates')
@@ -1333,13 +1323,9 @@ class References extends AbstractPlugin
             ->innerJoin('property', 'vocabulary', 'vocabulary', $expr->eq('vocabulary.id', 'property.vocabulary_id'))
             ->groupBy('val')
         ;
-        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
-        }
 
         return $this
+            ->filterByResourceType($qb)
             ->filterByVisibility($qb, 'o:property')
             ->filterByLanguage($qb)
             ->manageOptions($qb, 'o:property')
@@ -1397,13 +1383,9 @@ class References extends AbstractPlugin
             ->innerJoin('resource_class', 'vocabulary', 'vocabulary', $expr->eq('vocabulary.id', 'resource_class.vocabulary_id'))
             ->groupBy('val')
         ;
-        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
-        }
 
         return $this
+            ->filterByResourceType($qb)
             ->filterByVisibility($qb, 'o:resource_class')
             ->manageOptions($qb, 'o:resource_class')
             ->outputMetadata($qb, 'o:resource_class');
@@ -1446,13 +1428,9 @@ class References extends AbstractPlugin
             ->leftJoin('resource', 'resource_template', 'resource_template', $expr->eq('resource_template.id', 'resource.resource_template_id'))
             ->groupBy('val')
         ;
-        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
-        }
 
         return $this
+            ->filterByResourceType($qb)
             ->filterByVisibility($qb, 'o:resource_template')
             ->manageOptions($qb, 'o:resource_template')
             ->outputMetadata($qb, 'o:resource_template');
@@ -1563,13 +1541,8 @@ class References extends AbstractPlugin
             ->groupBy('val')
         ;
 
-        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
-        }
-
         return $this
+            ->filterByResourceType($qb)
             ->filterByVisibility($qb, 'o:owner')
             ->manageOptions($qb, 'o:owner')
             ->outputMetadata($qb, 'o:owner');
@@ -1670,13 +1643,8 @@ class References extends AbstractPlugin
             ->groupBy('val')
         ;
 
-        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
-        }
-
         return $this
+            ->filterByResourceType($qb)
             ->filterByVisibility($qb, 'access')
             ->manageOptions($qb, 'access')
             ->outputMetadata($qb, 'access');
@@ -1703,6 +1671,25 @@ class References extends AbstractPlugin
                 ->innerJoin('resource_item_set', 'site_item_set', 'ref_site_item_set', $expr->eq('ref_site_item_set.item_set_id', 'resource_item_set.id'))
                 ->andWhere($expr->eq('ref_site_item_set.site_id', ':ref_site_item_set_site'))
                 ->setParameter(':ref_site_item_set_site', $siteId, ParameterType::INTEGER);
+        }
+        return $this;
+    }
+
+    protected function filterByResourceType(QueryBuilder $qb): self
+    {
+        $table = $this->getResourceTable($this->optionsCurrent['entity_class']);
+        if ($table) {
+            /*
+            // A join is quicker, because column resource.resource_type is not
+            // indexed by default until module Common version 3.4.62.
+            // Anyway, even if implementations are the same, join is more readable.
+            $qb
+                ->andWhere($qb->expr()->eq('resource.resource_type', ':entity_class'))
+                ->setParameter('entity_class', $this->optionsCurrent['entity_class']), ParameterType::STRING);
+            }
+            */
+            $qb
+                ->innerJoin('resource', $table, 'rs', 'rs.id = resource.id');
         }
         return $this;
     }
@@ -2340,13 +2327,9 @@ class References extends AbstractPlugin
             ->setParameter('properties', $this->easyMeta->propertyTerms($propertyIds), Connection::PARAM_STR_ARRAY)
         ;
 
-        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
-        }
-
-        $this->searchQuery($qb);
+        $this
+            ->filterByResourceType($qb)
+            ->searchQuery($qb);
 
         return (int) $qb->execute()->fetchOne();
     }
@@ -2375,13 +2358,9 @@ class References extends AbstractPlugin
             ->andWhere($expr->in('resource.resource_class_id', ':resource_classes'))
             ->setParameter('resource_classes', array_map('intval', $resourceClassIds), Connection::PARAM_INT_ARRAY);
 
-        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
-        }
-
-        $this->searchQuery($qb);
+        $this
+            ->filterByResourceType($qb)
+            ->searchQuery($qb);
 
         return (int) $qb->execute()->fetchOne();
     }
@@ -2410,13 +2389,9 @@ class References extends AbstractPlugin
             ->andWhere($expr->in('resource.resource_template_id', ':resource_templates'))
             ->setParameter('resource_templates', array_map('intval', $resourceTemplateIds), Connection::PARAM_INT_ARRAY);
 
-        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
-            $qb
-                ->andWhere($expr->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
-        }
-
-        $this->searchQuery($qb);
+        $this
+            ->filterByResourceType($qb)
+            ->searchQuery($qb);
 
         return (int) $qb->execute()->fetchOne();
     }
@@ -3028,6 +3003,23 @@ class References extends AbstractPlugin
             }
         }
         return $this;
+    }
+
+    /**
+     * Get the derivated table for a resource.
+     */
+    protected function getResourceTable(?string $entityClass): ?string
+    {
+        $entityClassesToTables = [
+            \Omeka\Entity\Resource::class => null,
+            \Omeka\Entity\Item::class => 'item',
+            \Omeka\Entity\Media::class => 'media',
+            \Omeka\Entity\ItemSet::class => 'item_set',
+            \Omeka\Entity\ResourceClass::class => 'resource_class',
+            \Omeka\Entity\ResourceTemplate::class => 'resource_template',
+            \Annotate\Entity\Annotation::class => 'annotation',
+        ];
+        return $entityClassesToTables[$entityClass] ?? null;
     }
 
     /**
