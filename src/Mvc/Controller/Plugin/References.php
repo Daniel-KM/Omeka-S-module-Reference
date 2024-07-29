@@ -821,7 +821,7 @@ class References extends AbstractPlugin
             $options['meta_options'] = [];
         }
 
-        $resourceName = in_array($options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
+        $resourceName = in_array($options['resource_name'], ['items', 'item_sets', 'media', 'resources', 'annotations'])
             ? $options['resource_name']
             : $defaultOptions['resource_name'];
         $first = !empty($options['first']);
@@ -2722,6 +2722,7 @@ class References extends AbstractPlugin
             'item_sets' => 'item_set',
             'media' => 'media',
             'resources' => 'resource',
+            'annotations' => 'annotation',
         ];
         return $resourceTableMap[$resourceName] ?? 'resource';
     }
