@@ -91,7 +91,7 @@ class ThemeManagerFactory implements FactoryInterface
                 // Array_merge_recursive() converts duplicate keys to array.
                 // Array_map() removes keys.
                 : array_replace_recursive($moduleBlockTemplates, $configSpec['block_templates']);
-                $theme->setConfigSpec($configSpec);
+            $theme->setConfigSpec($configSpec);
         }
 
         // Note that, unlike the ModuleManagerFactory, this does not register

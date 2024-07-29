@@ -323,9 +323,6 @@ class References extends AbstractPlugin
     public function setQuery(?array $query = []): self
     {
         // Remove useless keys.
-        $filter = function ($v) {
-            return is_string($v) ? (bool) strlen($v) : (bool) $v;
-        };
         if ($query) {
             unset($query['sort_by']);
             unset($query['sort_order']);
@@ -333,7 +330,8 @@ class References extends AbstractPlugin
             unset($query['page']);
             unset($query['offset']);
             unset($query['limit']);
-            $this->query = array_filter($query, $filter);
+            $filterEmpty = fn ($v) => $v !== '' && $v !== [] && $v !== null;
+            $this->query = array_filter($query, $filterEmpty);
         } else {
             $this->query = [];
         }
@@ -803,12 +801,12 @@ class References extends AbstractPlugin
 
         // Explode with separator "|" if present, else ",".
         // For complex cases, an array should be used.
-        $explode = fn($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
+        $explode = fn ($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
 
         // Clean options filters in place.
-        $clean = fn(array $array): array => array_unique(array_filter(array_map('trim', $array)));
-        $cleanAllow0 = fn(array $array): array => array_unique(array_filter(array_map('trim', $array), fn($v) => $v || $v === '0'));
-        $cleanNoTrim = fn(array $array): array => array_unique(array_filter($array));
+        $clean = fn (array $array): array => array_unique(array_filter(array_map('trim', $array)));
+        $cleanAllow0 = fn (array $array): array => array_unique(array_filter(array_map('trim', $array), fn ($v) => $v || $v === '0'));
+        $cleanNoTrim = fn (array $array): array => array_unique(array_filter($array));
 
         // Set keys for all keys and only them, keeping order.
         $options += array_intersect_key(array_replace($defaultOptions, $options), $defaultOptions);
@@ -1179,7 +1177,7 @@ class References extends AbstractPlugin
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
-        if ($this->optionsCurrent['resource_name'] !=='items') {
+        if ($this->optionsCurrent['resource_name'] !== 'items') {
             return [];
         }
 
@@ -1904,7 +1902,7 @@ class References extends AbstractPlugin
         return $this;
     }
 
-    protected function manageOptions(QueryBuilder $qb,?string $type, array $args = []): self
+    protected function manageOptions(QueryBuilder $qb, ?string $type, array $args = []): self
     {
         $expr = $qb->expr();
         if (in_array($type, ['resource_classes', 'resource_templates', 'item_sets', 'resource_titles'])
@@ -2234,9 +2232,7 @@ class References extends AbstractPlugin
             $explodeResources = function (array $result) use ($listByMax): array {
                 return array_map(function ($v) use ($listByMax) {
                     $list = explode(chr(0x1D), (string) $v['resources']);
-                    $list = array_map(function ($vv) {
-                        return explode(chr(0x1F), $vv, 2);
-                    }, $listByMax ? array_slice($list, 0, $listByMax) : $list);
+                    $list = array_map(fn ($vv) => explode(chr(0x1F), $vv, 2), $listByMax ? array_slice($list, 0, $listByMax) : $list);
                     $v['resources'] = array_column($list, 1, 0);
                     return $v;
                 }, $result);
@@ -2267,9 +2263,7 @@ class References extends AbstractPlugin
                         }, $v['resources'], array_keys($v['resources']));
                     } else {
                         $resources = $this->api->search($this->optionsCurrent['resource_name'], ['id' => array_keys($v['resources']), 'sort_by' => 'title', 'sort_order' => 'asc'])->getContent();
-                        $v['resources'] = array_map(function ($r) use ($fields) {
-                            return array_intersect_key($r->jsonSerialize(), $fields);
-                        }, $resources);
+                        $v['resources'] = array_map(fn ($r) => array_intersect_key($r->jsonSerialize(), $fields), $resources);
                     }
                     return $v;
                 }, $result);
@@ -2737,7 +2731,7 @@ class References extends AbstractPlugin
             $result[] = [
                 '@type' => 'o:Property',
                 'o:term' => $propertyTerms[$termOrId],
-                'o:label' =>$propertyLabels[$termOrId],
+                'o:label' => $propertyLabels[$termOrId],
                 'o:id' => $id,
             ];
         }
@@ -2777,7 +2771,7 @@ class References extends AbstractPlugin
             $result[] = [
                 '@type' => 'o:ResourceClass',
                 'o:term' => $classTerms[$termOrId],
-                'o:label' =>$classLabels[$termOrId],
+                'o:label' => $classLabels[$termOrId],
                 'o:id' => $id,
             ];
         }

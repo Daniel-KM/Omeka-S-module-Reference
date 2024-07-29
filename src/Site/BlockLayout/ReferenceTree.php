@@ -61,7 +61,7 @@ class ReferenceTree extends AbstractBlockLayout implements TemplateableBlockLayo
         $data['total'] = (bool) $data['total'];
         $data['branch'] = (bool) $data['branch'];
         $data['expanded'] = (bool) $data['expanded'];
-        $data['query_type'] = $data['query_type'] ?? 'eq';
+        $data['query_type'] ??= 'eq';
 
         $block->setData($data);
     }

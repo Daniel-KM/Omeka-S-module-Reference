@@ -69,7 +69,7 @@ class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutIn
         $data['sort_by'] = isset($data['sort_by']) && $data['sort_by'] === 'total' ? 'total' : 'alphabetic';
         $data['sort_order'] = isset($data['sort_order']) && strcasecmp($data['sort_order'], 'desc') === 0 ? 'desc' : 'asc';
 
-        $data['languages'] = $data['languages'] ?? [];
+        $data['languages'] ??= [];
 
         // Normalize options one time.
         $data['by_initial'] = !empty($data['by_initial']);
