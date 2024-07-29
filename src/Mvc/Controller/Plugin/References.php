@@ -2436,7 +2436,14 @@ class References extends AbstractPlugin
      */
     protected function searchQuery(QueryBuilder $qb, ?string $type = null): self
     {
-        if (empty($this->query)) {
+        // When facets are searched, the same query can be used multiple times,
+        // so store results. It may improve performance with big bases when
+        // using a query with "contains" (in), so sql "like". Nevertheless, it
+        // is useful only when parameters are the same, that is not frequent.
+        // The dql is not available with dbal connection query builder.
+        static $sqlToIds = [];
+
+        if (!count($this->query)) {
             return $this;
         }
 
@@ -2445,29 +2452,38 @@ class References extends AbstractPlugin
             return $this;
         }
 
-        $mainQuery = $this->query;
+        $sql = $qb->getSQL();
+        $params = $qb->getParameters();
+        $key = serialize([$sql, $params]);
+        if (!isset($sqlToIds[$key])) {
+            $mainQuery = $this->query;
 
-        // When searching by item set or site, remove the matching query filter.
-        // TODO Is it still needed?
-        if ($type === 'o:item_set') {
-            unset($mainQuery['item_set_id']);
-        }
-        if ($type === 'o:site') {
-            unset($mainQuery['site_id']);
-        }
+            // When searching by item set or site, remove the matching query
+            // filter, else there won't be any results.
+            // TODO Check if item sets and sites are still an exception for references.
+            if ($type === 'o:item_set') {
+                unset($mainQuery['item_set_id']);
+            }
+            if ($type === 'o:site') {
+                unset($mainQuery['site_id']);
+            }
 
-        // In the previous version, the query builder was the orm qb. It is now
-        // the dbal qb, so it doesn't manage entities.
-        // Anyway, the output is only scalar ids.
-        // To avoid issues with parameters of the sub-qb, get ids from here.
-        // TODO Do a real subquery as before instead of a double query. Most of the time (facets), it should be cached by doctrine.
-        // Use an api request.
-        $ids = $this->api->search($this->optionsCurrent['resource_name'], $mainQuery, ['returnScalar' => 'id'])->getContent();
+            // In the previous version, the query builder was the orm qb. It is now
+            // the dbal qb, so it doesn't manage entities.
+            // Anyway, the output is only scalar ids.
+            // To avoid issues with parameters of the sub-qb, get ids from here.
+            // TODO Do a real subquery as before instead of a double query. Most of the time (facets), it should be cached by doctrine.
+            // Use an api request.
+
+            $ids = $this->api->search($this->optionsCurrent['resource_name'], $mainQuery, ['returnScalar' => 'id'])->getContent();
+
+            $sqlToIds[$key] = array_keys($ids);
+        }
 
         // There is no collision: the adapter query uses alias "omeka_" + index.
         $qb
             ->andWhere($qb->expr()->in('resource.id', ':resource_ids'))
-            ->setParameter('resource_ids', array_keys($ids), Connection::PARAM_INT_ARRAY);
+            ->setParameter('resource_ids', $sqlToIds[$key], Connection::PARAM_INT_ARRAY);
 
         return $this;
     }
