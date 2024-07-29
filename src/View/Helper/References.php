@@ -73,7 +73,7 @@ class References extends AbstractHelper
      *     - main_types (array): array with "literal", "resource", or "uri".
      *       Filter property values according to the main data type. Default is
      *       to search all data types.
-     *     - datatypes (array): Filter property values according to the data
+     *     - data_types (array): Filter property values according to the data
      *       types. Default datatypes are "literal", "resource", "resource:item",
      *       "resource:itemset", "resource:media" and "uri". Data types from
      *       other modules are managed too.
@@ -97,7 +97,7 @@ class References extends AbstractHelper
      *     letters of each result. It is useful for example to extract years
      *     from iso 8601 dates.
      *   - distinct (bool): Distinct values by type (default false).
-     *   - datatype (bool): Include the data type of values (default false).
+     *   - data_type (bool): Include the data type of values (default false).
      *   - lang (bool): Include the language of value (default false).
      *   - locale (string|array): Allow to get the returned values in the
      *     specified languages when a property has translated values. Use "null"

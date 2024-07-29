@@ -143,7 +143,7 @@ class References extends AbstractPlugin
         'filters' => [
             'languages' => [],
             'main_types' => [],
-            'datatypes' => [],
+            'data_types' => [],
             'values' => [],
             'begin' => [],
             'end' => [],
@@ -154,7 +154,7 @@ class References extends AbstractPlugin
         'fields' => [],
         'initial' => false,
         'distinct' => false,
-        'datatype' => false,
+        'data_type' => false,
         'lang' => false,
         'include_without_meta' => false,
         'single_reference_format' => false,
@@ -227,8 +227,8 @@ class References extends AbstractPlugin
      *     - main_types (array): array with "literal", "resource", or "uri".
      *       Filter property values according to the main data type. Default is
      *       to search all data types.
-     *     - datatypes (array): Filter property values according to the data
-     *       types. Default datatypes are "literal", "resource", "resource:item",
+     *     - data_types (array): Filter property values according to the data
+     *       types. Default data types are "literal", "resource", "resource:item",
      *       "resource:itemset", "resource:media" and "uri". Data types from
      *       other modules are managed too.
      *       Warning: "resource" is not the same than specific resources.
@@ -251,7 +251,7 @@ class References extends AbstractPlugin
      *     letters of each result. It is useful for example to extract years
      *     from iso 8601 dates.
      *   - distinct (bool): Distinct values by type (default false).
-     *   - datatype (bool): Include the data type of values (default false).
+     *   - data_type (bool): Include the data type of values (default false).
      *   - lang (bool): Include the language of value (default false).
      *   - locale (string|array): Allow to get the returned values in the
      *     specified languages when a property has translated values. Use "null"
@@ -262,7 +262,7 @@ class References extends AbstractPlugin
      *   - single_reference_format (bool): Use the old output format without the
      *     deprecated warning for single references without named key.
      *   - output (string): "list" (default), "associative" or "values". When
-     *     options "first", "list_by_max", "initial", "distinct", "datatype", or
+     *     options "first", "list_by_max", "initial", "distinct", "data_type", or
      *     "lang" are used, the output is forced to "list".
      * Some options and some combinations are not managed for some metadata.
      *
@@ -362,6 +362,20 @@ class References extends AbstractPlugin
             );
         }
 
+        if (isset($options['datatype'])) {
+            $options['data_type'] ??= $options['datatype'];
+            $this->logger->err(
+                'To get references, to pass the option "data" as main key is deprecated in favor of "data_type".' // @ŧranslate
+            );
+        }
+
+        if (isset($options['filters']['datatypes'])) {
+            $options['filters']['data_types'] ??= $options['filters']['datatypes'];
+            $this->logger->err(
+                'To get references, to pass the option "datatypes" in filters is deprecated in favor of "data_types".' // @ŧranslate
+            );
+        }
+
         $options += $this->optionsDefaults;
 
         $resourceName = in_array($options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
@@ -372,7 +386,7 @@ class References extends AbstractPlugin
         $fields = empty($options['fields']) ? [] : $options['fields'];
         $initial = empty($options['initial']) ? false : (int) $options['initial'];
         $distinct = !empty($options['distinct']);
-        $datatype = !empty($options['datatype']);
+        $dataType = !empty($options['data_type']);
         $lang = !empty($options['lang']);
         // Currently, only one locale can be used, but it is managed as
         // array internally.
@@ -400,12 +414,12 @@ class References extends AbstractPlugin
             'fields' => $fields,
             'initial' => $initial,
             'distinct' => $distinct,
-            'datatype' => $datatype,
+            'data_type' => $dataType,
             'lang' => $lang,
             'include_without_meta' => !empty($options['include_without_meta']),
             'single_reference_format' => !empty($options['single_reference_format']),
             'locale' => $locales,
-            'output' => in_array($options['output'], ['associative', 'values']) && !$first && !$listByMax && !$initial && !$distinct && !$datatype && !$lang
+            'output' => in_array($options['output'], ['associative', 'values']) && !$first && !$listByMax && !$initial && !$distinct && !$dataType && !$lang
                 ? $options['output']
                 : 'list',
             // Not options, but used internally and simpler to set here.
@@ -454,10 +468,10 @@ class References extends AbstractPlugin
         $this->options['filters']['main_types'] = array_values(array_intersect(['value', 'resource', 'uri'], $this->options['filters']['main_types']));
         $this->options['filters']['main_types'] = array_combine($this->options['filters']['main_types'], $this->options['filters']['main_types']);
 
-        if (!is_array($this->options['filters']['datatypes'])) {
-            $this->options['filters']['datatypes'] = $explode($this->options['filters']['datatypes']);
+        if (!is_array($this->options['filters']['data_types'])) {
+            $this->options['filters']['data_types'] = $explode($this->options['filters']['data_types']);
         }
-        $this->options['filters']['datatypes'] = $clean($this->options['filters']['datatypes']);
+        $this->options['filters']['data_types'] = $clean($this->options['filters']['data_types']);
 
         if (!is_array($this->options['filters']['values'])) {
             $this->options['filters']['values'] = $explode($this->options['filters']['values']);
@@ -761,7 +775,7 @@ class References extends AbstractPlugin
         $this->options['initial'] = false;
         // TODO Check options for initials.
         $this->options['distinct'] = false;
-        $this->options['datatype'] = false;
+        $this->options['data_type'] = false;
         $this->options['lang'] = false;
         $this->options['fields'] = [];
         // TODO Use option "values" instead of "associative"?
@@ -1763,11 +1777,11 @@ class References extends AbstractPlugin
 
     protected function filterByDataType(QueryBuilder $qb): self
     {
-        if ($this->options['filters']['datatypes']) {
+        if ($this->options['filters']['data_types']) {
             $expr = $qb->expr();
             $qb
-                ->andWhere($expr->in('value.type', ':datatypes'))
-                ->setParameter('datatypes', $this->options['filters']['datatypes'], Connection::PARAM_STR_ARRAY);
+                ->andWhere($expr->in('value.type', ':data_types'))
+                ->setParameter('data_types', $this->options['filters']['data_types'], Connection::PARAM_STR_ARRAY);
         }
         return $this;
     }
@@ -1907,7 +1921,7 @@ class References extends AbstractPlugin
                 ->addGroupBy('uri');
         }
 
-        if ($type === 'properties' && $this->options['datatype']) {
+        if ($type === 'properties' && $this->options['data_type']) {
             $qb
                 ->addSelect(
                     $this->supportAnyValue
