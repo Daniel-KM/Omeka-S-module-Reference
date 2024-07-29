@@ -12,19 +12,19 @@ class ReferencesFactory implements FactoryInterface
     {
         $plugins = $services->get('ControllerPluginManager');
         return new References(
-            $services->get('Omeka\EntityManager'),
-            $services->get('Omeka\Connection'),
-            $services->get('Omeka\ApiAdapterManager'),
             $services->get('Omeka\Acl'),
-            $services->get('Omeka\AuthenticationService')->getIdentity(),
+            $services->get('Omeka\ApiAdapterManager'),
             $services->get('Omeka\ApiManager'),
+            $services->get('Omeka\Connection'),
+            $services->get('Omeka\EntityManager'),
             $plugins->get('translate'),
+            $services->get('Omeka\AuthenticationService')->getIdentity(),
             $plugins->has('accessLevel'),
             $this->supportAnyValue($services)
         );
     }
 
-    protected function supportAnyValue(ContainerInterface $services)
+    protected function supportAnyValue(ContainerInterface $services): bool
     {
         /** @var \Doctrine\DBAL\Connection $connection */
         $connection = $services->get('Omeka\Connection');

@@ -16,47 +16,47 @@ use Omeka\Permissions\Acl;
 class References extends AbstractPlugin
 {
     /**
-     * @param EntityManager
-     */
-    protected $entityManager;
-
-    /**
-     * @param Connection
-     */
-    protected $connection;
-
-    /**
-     * @param AdapterManager
-     */
-    protected $adapterManager;
-
-    /**
-     * @var Acl
+     * @var \Omeka\Permissions\Acl
      */
     protected $acl;
 
     /**
-     * @var ?User
+     * @param \Omeka\Api\Adapter\Manager
      */
-    protected $user;
+    protected $adapterManager;
 
     /**
-     * @var ApiManager
+     * @var \Omeka\Api\Manager
      */
     protected $api;
 
     /**
-     * @var Translate
+     * @var \Doctrine\DBAL\Connection
+     */
+    protected $connection;
+
+    /**
+     * @var \Doctrine\ORM\EntityManager
+     */
+    protected $entityManager;
+
+    /**
+     * @var \Omeka\Mvc\Controller\Plugin\Translate
      */
     protected $translate;
 
     /**
-     * @param bool
+     * @var ?\Omeka\Entity\User
+     */
+    protected $user;
+
+    /**
+     * @var bool
      */
     protected $hasAccess;
 
     /**
-     * @param bool
+     * @var bool
      */
     protected $supportAnyValue;
 
@@ -131,23 +131,23 @@ class References extends AbstractPlugin
     protected $process;
 
     public function __construct(
-        EntityManager $entityManager,
-        Connection $connection,
-        AdapterManager $adapterManager,
         Acl $acl,
-        ?User $user,
+        AdapterManager $adapterManager,
         ApiManager $api,
+        Connection $connection,
+        EntityManager $entityManager,
         Translate $translate,
+        ?User $user,
         bool $hasAccess,
-        $supportAnyValue
+        bool $supportAnyValue
     ) {
-        $this->entityManager = $entityManager;
-        $this->connection = $connection;
-        $this->adapterManager = $adapterManager;
         $this->acl = $acl;
-        $this->user = $user;
+        $this->adapterManager = $adapterManager;
         $this->api = $api;
+        $this->connection = $connection;
+        $this->entityManager = $entityManager;
         $this->translate = $translate;
+        $this->user = $user;
         $this->hasAccess = $hasAccess;
         $this->supportAnyValue = $supportAnyValue;
     }
