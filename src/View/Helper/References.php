@@ -4,28 +4,30 @@ namespace Reference\View\Helper;
 
 use Laminas\View\Helper\AbstractHelper;
 use Reference\Mvc\Controller\Plugin\References as ReferencesPlugin;
+use Reference\Mvc\Controller\Plugin\ReferenceTree;
 
 class References extends AbstractHelper
 {
     /**
-     * @var ReferencesPlugin
+     * @var \Reference\Mvc\Controller\Plugin\References
      */
     protected $references;
 
     /**
-     * @param ReferencesPlugin $references
+     * @var \Reference\Mvc\Controller\Plugin\ReferenceTree
      */
-    public function __construct(ReferencesPlugin $references)
+    protected $referenceTree;
+
+    public function __construct(ReferencesPlugin $references, ReferenceTree $referenceTree)
     {
         $this->references = $references;
+        $this->referenceTree = $referenceTree;
     }
 
     /**
      * Get the references.
      *
      * @uses \Reference\Mvc\Controller\Plugin\References
-     *
-     * @return self
      */
     public function __invoke(): self
     {
@@ -277,7 +279,7 @@ class References extends AbstractHelper
      */
     public function tree($referenceLevels, ?array $query = [], ?array $options = []): array
     {
-        return $this->references->getController()->referenceTree()->getTree($referenceLevels, $query, $options);
+        return $this->referenceTree->getTree($referenceLevels, $query, $options);
     }
 
     /**
