@@ -2447,11 +2447,6 @@ class References extends AbstractPlugin
             return $this;
         }
 
-        // TODO Search in any resources in Omeka S v4.1.
-        if (empty($this->optionsCurrent['resource_name']) || $this->optionsCurrent['resource_name'] === 'resources') {
-            return $this;
-        }
-
         $sql = $qb->getSQL();
         $params = $qb->getParameters();
         $key = serialize([$sql, $params]);
