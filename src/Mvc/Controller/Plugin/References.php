@@ -131,7 +131,6 @@ class References extends AbstractPlugin
 
     /**
      * Options by default.
-     * Some keys that are not options, but simpler to manage here.
      *
      * @var array
      */
@@ -163,10 +162,6 @@ class References extends AbstractPlugin
         'locale' => [],
         'output' => 'list',
         'meta_options' => [],
-        // Not options, but used internally and simpler to set here for now.
-        'entity_class' => \Omeka\Entity\Item::class,
-        'resource_table' => 'item',
-        'is_base_resource' => false,
     ];
 
     /**
@@ -847,7 +842,6 @@ class References extends AbstractPlugin
                 $locales[$pos] = '';
             }
         }
-        $entityClass = $this->easyMeta->entityClass($resourceName);
 
         $options = [
             // Options to filter, limit and sort results (used for sql).
@@ -871,10 +865,6 @@ class References extends AbstractPlugin
             'output' => in_array($options['output'], ['associative', 'values']) && !$first && !$listByMax && !$initial && !$distinct && !$dataType && !$lang
                 ? $options['output']
                 : 'list',
-            // Not options, but used internally and simpler to set here.
-            'entity_class' => $entityClass,
-            'resource_table' => $this->mapResourceNameToTable($resourceName),
-            'is_base_resource' => empty($entityClass) || $entityClass === \Omeka\Entity\Resource::class,
         ];
 
         if (!is_array($options['fields'])) {
@@ -981,15 +971,22 @@ class References extends AbstractPlugin
         ;
 
         // The values should be distinct for each type.
-        if ($this->optionsCurrent['is_base_resource']) {
+        $table = $this->getTableDerivateResource($this->optionsCurrent['resource_name']);
+        if (empty($table)) {
             $qb
                 ->innerJoin('value', 'resource', 'resource', $expr->eq('resource.id', 'value.resource_id'))
                 ->leftJoin('value', 'resource', 'value_resource', $expr->eq('value_resource.id', 'value.value_resource_id'));
         } else {
+            $entityClass = $this->easyMeta->entityClass($this->optionsCurrent['resource_name']);
             $qb
-                ->innerJoin('value', 'resource', 'resource', $expr->and($expr->eq('resource.id', 'value.resource_id'), $expr->eq('resource.resource_type', ':entity_class')))
-                ->leftJoin('value', 'resource', 'value_resource', $expr->and($expr->eq('value_resource.id', 'value.value_resource_id'), $expr->eq('value_resource.resource_type', ':entity_class')))
-                ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
+                ->innerJoin('value', 'resource', 'resource', $expr->eq('resource.id', 'value.resource_id'))
+                ->innerJoin('value', $table, 'vrs', $expr->eq('vrs.id', 'value.resource_id'))
+                // It is not possible to use two left joins here.
+                ->leftJoin('value', 'resource', 'value_resource', $expr->and(
+                    $expr->eq('value_resource.id', 'value.value_resource_id'),
+                    $expr->eq('value_resource.resource_type', ':entity_class')
+                ))
+                ->setParameter('entity_class', $entityClass, ParameterType::STRING);
         }
 
         // This filter is used by properties only and normally already included
@@ -1182,7 +1179,7 @@ class References extends AbstractPlugin
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
-        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Item::class) {
+        if ($this->optionsCurrent['resource_name'] !=='items') {
             return [];
         }
 
@@ -1230,7 +1227,6 @@ class References extends AbstractPlugin
     protected function listDataForResourceTitle(): array
     {
         $qb = $this->connection->createQueryBuilder();
-        $expr = $qb->expr();
 
         // Note: Doctrine ORM requires simple label, without quote or double quote:
         // "o:label" is not possible, neither "count". Use of Doctrine DBAL now.
@@ -1261,8 +1257,6 @@ class References extends AbstractPlugin
             // resource: we count resources, not properties.
             ->distinct()
             ->from('resource', 'resource')
-            ->where($expr->eq('resource.resource_type', ':entity_class'))
-            ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING)
             ->groupBy('val')
         ;
 
@@ -1271,6 +1265,7 @@ class References extends AbstractPlugin
             // ->filterByMainType($qb)
             // ->filterByDataType($qb)
             // ->filterByLanguage($qb)
+            ->filterByResourceType($qb)
             ->filterByVisibility($qb, 'resource_titles')
             ->filterByBeginOrEnd($qb, 'resource.title')
             ->manageOptions($qb, 'resource_titles')
@@ -1677,7 +1672,7 @@ class References extends AbstractPlugin
 
     protected function filterByResourceType(QueryBuilder $qb): self
     {
-        $table = $this->getResourceTable($this->optionsCurrent['entity_class']);
+        $table = $this->getTableDerivateResource($this->optionsCurrent['resource_name']);
         if ($table) {
             /*
             // A join is quicker, because column resource.resource_type is not
@@ -1685,11 +1680,11 @@ class References extends AbstractPlugin
             // Anyway, even if implementations are the same, join is more readable.
             $qb
                 ->andWhere($qb->expr()->eq('resource.resource_type', ':entity_class'))
-                ->setParameter('entity_class', $this->optionsCurrent['entity_class']), ParameterType::STRING);
+                ->setParameter('entity_class', $this->easyMeta->entityClass($this->optionsCurrent['resource_name']), ParameterType::STRING);
             }
             */
             $qb
-                ->innerJoin('resource', $table, 'rs', 'rs.id = resource.id');
+                ->innerJoin('resource', $table, 'rs', $qb->expr()->eq('rs.id', 'resource.id'));
         }
         return $this;
     }
@@ -2411,7 +2406,7 @@ class References extends AbstractPlugin
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
-        if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Item::class) {
+        if ($this->optionsCurrent['resource_name'] !== 'items') {
             return 0;
         }
 
@@ -2446,12 +2441,7 @@ class References extends AbstractPlugin
         }
 
         // TODO Search in any resources in Omeka S v4.1.
-        if (empty($this->optionsCurrent['entity_class']) || $this->optionsCurrent['entity_class'] === \Omeka\Entity\Resource::class) {
-            return $this;
-        }
-
-        $resourceName = $this->easyMeta->resourceName($this->optionsCurrent['entity_class']);
-        if (empty($resourceName)) {
+        if (empty($this->optionsCurrent['resource_name']) || $this->optionsCurrent['resource_name'] === 'resources') {
             return $this;
         }
 
@@ -2472,7 +2462,7 @@ class References extends AbstractPlugin
         // To avoid issues with parameters of the sub-qb, get ids from here.
         // TODO Do a real subquery as before instead of a double query. Most of the time (facets), it should be cached by doctrine.
         // Use an api request.
-        $ids = $this->api->search($resourceName, $mainQuery, ['returnScalar' => 'id'])->getContent();
+        $ids = $this->api->search($this->optionsCurrent['resource_name'], $mainQuery, ['returnScalar' => 'id'])->getContent();
 
         // There is no collision: the adapter query uses alias "omeka_" + index.
         $qb
@@ -3008,18 +2998,19 @@ class References extends AbstractPlugin
     /**
      * Get the derivated table for a resource.
      */
-    protected function getResourceTable(?string $entityClass): ?string
+    protected function getTableDerivateResource(?string $resourceName): ?string
     {
-        $entityClassesToTables = [
-            \Omeka\Entity\Resource::class => null,
-            \Omeka\Entity\Item::class => 'item',
-            \Omeka\Entity\Media::class => 'media',
-            \Omeka\Entity\ItemSet::class => 'item_set',
-            \Omeka\Entity\ResourceClass::class => 'resource_class',
-            \Omeka\Entity\ResourceTemplate::class => 'resource_template',
-            \Annotate\Entity\Annotation::class => 'annotation',
+        // Other omeka api resources are not resources.
+        $resourceNamesToTables = [
+            'resources' => null,
+            'items' => 'item',
+            'media' => 'media',
+            'item_sets' => 'item_set',
+            'resource_classes' => 'resource_class',
+            'resource_templates' => 'resource_template',
+            'annotations' => 'annotation',
         ];
-        return $entityClassesToTables[$entityClass] ?? null;
+        return $resourceNamesToTables[$resourceName] ?? null;
     }
 
     /**
