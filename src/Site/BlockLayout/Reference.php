@@ -40,48 +40,45 @@ class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutIn
         $data = $block->getData();
 
         // Check if data are already formatted, checking the main value.
-        if (!empty($data['args']['fields'])) {
+        if (!empty($data['fields'])) {
             return;
         }
 
-        if (!empty($data['args']['properties'])) {
-            $data['args']['fields'] = $data['args']['properties'];
-            $data['args']['type'] = 'properties';
-        } elseif (!empty($data['args']['resource_classes'])) {
-            $data['args']['fields'] = $data['args']['resource_classes'];
-            $data['args']['type'] = 'resource_classes';
+        if (!empty($data['properties'])) {
+            $data['fields'] = $data['properties'];
+            $data['type'] = 'properties';
+        } elseif (!empty($data['resource_classes'])) {
+            $data['fields'] = $data['resource_classes'];
+            $data['type'] = 'resource_classes';
         } else {
             $errorStore->addError('properties', 'To create references, there must be one or more properties or resource classes.'); // @translate
             return;
         }
 
-        if (empty($data['args']['resource_name'])) {
-            $data['args']['resource_name'] = 'items';
+        unset($data['properties']);
+        unset($data['resource_classes']);
+
+        if (empty($data['resource_name'])) {
+            $data['resource_name'] = 'items';
         }
 
         $query = [];
-        parse_str(ltrim((string) $data['args']['query'], "? \t\n\r\0\x0B"), $query);
-        $data['args']['query'] = $query;
+        parse_str(ltrim((string) $data['query'], "? \t\n\r\0\x0B"), $query);
+        $data['query'] = $query;
 
-        $data['args']['order'] = empty($data['args']['order'])
-            ? ['alphabetic' => 'ASC']
-            : [strtok($data['args']['order'], ' ') => strtok(' ')];
+        $data['sort_by'] = isset($data['sort_by']) && $data['sort_by'] === 'total' ? 'total' : 'alphabetic';
+        $data['sort_order'] = isset($data['sort_order']) && strcasecmp($data['sort_order'], 'desc') === 0 ? 'desc' : 'asc';
 
-        $data['args']['languages'] = strlen(trim($data['args']['languages']))
-            ? array_unique(array_map('trim', explode('|', $data['args']['languages'])))
-            : [];
+        $data['languages'] = $data['languages'] ?? [];
 
         // Normalize options one time.
-        $data['options']['by_initial'] = !empty($data['options']['by_initial']);
-        $data['options']['link_to_single'] = !empty($data['options']['link_to_single']);
-        $data['options']['custom_url'] = !empty($data['options']['custom_url']);
-        $data['options']['skiplinks'] = !empty($data['options']['skiplinks']);
-        $data['options']['headings'] = !empty($data['options']['headings']);
-        $data['options']['total'] = !empty($data['options']['total']);
-        $data['options']['list_by_max'] = (int) $data['options']['list_by_max'];
-
-        unset($data['args']['properties']);
-        unset($data['args']['resource_classes']);
+        $data['by_initial'] = !empty($data['by_initial']);
+        $data['link_to_single'] = !empty($data['link_to_single']);
+        $data['custom_url'] = !empty($data['custom_url']);
+        $data['skiplinks'] = !empty($data['skiplinks']);
+        $data['headings'] = !empty($data['headings']);
+        $data['total'] = !empty($data['total']);
+        $data['list_by_max'] = (int) $data['list_by_max'];
 
         $block->setData($data);
     }
@@ -98,55 +95,39 @@ class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutIn
         $defaultSettings = $services->get('Config')['reference']['block_settings']['reference'];
         $blockFieldset = \Reference\Form\ReferenceFieldset::class;
 
-        // TODO Fill the fieldset like other blocks (cf. blockplus).
+        $data = $block ? ($block->data() ?? []) + $defaultSettings : $defaultSettings;
 
-        if ($block) {
-            $data = $block->data() + $defaultSettings;
-            if (is_array($data['args']['query'])) {
-                $data['args']['query'] = urldecode(
-                    http_build_query($data['args']['query'], '', '&', PHP_QUERY_RFC3986)
-                );
-            }
-        } else {
-            $data = $defaultSettings;
-            $data['args']['query'] = 'site_id=' . $site->id();
-        }
-
-        if (empty($data['args']['fields'])) {
-            // Nothing.
-        } else {
-            foreach ($data['args']['fields'] as $field) {
-                if ($this->easyMeta->resourceClassTerm($field)) {
-                    $data['args']['resource_classes'][] = $field;
+        $dataForm = [];
+        foreach ($data as $key => $value) {
+            if ($key === 'fields') {
+                if (empty($value)) {
+                    continue;
                 } else {
-                    $data['args']['properties'][] = $field;
+                    // Properties and resource classes cannot be mixed
+                    $key = $this->easyMeta->resourceClassTerm($key)
+                        ? 'resource_classes'
+                        : 'properties';
+                }
+            } elseif ($key === 'query') {
+                if (is_array($value)) {
+                    $value = urldecode(http_build_query($value, '', '&', PHP_QUERY_RFC3986));
+                } else {
+                    $value = $block ? $value : 'site_id=' . $site->id();
                 }
             }
-        }
-        unset($data['args']['fields']);
-
-        $data['args']['order'] = (key($data['args']['order']) === 'alphabetic' ? 'alphabetic' : 'total') . ' ' . reset($data['args']['order']);
-
-        if (isset($data['args']['languages']) && is_array($data['args']['languages'])) {
-            $data['args']['languages'] = implode('|', $data['args']['languages']);
+            $dataForm['o:block[__blockIndex__][o:data][' . $key . ']'] = $value;
         }
 
+        /** @var \Reference\Form\ReferenceFieldset $fieldset */
         $fieldset = $formElementManager->get($blockFieldset);
+        $fieldset->populateValues($dataForm);
         $fieldset
-            ->get('o:block[__blockIndex__][o:data][args]')
-            ->get('query')
+            ->get('o:block[__blockIndex__][o:data][query]')
             ->setOption('query_resource_type', $data['resource_type'] ?? 'items');
-        // TODO Fix set data for radio buttons.
-        $fieldset->setData([
-            'o:block[__blockIndex__][o:data][args]' => $data['args'],
-            'o:block[__blockIndex__][o:data][options]' => $data['options'],
-        ]);
-
-        $fieldset->prepare();
 
         $html = '<p>' . $view->translate('Choose one or more properties or one or more resource classes.') . '</p>';
         $html .= '<p>' . $view->translate('With the layout template "Reference Index", the pages for the selected terms should be created manually with the terms as slug, with the ":" replaced by a "-".') . '</p>';
-        $html .= $view->formCollection($fieldset);
+        $html .= $view->formCollection($fieldset, false);
         return $html;
     }
 
@@ -159,20 +140,18 @@ class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutIn
     public function render(PhpRenderer $view, SitePageBlockRepresentation $block, $templateViewScript = self::PARTIAL_NAME)
     {
         $data = $block->data();
-        $args = $data['args'] + ['order' => ['alphabetic' => 'ASC']];
-        $options = $data['options'];
 
-        // TODO Update forms and saved params.
+        // TODO Is this check still needed?
+        $options = $data + [
+            'sort_by' => 'alphabetic',
+            'sort_order' => 'ASC',
+        ];
+
         // Use new format for references.
-        $fields = ['fields' => $args['fields']];
-        $query = $args['query'];
-        unset(
-            $args['fields'],
-            $args['query']
-        );
-        $options = $options + $args;
+        $fields = ['fields' => $options['fields'] ?? []];
+        $query = $options['query'] ?? [];
 
-        $languages = @$options['languages'];
+        $languages = $options['languages'] ?? [];
         unset($options['languages']);
         if ($languages) {
             $options['filters']['languages'] = $languages;
@@ -183,9 +162,13 @@ class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutIn
             $options['filters']['begin'] = $view->params()->fromQuery('begin') ?: 'a';
         }
 
-        $options['sort_order'] = reset($args['order']);
-        $options['sort_by'] = key($args['order']) === 'alphabetic' ? 'alphabetic' : 'total';
         $options['per_page'] = 0;
+
+        unset(
+            $options['fields'],
+            $options['query'],
+            $options['languages']
+        );
 
         $vars = [
             'block' => $block,

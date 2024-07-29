@@ -2,25 +2,23 @@
 
 namespace Reference\Form;
 
+use Common\Form\Element as CommonElement;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
-use Laminas\Form\Form;
 use Omeka\Form\Element as OmekaElement;
 
-// FIXME Use a fieldset, not a form.
-class ReferenceFieldset extends Form
+class ReferenceFieldset extends Fieldset
 {
     public function init(): void
     {
-        $this->add([
-            'name' => 'o:block[__blockIndex__][o:data][args]',
-            'type' => Fieldset::class,
-        ]);
+        // Args and options cannot use sub-fieldsets for compatibility with
+        // group block plus.
 
-        $argsFieldset = $this->get('o:block[__blockIndex__][o:data][args]');
-        $argsFieldset
+        // Args.
+
+        $this
             ->add([
-                'name' => 'properties',
+                'name' => 'o:block[__blockIndex__][o:data][properties]',
                 'type' => OmekaElement\PropertySelect::class,
                 'options' => [
                     'label' => 'Properties', // @translate
@@ -33,10 +31,11 @@ class ReferenceFieldset extends Form
                     'class' => 'chosen-select',
                     'multiple' => 'multiple',
                     'data-placeholder' => 'Select properties…', // @translate
+                    'data-fieldset' => 'args',
                 ],
             ])
             ->add([
-                'name' => 'resource_classes',
+                'name' => 'o:block[__blockIndex__][o:data][resource_classes]',
                 'type' => OmekaElement\ResourceClassSelect::class,
                 'options' => [
                     'label' => 'Resource classes', // @translate
@@ -49,10 +48,11 @@ class ReferenceFieldset extends Form
                     'class' => 'chosen-select',
                     'multiple' => 'multiple',
                     'data-placeholder' => 'Select resource classes…', // @translate
+                    'data-fieldset' => 'args',
                 ],
             ])
             ->add([
-                'name' => 'resource_name',
+                'name' => 'o:block[__blockIndex__][o:data][resource_name]',
                 // TODO Radio doesn't work when there are multiple blocks.
                 // 'type' => Element\Radio::class,
                 'type' => Element\Select::class,
@@ -71,27 +71,11 @@ class ReferenceFieldset extends Form
                 'attributes' => [
                     'id' => 'reference-args-resource-name',
                     'class' => 'chosen-select',
+                    'data-fieldset' => 'args',
                 ],
             ])
             ->add([
-                'name' => 'order',
-                'type' => Element\Select::class,
-                'options' => [
-                    'label' => 'Select order', // @translate
-                    'value_options' => [
-                        'alphabetic ASC' => 'Alphabetic ascendant',  // @translate
-                        'alphabetic DESC' => 'Alphabetic descendant',  // @translate
-                        'total ASC' => 'Total ascendant',  // @translate
-                        'total DESC' => 'Total descendant',  // @translate
-                    ],
-                ],
-                'attributes' => [
-                    'id' => 'reference-args-order',
-                    'class' => 'chosen-select',
-                ],
-            ])
-            ->add([
-                'name' => 'query',
+                'name' => 'o:block[__blockIndex__][o:data][query]',
                 'type' => OmekaElement\Query::class,
                 'options' => [
                     'label' => 'Search pool query', // @translate
@@ -101,44 +85,75 @@ class ReferenceFieldset extends Form
                 ],
                 'attributes' => [
                     'id' => 'reference-args-query',
+                    'data-fieldset' => 'args',
                 ],
             ])
             ->add([
-                'name' => 'languages',
-                'type' => Element\Text::class,
+                'name' => 'o:block[__blockIndex__][o:data][languages]',
+                'type' => CommonElement\ArrayText::class,
                 'options' => [
                     'label' => 'Filter by language', // @translate
                     'info' => 'Limit the results to the specified languages. Use "|" to separate multiple languages. Use "||" for values without language.', // @translate
+                    'value_separator' => '|',
                 ],
                 'attributes' => [
                     'id' => 'reference-args-languages',
                     'placeholder' => 'fra|way|apy||',
+                    'data-fieldset' => 'args',
                 ],
-            ]);
+            ])
+            ->add([
+                'name' => 'o:block[__blockIndex__][o:data][sort_by]',
+                // 'type' => CommonElement\OptionalRadio::class,
+                'type' => Element\Select::class,
+                'options' => [
+                    'label' => 'Select order', // @translate
+                    'value_options' => [
+                        'alphabetic' => 'Alphabetic',  // @translate
+                        'total' => 'Total',  // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'reference-args-sort-by',
+                    'class' => 'chosen-select',
+                    'data-fieldset' => 'args',
+                ],
+            ])
+            ->add([
+                'name' => 'o:block[__blockIndex__][o:data][sort_order]',
+                // 'type' => CommonElement\OptionalRadio::class,
+                'type' => Element\Select::class,
+                'options' => [
+                    'label' => 'Select order', // @translate
+                    'value_options' => [
+                        'asc' => 'Ascendant',  // @translate
+                        'desc' => 'Descendant',  // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'reference-args-sort-order',
+                    'class' => 'chosen-select',
+                    'data-fieldset' => 'args',
+                ],
+            ])
+        ;
+
+        // Options for display.
 
         $this
             ->add([
-                'name' => 'o:block[__blockIndex__][o:data][options]',
-                'type' => Fieldset::class,
-                'options' => [
-                    'label' => 'Display', // @translate
-                ],
-            ]);
-
-        $optionsFieldset = $this->get('o:block[__blockIndex__][o:data][options]');
-        $optionsFieldset
-            ->add([
-                'name' => 'heading',
+                'name' => 'o:block[__blockIndex__][o:data][heading]',
                 'type' => Element\Text::class,
                 'options' => [
                     'label' => 'Heading', // @translate
                 ],
                 'attributes' => [
                     'id' => 'reference-options-heading',
+                    'data-fieldset' => 'options',
                 ],
             ])
             ->add([
-                'name' => 'by_initial',
+                'name' => 'o:block[__blockIndex__][o:data][by_initial]',
                 'type' => Element\Checkbox::class,
                 'options' => [
                     'label' => 'One page by initial', // @translate
@@ -146,10 +161,14 @@ class ReferenceFieldset extends Form
                 ],
                 'attributes' => [
                     'id' => 'reference-options-by-initial',
+                    'data-fieldset' => 'options',
+                ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
                 ],
             ])
             ->add([
-                'name' => 'link_to_single',
+                'name' => 'o:block[__blockIndex__][o:data][link_to_single]',
                 'type' => Element\Checkbox::class,
                 'options' => [
                     'label' => 'Link to single records', // @translate
@@ -157,10 +176,14 @@ class ReferenceFieldset extends Form
                 ],
                 'attributes' => [
                     'id' => 'reference-options-link-to-single',
+                    'data-fieldset' => 'options',
+                ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
                 ],
             ])
             ->add([
-                'name' => 'custom_url',
+                'name' => 'o:block[__blockIndex__][o:data][custom_url]',
                 'type' => Element\Checkbox::class,
                 'options' => [
                     'label' => 'Custom url for single', // @translate
@@ -168,40 +191,56 @@ class ReferenceFieldset extends Form
                 ],
                 'attributes' => [
                     'id' => 'reference-options-custom-url',
+                    'data-fieldset' => 'options',
+                ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
                 ],
             ])
             ->add([
-                'name' => 'skiplinks',
+                'name' => 'o:block[__blockIndex__][o:data][skiplinks]',
                 'type' => Element\Checkbox::class,
                 'options' => [
                     'label' => 'Add skiplinks above and below list', // @translate
                 ],
                 'attributes' => [
                     'id' => 'reference-options-skiplinks',
+                    'data-fieldset' => 'options',
+                ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
                 ],
             ])
             ->add([
-                'name' => 'headings',
+                'name' => 'o:block[__blockIndex__][o:data][headings]',
                 'type' => Element\Checkbox::class,
                 'options' => [
                     'label' => 'Add first letter as headings between references', // @translate
                 ],
                 'attributes' => [
                     'id' => 'reference-options-headings',
+                    'data-fieldset' => 'options',
+                ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
                 ],
             ])
             ->add([
-                'name' => 'total',
+                'name' => 'o:block[__blockIndex__][o:data][total]',
                 'type' => Element\Checkbox::class,
                 'options' => [
                     'label' => 'Add the total of resources for each reference', // @translate
                 ],
                 'attributes' => [
                     'id' => 'reference-options-total',
+                    'data-fieldset' => 'options',
+                ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
                 ],
             ])
             ->add([
-                'name' => 'list_by_max',
+                'name' => 'o:block[__blockIndex__][o:data][list_by_max]',
                 'type' => Element\Number::class,
                 'options' => [
                     'label' => 'Maximum resources to display by reference', // @translate
@@ -212,10 +251,14 @@ class ReferenceFieldset extends Form
                     'required' => false,
                     'min' => 0,
                     'max' => 1024,
+                    'data-fieldset' => 'options',
+                ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\ToInt::class],
                 ],
             ])
             ->add([
-                'name' => 'subject_property',
+                'name' => 'o:block[__blockIndex__][o:data][subject_property]',
                 'type' => OmekaElement\PropertySelect::class,
                 'options' => [
                     'label' => 'Subject values', // @translate
@@ -228,18 +271,9 @@ class ReferenceFieldset extends Form
                     'required' => false,
                     'class' => 'chosen-select',
                     'data-placeholder' => 'Select a property…', // @translate
+                    'data-fieldset' => 'options',
                 ],
-            ]);
-
-        $inputFilter = $this->getInputFilter();
-        $inputFilter
-            ->add([
-                'name' => 'o:block[__blockIndex__][o:data][args]',
-                'required' => false,
             ])
-            ->add([
-                'name' => 'o:block[__blockIndex__][o:data][options]',
-                'required' => false,
-            ]);
+        ;
     }
 }

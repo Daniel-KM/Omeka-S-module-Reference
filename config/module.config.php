@@ -164,27 +164,24 @@ return [
         // Default for blocks.
         'block_settings' => [
             'reference' => [
-                'args' => [
-                    'fields' => [
-                        'dcterms:subject',
-                    ],
-                    'type' => 'properties',
-                    'resource_name' => 'items',
-                    'order' => ['alphabetic' => 'ASC'],
-                    'query' => '',
-                    'languages' => [],
+                'fields' => [
+                    'dcterms:subject',
                 ],
-                'options' => [
-                    'heading' => 'Subjects', // @translate
-                    'by_initial' => false,
-                    'link_to_single' => true,
-                    'custom_url' => false,
-                    'skiplinks' => true,
-                    'headings' => true,
-                    'total' => true,
-                    'list_by_max' => 0,
-                    'subject_property' => null,
-                ],
+                'type' => 'properties',
+                'resource_name' => 'items',
+                'query' => [],
+                'languages' => [],
+                'sort_by' => 'alphabetic',
+                'sort_order' => 'asc',
+                'heading' => 'Subjects', // @translate
+                'by_initial' => false,
+                'link_to_single' => true,
+                'custom_url' => false,
+                'skiplinks' => true,
+                'headings' => true,
+                'total' => true,
+                'list_by_max' => 0,
+                'subject_property' => null,
             ],
             'referenceTree' => [
                 'heading' => 'Tree of subjects', // @translate
