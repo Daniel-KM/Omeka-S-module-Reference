@@ -155,7 +155,7 @@ class References extends AbstractPlugin
     /**
      * Get the references.
      *
-     * @param array $metadata The list of metadata to get references for.
+     * @param array|string $metadata List of metadata to get references for.
      * Classes, properties terms, template names, or other Omeka metadata names.
      * Similar types of metadata may be grouped to get aggregated references,
      * for example ['Dates' => ['dcterms:date', 'dcterms:issued']], with the key
@@ -220,7 +220,7 @@ class References extends AbstractPlugin
      * @todo Option locale: Use locale first or any locale (so all results preferably in the specified locale).
      * @todo Option locale: Check if the option include_without_meta is still needed with data types.
      */
-    public function __invoke(?array $metadata = [], ?array $query = [], ?array $options = [])
+    public function __invoke($metadata = [], ?array $query = [], ?array $options = []): self
     {
         return $this
             ->setMetadata($metadata)
@@ -231,9 +231,17 @@ class References extends AbstractPlugin
     /**
      * @see self::__invoke()
      */
-    public function setMetadata(?array $metadata = [])
+    public function setMetadata($metadata = []): self
     {
-        $this->metadata = $metadata ? array_filter($metadata) : [];
+        if (!$metadata) {
+            $this->metadata = [];
+        } elseif (is_array($metadata)) {
+            $this->metadata = array_filter($metadata);
+        } elseif (is_string($metadata)) {
+            $this->metadata = ['fields' => $metadata];
+        } else {
+            $this->metadata = [];
+        }
 
         // Check if one of the metadata fields is a short aggregated one.
         foreach ($this->metadata as $key => &$fieldElement) {

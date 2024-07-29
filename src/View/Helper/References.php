@@ -48,7 +48,7 @@ class References extends AbstractHelper
      * @uses \Reference\Mvc\Controller\Plugin\References::__invoke()
      * @uses \Reference\Mvc\Controller\Plugin\References::list()
      *
-     * @param array $metadata The list of metadata to get references for.
+     * @param array|string $metadata List of metadata to get references for.
      * Classes, properties terms, template names, or other Omeka metadata names.
      * Similar types of metadata may be grouped to get aggregated references,
      * for example ['Dates' => ['dcterms:date', 'dcterms:issued']], with the key
