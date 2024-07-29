@@ -122,6 +122,45 @@ class References extends AbstractPlugin
     protected $options = [];
 
     /**
+     * Options by default.
+     * Some keys that are not options, but simpler to manage here.
+     *
+     * @var array
+     */
+    protected $optionsDefaults = [
+        // Options to filter, limit and sort results (used for sql).
+        'resource_name' => 'items',
+        'sort_by' => 'alphabetic',
+        'sort_order' => 'ASC',
+        'page' => 1,
+        'per_page' => 0,
+        'filters' => [
+            'languages' => [],
+            'main_types' => [],
+            'datatypes' => [],
+            'begin' => [],
+            'end' => [],
+        ],
+        'values' => [],
+        // Output options.
+        'first' => false,
+        'list_by_max' => 0,
+        'fields' => [],
+        'initial' => false,
+        'distinct' => false,
+        'datatype' => false,
+        'lang' => false,
+        'include_without_meta' => false,
+        'single_reference_format' => false,
+        'locale' => [],
+        'output' => 'list',
+        // Not options, but used internally and simpler to set here.
+        'entity_class' => \Omeka\Entity\Item::class,
+        'resource_table' => 'item',
+        'is_base_resource' => false,
+    ];
+
+    /**
      * The current process: "list", "count" or "initials".
      *
      * Only the process "initials" is set for now.
@@ -301,133 +340,106 @@ class References extends AbstractPlugin
      */
     public function setOptions(?array $options): self
     {
-        $defaults = [
-            'resource_name' => 'items',
-            // Not an option, but simpler to set it here.
-            'entity_class' => \Omeka\Entity\Item::class,
-            'resource_table' => 'item',
-            'is_base_resource' => false,
-            // Options sql.
-            'per_page' => 0,
-            'page' => 1,
-            'sort_by' => 'alphabetic',
-            'sort_order' => 'ASC',
-            'filters' => [
-                'languages' => [],
-                'main_types' => [],
-                'datatypes' => [],
-                'begin' => [],
-                'end' => [],
-            ],
-            'values' => [],
-            // Output options.
-            'first' => false,
-            'list_by_max' => 0,
-            'fields' => [],
-            'initial' => false,
-            'distinct' => false,
-            'datatype' => false,
-            'lang' => false,
-            'include_without_meta' => false,
-            'single_reference_format' => false,
-            'locale' => [],
-            'output' => 'list',
-        ];
-        if ($options) {
-            $resourceName = isset($options['resource_name'])
-                && in_array($options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
-                ? $options['resource_name']
-                : $defaults['resource_name'];
-            $first = !empty($options['first']);
-            $listByMax = empty($options['list_by_max']) ? 0 : (int) $options['list_by_max'];
-            $fields = empty($options['fields']) ? [] : $options['fields'];
-            $initial = empty($options['initial']) ? false : (int) $options['initial'];
-            $distinct = !empty($options['distinct']);
-            $datatype = !empty($options['datatype']);
-            $lang = !empty($options['lang']);
-            // Currently, only one locale can be used, but it is managed as
-            // array internally.
-            if (empty($options['locale'])) {
-                $locales = [];
-            } else {
-                $locales = is_array($options['locale']) ? $options['locale'] : [$options['locale']];
-                $locales = array_filter(array_unique(array_map('trim', array_map('strval', $locales))), function ($v) {
-                    return ctype_alnum(str_replace(['-', '_'], ['', ''], $v));
-                });
-                if (($pos = array_search('null', $locales)) !== false) {
-                    $locales[$pos] = '';
-                }
-            }
-            $entityClass = $this->mapResourceNameToEntityClass($resourceName);
-            $this->options = [
-                'resource_name' => $resourceName,
-                'entity_class' => $entityClass,
-                'resource_table' => $this->mapResourceNameToTable($resourceName),
-                'is_base_resource' => empty($entityClass) || $entityClass === \Omeka\Entity\Resource::class,
-                'per_page' => isset($options['per_page']) && is_numeric($options['per_page']) ? (int) $options['per_page'] : $defaults['per_page'],
-                'page' => $options['page'] ?? $defaults['page'],
-                'sort_by' => $options['sort_by'] ?? 'alphabetic',
-                'sort_order' => isset($options['sort_order']) && strtolower((string) $options['sort_order']) === 'desc' ? 'DESC' : 'ASC',
-                'filters' => isset($options['filters']) && is_array($options['filters']) ? $options['filters'] + $defaults['filters'] : $defaults['filters'],
-                'values' => $options['values'] ?? [],
-                'first' => $first,
-                'list_by_max' => $listByMax,
-                'fields' => $fields,
-                'initial' => $initial,
-                'distinct' => $distinct,
-                'datatype' => $datatype,
-                'lang' => $lang,
-                'include_without_meta' => !empty($options['include_without_meta']),
-                'single_reference_format' => !empty($options['single_reference_format']),
-                'locale' => $locales,
-                'output' => isset($options['output']) && in_array($options['output'], ['associative', 'values']) && !$first && !$listByMax && !$initial && !$distinct && !$datatype && !$lang
-                    ? $options['output']
-                    : 'list',
-            ];
-
-            // The check for length avoids to add a filter on values without any
-            // language. It should be specified as "||" (or leading/trailing "|").
-            // The value "null" can be used too and is recommended instead of an
-            // empty string.
-            if (!is_array($this->options['filters']['languages'])) {
-                $this->options['filters']['languages'] = explode('|', str_replace(',', '|', $this->options['filters']['languages'] ?: ''));
-            }
-            $noEmptyLanguages = array_diff($this->options['filters']['languages'], ['null', null, '', 0, '0']);
-            if (count($noEmptyLanguages) !== count($this->options['filters']['languages'])) {
-                $this->options['filters']['languages'] = $noEmptyLanguages;
-                $this->options['filters']['languages'][] = '';
-            }
-            $this->options['filters']['languages'] = array_unique(array_map('trim', $this->options['filters']['languages']));
-
-            // May be an array or a string (literal, uri or resource, in this order).
-            if (!is_array($this->options['filters']['main_types'])) {
-                $this->options['filters']['main_types'] = explode('|', str_replace(',', '|', $this->options['filters']['main_types'] ?: ''));
-            }
-            $this->options['filters']['main_types'] = array_unique(array_filter(array_map('trim', $this->options['filters']['main_types'])));
-            $this->options['filters']['main_types'] = array_values(array_intersect(['value', 'resource', 'uri'], $this->options['filters']['main_types']));
-            $this->options['filters']['main_types'] = array_combine($this->options['filters']['main_types'], $this->options['filters']['main_types']);
-            if (!is_array($this->options['filters']['datatypes'])) {
-                $this->options['filters']['datatypes'] = explode('|', str_replace(',', '|', $this->options['filters']['datatypes'] ?: ''));
-            }
-            $this->options['filters']['datatypes'] = array_unique(array_filter(array_map('trim', $this->options['filters']['datatypes'])));
-
-            // No trim for begin/end.
-            if (!is_array($this->options['filters']['begin'])) {
-                $this->options['filters']['begin'] = explode('|', str_replace(',', '|', $this->options['filters']['begin'] ?? ''));
-            }
-            $this->options['filters']['begin'] = array_unique(array_filter($this->options['filters']['begin']));
-            if (!is_array($this->options['filters']['end'])) {
-                $this->options['filters']['end'] = explode('|', str_replace(',', '|', $this->options['filters']['end'] ?? ''));
-            }
-            $this->options['filters']['end'] = array_unique(array_filter($this->options['filters']['end']));
-
-            if (!is_array($this->options['fields'])) {
-                $this->options['fields'] = explode('|', str_replace(',', '|', $this->options['fields'] ?? ''));
-            }
-            $this->options['fields'] = array_unique(array_filter(array_map('trim', $this->options['fields'])));
-        } else {
-            $this->options = $defaults;
+        if (!$options) {
+            $this->options = $this->optionsDefaults;
+            return $this;
         }
+
+        $options += $this->optionsDefaults;
+
+        $resourceName = in_array($options['resource_name'], ['items', 'item_sets', 'media', 'resources'])
+            ? $options['resource_name']
+            : $this->optionsDefaults['resource_name'];
+        $first = !empty($options['first']);
+        $listByMax = empty($options['list_by_max']) ? 0 : (int) $options['list_by_max'];
+        $fields = empty($options['fields']) ? [] : $options['fields'];
+        $initial = empty($options['initial']) ? false : (int) $options['initial'];
+        $distinct = !empty($options['distinct']);
+        $datatype = !empty($options['datatype']);
+        $lang = !empty($options['lang']);
+        // Currently, only one locale can be used, but it is managed as
+        // array internally.
+        if (empty($options['locale'])) {
+            $locales = [];
+        } else {
+            $locales = is_array($options['locale']) ? $options['locale'] : [$options['locale']];
+            $locales = array_filter(array_unique(array_map('trim', array_map('strval', $locales))), fn ($v) => ctype_alnum(str_replace(['-', '_'], ['', ''], $v)));
+            if (($pos = array_search('null', $locales)) !== false) {
+                $locales[$pos] = '';
+            }
+        }
+        $entityClass = $this->mapResourceNameToEntityClass($resourceName);
+        $this->options = [
+            // Options to filter, limit and sort results (used for sql).
+            'resource_name' => $resourceName,
+            'sort_by' => $options['sort_by'] ?? 'alphabetic',
+            'sort_order' => strtoupper((string) $options['sort_order']) === 'DESC' ? 'DESC' : 'ASC',
+            'page' => !is_numeric($options['page']) || !(int) $options['page'] ? $this->optionsDefaults['page'] : (int) $options['page'],
+            'per_page' => !is_numeric($options['per_page']) || !(int) $options['per_page'] ? $this->optionsDefaults['per_page'] : (int) $options['per_page'],
+            'filters' => is_array($options['filters']) ? $options['filters'] + $this->optionsDefaults['filters'] : $this->optionsDefaults['filters'],
+            // Output options.
+            'first' => $first,
+            'list_by_max' => $listByMax,
+            'fields' => $fields,
+            'initial' => $initial,
+            'distinct' => $distinct,
+            'datatype' => $datatype,
+            'lang' => $lang,
+            'include_without_meta' => !empty($options['include_without_meta']),
+            'single_reference_format' => !empty($options['single_reference_format']),
+            'locale' => $locales,
+            'output' => in_array($options['output'], ['associative', 'values']) && !$first && !$listByMax && !$initial && !$distinct && !$datatype && !$lang
+                ? $options['output']
+                : 'list',
+            // Not options, but used internally and simpler to set here.
+            'entity_class' => $entityClass,
+            'resource_table' => $this->mapResourceNameToTable($resourceName),
+            'is_base_resource' => empty($entityClass) || $entityClass === \Omeka\Entity\Resource::class,
+        ];
+
+        // Set keys for all default filters.
+        $this->options['filters'] += $this->optionsDefaults['filters'];
+
+        // The check for length avoids to add a filter on values without any
+        // language. It should be specified as "||" (or leading/trailing "|").
+        // The value "null" can be used too and is recommended instead of an
+        // empty string.
+        if (!is_array($this->options['filters']['languages'])) {
+            $this->options['filters']['languages'] = explode('|', str_replace(',', '|', $this->options['filters']['languages'] ?: ''));
+        }
+        $noEmptyLanguages = array_diff($this->options['filters']['languages'], ['null', null, '', 0, '0']);
+        if (count($noEmptyLanguages) !== count($this->options['filters']['languages'])) {
+            $this->options['filters']['languages'] = $noEmptyLanguages;
+            $this->options['filters']['languages'][] = '';
+        }
+        $this->options['filters']['languages'] = array_unique(array_map('trim', $this->options['filters']['languages']));
+
+        // May be an array or a string (literal, uri or resource, in this order).
+        if (!is_array($this->options['filters']['main_types'])) {
+            $this->options['filters']['main_types'] = explode('|', str_replace(',', '|', $this->options['filters']['main_types'] ?: ''));
+        }
+        $this->options['filters']['main_types'] = array_unique(array_filter(array_map('trim', $this->options['filters']['main_types'])));
+        $this->options['filters']['main_types'] = array_values(array_intersect(['value', 'resource', 'uri'], $this->options['filters']['main_types']));
+        $this->options['filters']['main_types'] = array_combine($this->options['filters']['main_types'], $this->options['filters']['main_types']);
+        if (!is_array($this->options['filters']['datatypes'])) {
+            $this->options['filters']['datatypes'] = explode('|', str_replace(',', '|', $this->options['filters']['datatypes'] ?: ''));
+        }
+        $this->options['filters']['datatypes'] = array_unique(array_filter(array_map('trim', $this->options['filters']['datatypes'])));
+
+        // No trim for begin/end.
+        if (!is_array($this->options['filters']['begin'])) {
+            $this->options['filters']['begin'] = explode('|', str_replace(',', '|', $this->options['filters']['begin'] ?? ''));
+        }
+        $this->options['filters']['begin'] = array_unique(array_filter($this->options['filters']['begin']));
+        if (!is_array($this->options['filters']['end'])) {
+            $this->options['filters']['end'] = explode('|', str_replace(',', '|', $this->options['filters']['end'] ?? ''));
+        }
+        $this->options['filters']['end'] = array_unique(array_filter($this->options['filters']['end']));
+
+        if (!is_array($this->options['fields'])) {
+            $this->options['fields'] = explode('|', str_replace(',', '|', $this->options['fields'] ?? ''));
+        }
+        $this->options['fields'] = array_unique(array_filter(array_map('trim', $this->options['fields'])));
 
         return $this;
     }
