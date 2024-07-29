@@ -2,6 +2,7 @@
 
 namespace Reference\Mvc\Controller\Plugin;
 
+use Common\Stdlib\EasyMeta;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Query\QueryBuilder;
@@ -37,6 +38,11 @@ class References extends AbstractPlugin
     protected $connection;
 
     /**
+     * @var \Common\Stdlib\EasyMeta
+     */
+    protected $easyMeta;
+
+    /**
      * @var \Doctrine\ORM\EntityManager
      */
     protected $entityManager;
@@ -65,27 +71,6 @@ class References extends AbstractPlugin
      * @var bool
      */
     protected $supportAnyValue;
-
-    /**
-     * List of property main data by term and id.
-     *
-     * @var array
-     */
-    protected $propertiesByTermsAndIds;
-
-    /**
-     * List of resource class main data by term and id.
-     *
-     * @var array
-     */
-    protected $resourceClassesByTermsAndIds;
-
-    /**
-     * List of resource template main data by label and id.
-     *
-     * @var array
-     */
-    protected $resourceTemplatesByLabelsAndIds;
 
     /**
      * List of item sets by title and id.
@@ -198,6 +183,7 @@ class References extends AbstractPlugin
         AdapterManager $adapterManager,
         ApiManager $api,
         Connection $connection,
+        EasyMeta $easyMeta,
         EntityManager $entityManager,
         Logger $logger,
         Translate $translate,
@@ -209,6 +195,7 @@ class References extends AbstractPlugin
         $this->adapterManager = $adapterManager;
         $this->api = $api;
         $this->connection = $connection;
+        $this->easyMeta = $easyMeta;
         $this->entityManager = $entityManager;
         $this->logger = $logger;
         $this->translate = $translate;
@@ -503,7 +490,7 @@ class References extends AbstractPlugin
                     } else {
                         foreach (array_filter($values) as $valueData) {
                             $resourceClass = $this->getResourceClass($valueData['val']);
-                            $resourceClass['o:label'] = $this->translate->__invoke($resourceClass->label());
+                            $resourceClass['o:label'] = $this->translate->__invoke($resourceClass['o:label']);
                             $result[$keyResult]['o:references'][] = $resourceClass + $valueData;
                         }
                     }
@@ -533,6 +520,7 @@ class References extends AbstractPlugin
                     } else {
                         foreach (array_filter($values) as $valueData) {
                             $meta = $this->getItemSet($valueData['val']);
+                            unset($meta['@type']);
                             $result[$keyResult]['o:references'][] = $meta + $valueData;
                         }
                     }
@@ -545,6 +533,7 @@ class References extends AbstractPlugin
                     } else {
                         foreach (array_filter($values) as $valueData) {
                             $meta = $this->getOwner($valueData['val']);
+                            unset($meta['@type']);
                             $result[$keyResult]['o:references'][] = $meta + $valueData;
                         }
                     }
@@ -557,6 +546,7 @@ class References extends AbstractPlugin
                     } else {
                         foreach (array_filter($values) as $valueData) {
                             $meta = $this->getSite($valueData['val']);
+                            unset($meta['@type']);
                             $result[$keyResult]['o:references'][] = $meta + $valueData;
                         }
                     }
@@ -857,7 +847,7 @@ class References extends AbstractPlugin
                 $locales[$pos] = '';
             }
         }
-        $entityClass = $this->mapResourceNameToEntityClass($resourceName);
+        $entityClass = $this->easyMeta->entityClass($resourceName);
 
         $options = [
             // Options to filter, limit and sort results (used for sql).
@@ -983,7 +973,7 @@ class References extends AbstractPlugin
         $qb
             // "Distinct" avoids to count duplicate values in properties in a
             // resource: we count resources, not properties.
-            ->distinct(true)
+            ->distinct()
             ->from('value', 'value')
             ->where($expr->in('value.property_id', ':properties'))
             ->setParameter('properties', array_map('intval', $propertyIds), Connection::PARAM_INT_ARRAY)
@@ -1112,7 +1102,7 @@ class References extends AbstractPlugin
         }
 
         $qb
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             ->where($expr->in('resource.resource_class_id', ':resource_classes'))
             ->setParameter('resource_classes', array_map('intval', $resourceClassIds), Connection::PARAM_INT_ARRAY)
@@ -1139,7 +1129,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listDataForResourceTemplates(array $resourceTemplateIds)
+    protected function listDataForResourceTemplates(array $resourceTemplateIds): array
     {
         if (empty($resourceTemplateIds)) {
             return [];
@@ -1166,7 +1156,7 @@ class References extends AbstractPlugin
         }
 
         $qb
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             ->where($expr->in('resource.resource_template_id', ':resource_templates'))
             ->setParameter('resource_templates', array_map('intval', $resourceTemplateIds), Connection::PARAM_INT_ARRAY)
@@ -1224,7 +1214,7 @@ class References extends AbstractPlugin
         }
 
         $qb
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             // Always an item.
             ->innerJoin('resource', 'item', 'res', 'res.id = resource.id')
@@ -1247,7 +1237,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listDataForResourceTitle()
+    protected function listDataForResourceTitle(): array
     {
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
@@ -1279,7 +1269,7 @@ class References extends AbstractPlugin
         $qb
             // "Distinct" avoids to count duplicate values in properties in a
             // resource: we count resources, not properties.
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             ->where($expr->eq('resource.resource_type', ':entity_class'))
             ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING)
@@ -1335,7 +1325,7 @@ class References extends AbstractPlugin
             // "Distinct" avoids to count resources with multiple values
             // multiple times for the same property: we count resources, not
             // properties.
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             ->innerJoin('resource', 'value', 'value', $expr->eq('value.resource_id', 'resource.id'))
             // The left join allows to get the total of items without property.
@@ -1363,7 +1353,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listResourceClasses():array
+    protected function listResourceClasses(): array
     {
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
@@ -1399,7 +1389,7 @@ class References extends AbstractPlugin
         }
 
         $qb
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             // The left join allows to get the total of items without resource
             // class.
@@ -1449,7 +1439,7 @@ class References extends AbstractPlugin
         }
 
         $qb
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             // The left join allows to get the total of items without resource
             // template.
@@ -1509,7 +1499,7 @@ class References extends AbstractPlugin
         }
 
         $qb
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             ->innerJoin('resource', 'item', 'item', $expr->eq('item.id', 'resource.id'))
             // The left join allows to get the total of items without item set.
@@ -1534,7 +1524,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listOwners()
+    protected function listOwners(): array
     {
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
@@ -1567,7 +1557,7 @@ class References extends AbstractPlugin
         }
 
         $qb
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             ->leftJoin('resource', 'user', 'user', $expr->eq('user.id', 'resource.owner_id'))
             ->groupBy('val')
@@ -1591,7 +1581,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listSites()
+    protected function listSites(): array
     {
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
@@ -1618,7 +1608,7 @@ class References extends AbstractPlugin
         }
 
         $qb
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             ->innerJoin('resource', 'item', 'res', $expr->eq('res.id', 'resource.id'))
             ->leftJoin('res', 'item_site', 'res_site', $expr->eq('res_site.item_id', 'resource.id'))
@@ -1642,7 +1632,7 @@ class References extends AbstractPlugin
      * @return array Associative list of references, with the total, the first
      * record, and the first character, according to the parameters.
      */
-    protected function listAccesses()
+    protected function listAccesses(): array
     {
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
@@ -1674,7 +1664,7 @@ class References extends AbstractPlugin
         }
 
         $qb
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             ->innerJoin('resource', 'access_status', 'access_status', $expr->eq('access_status.id', 'resource.id'))
             ->groupBy('val')
@@ -1717,7 +1707,7 @@ class References extends AbstractPlugin
         return $this;
     }
 
-    protected function filterByVisibility(QueryBuilder $qb, $type): self
+    protected function filterByVisibility(QueryBuilder $qb, ?string $type): self
     {
         if ($this->acl->userIsAllowed(\Omeka\Entity\Resource::class, 'view-all')) {
             return $this;
@@ -1727,7 +1717,7 @@ class References extends AbstractPlugin
             : $this->filterByVisibilityForAnonymous($qb, $type);
     }
 
-    protected function filterByVisibilityForAnonymous(QueryBuilder $qb, $type): self
+    protected function filterByVisibilityForAnonymous(QueryBuilder $qb, ?string $type): self
     {
         /**
          * @see \Omeka\Db\Filter\ResourceVisibilityFilter
@@ -1761,7 +1751,7 @@ class References extends AbstractPlugin
         return $this;
     }
 
-    protected function filterByVisibilityForUser(QueryBuilder $qb, $type): self
+    protected function filterByVisibilityForUser(QueryBuilder $qb, ?string $type): self
     {
         /**
          * @see \Omeka\Db\Filter\ResourceVisibilityFilter
@@ -1932,7 +1922,7 @@ class References extends AbstractPlugin
         return $this;
     }
 
-    protected function manageOptions(QueryBuilder $qb, $type, array $args = []): self
+    protected function manageOptions(QueryBuilder $qb,?string $type, array $args = []): self
     {
         $expr = $qb->expr();
         if (in_array($type, ['resource_classes', 'resource_templates', 'item_sets', 'resource_titles'])
@@ -2097,19 +2087,19 @@ class References extends AbstractPlugin
                     // TODO Nothing to filter for resource titles?
                     break;
                 case 'o:property':
-                    $values = $this->getPropertyIds($this->optionsCurrent['filters']['values']) ?: [0];
+                    $values = $this->easyMeta->propertyIds($this->optionsCurrent['filters']['values']) ?: [0];
                     $qb
                         ->andWhere($expr->in('property.id', ':ids'))
                         ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:resource_class':
-                    $values = $this->getResourceClassIds($this->optionsCurrent['filters']['values']) ?: [0];
+                    $values = $this->easyMeta->resourceClassIds($this->optionsCurrent['filters']['values']) ?: [0];
                     $qb
                         ->andWhere($expr->in('resource_class.id', ':ids'))
                         ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:resource_template':
-                    $values = $this->getResourceTemplateIds($this->optionsCurrent['filters']['values']) ?: [0];
+                    $values = $this->easyMeta->resourceTemplateIds($this->optionsCurrent['filters']['values']) ?: [0];
                     $qb
                         ->andWhere($expr->in('resource_template.id', ':ids'))
                         ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
@@ -2189,7 +2179,7 @@ class References extends AbstractPlugin
         return $this;
     }
 
-    protected function outputMetadata(QueryBuilder $qb, $type): array
+    protected function outputMetadata(QueryBuilder $qb, ?string $type): array
     {
         if ($this->optionsCurrent['output'] === 'values') {
             return $qb->execute()->fetchFirstColumn() ?: [];
@@ -2259,7 +2249,7 @@ class References extends AbstractPlugin
         $hasListBy = array_key_exists('resources', $first);
         if ($hasListBy) {
             $listByMax = $this->optionsCurrent['list_by_max'];
-            $explodeResources = function (array $result) use ($listByMax) {
+            $explodeResources = function (array $result) use ($listByMax): array {
                 return array_map(function ($v) use ($listByMax) {
                     $list = explode(chr(0x1D), (string) $v['resources']);
                     $list = array_map(function ($vv) {
@@ -2316,7 +2306,7 @@ class References extends AbstractPlugin
             return array_values($result);
         }
 
-        return array_filter($result, function ($v) {
+        return array_filter($result, function ($v): array {
             return $v['val'] !== ''
                 || $v['type'] === 'uri'
                 || strpos($v['type'], 'resource') === 0;
@@ -2343,11 +2333,11 @@ class References extends AbstractPlugin
                 // Here, this is the count of references, not resources.
                 'COUNT(refmeta.text)'
             )
-            ->distinct(true)
+            ->distinct()
             ->from('reference_metadata', 'refmeta')
             ->innerJoin('refmeta', 'resource', 'resource', $expr->eq('resource.id', 'refmeta.resource_id'))
             ->andWhere($expr->in('refmeta.field', ':properties'))
-            ->setParameter('properties', $this->getPropertyTerms($propertyIds), Connection::PARAM_STR_ARRAY)
+            ->setParameter('properties', $this->easyMeta->propertyTerms($propertyIds), Connection::PARAM_STR_ARRAY)
         ;
 
         if ($this->optionsCurrent['entity_class'] !== \Omeka\Entity\Resource::class) {
@@ -2380,7 +2370,7 @@ class References extends AbstractPlugin
             ->select(
                 'COUNT(resource.id)'
             )
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             ->andWhere($expr->in('resource.resource_class_id', ':resource_classes'))
             ->setParameter('resource_classes', array_map('intval', $resourceClassIds), Connection::PARAM_INT_ARRAY);
@@ -2415,7 +2405,7 @@ class References extends AbstractPlugin
             ->select(
                 'COUNT(resource.id)'
             )
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             ->andWhere($expr->in('resource.resource_template_id', ':resource_templates'))
             ->setParameter('resource_templates', array_map('intval', $resourceTemplateIds), Connection::PARAM_INT_ARRAY);
@@ -2454,7 +2444,7 @@ class References extends AbstractPlugin
             ->select(
                 'COUNT(resource.id)'
             )
-            ->distinct(true)
+            ->distinct()
             ->from('resource', 'resource')
             ->innerJoin('resource', 'item', 'res', $expr->eq('res.id', 'resource.id'))
             // See \Omeka\Api\Adapter\ItemAdapter::buildQuery()
@@ -2472,7 +2462,7 @@ class References extends AbstractPlugin
      * The query is generally the site query, but may be complex with advanced
      * search, in particular for facets in module AdvancedSearch.
      *
-     * @fixme The method searchQuery() is working fine, but has a performance issue with big database to get the list of all ids. But in that case, Solr is used.
+     * @fixme The method searchQuery() is working fine, but has a performance issue with big database to get the list of all ids. But in that case, Solr is recommended, so no facet to process.
      */
     protected function searchQuery(QueryBuilder $qb, ?string $type = null): self
     {
@@ -2485,7 +2475,7 @@ class References extends AbstractPlugin
             return $this;
         }
 
-        $resourceName = $this->mapEntityClassToResourceName($this->optionsCurrent['entity_class']);
+        $resourceName = $this->easyMeta->resourceName($this->optionsCurrent['entity_class']);
         if (empty($resourceName)) {
             return $this;
         }
@@ -2552,8 +2542,6 @@ class References extends AbstractPlugin
         $fields = $isSingle ? [$fields] : $fields;
         $field = reset($fields);
 
-        $translate = $this->translate;
-
         $labelRequested = empty($keyOrLabelRequest) || is_numeric($keyOrLabelRequest)
             ? null
             : $keyOrLabelRequest;
@@ -2561,13 +2549,13 @@ class References extends AbstractPlugin
         // Special fields.
         if (isset($metaToTypes[$field])) {
             $labels = [
-                'o:property' => $translate('Properties'), // @translate
-                'o:resource_class' => $translate('Classes'), // @translate
-                'o:resource_template' => $translate('Templates'), // @translate
-                'o:item_set' => $translate('Item sets'), // @translate
-                'o:owner' => $translate('Owners'), // @translate
-                'o:site' => $translate('Sites'), // @translate
-                'access' => $translate('Access'), // @translate
+                'o:property' => $this->translate->__invoke('Properties'), // @translate
+                'o:resource_class' => $this->translate->__invoke('Classes'), // @translate
+                'o:resource_template' => $this->translate->__invoke('Templates'), // @translate
+                'o:item_set' => $this->translate->__invoke('Item sets'), // @translate
+                'o:owner' => $this->translate->__invoke('Owners'), // @translate
+                'o:site' => $this->translate->__invoke('Sites'), // @translate
+                'access' => $this->translate->__invoke('Access'), // @translate
             ];
             return [
                 'type' => $field,
@@ -2602,7 +2590,7 @@ class References extends AbstractPlugin
             return [
                 'type' => null,
                 'output' => [
-                    'o:label' => $labelRequested ?? $translate('[Unknown]'), // @translate
+                    'o:label' => $labelRequested ?? $this->translate->__invoke('[Unknown]'), // @translate
                     'o:request' => [
                         'o:field' => $meta,
                     ],
@@ -2616,7 +2604,7 @@ class References extends AbstractPlugin
 
         // Cannot be mixed currently.
         if ($field === 'o:title') {
-            $label = $translate('Title'); // @translate
+            $label = $this->translate->__invoke('Title'); // @translate
             return [
                 'type' => 'resource_titles',
                 'output' => [
@@ -2640,14 +2628,7 @@ class References extends AbstractPlugin
 
         $meta = $this->getProperties($fields);
         if ($meta) {
-            foreach ($meta as &$metaElement) {
-                unset($metaElement['@language']);
-                $metaElement = [
-                    '@type' => 'o:Property',
-                ] + $metaElement;
-            }
-            unset($metaElement);
-            $labelFirst = $translate(reset($meta)['o:label']);
+            $labelFirst = $this->translate->__invoke(reset($meta)['o:label']);
             return [
                 'type' => 'properties',
                 'output' => [
@@ -2667,14 +2648,7 @@ class References extends AbstractPlugin
 
         $meta = $this->getResourceClasses($fields);
         if ($meta) {
-            foreach ($meta as &$metaElement) {
-                unset($metaElement['@language']);
-                $metaElement = [
-                    '@type' => 'o:ResourceClass',
-                ] + $metaElement;
-            }
-            unset($metaElement);
-            $labelFirst = $translate(reset($meta)['o:label']);
+            $labelFirst = $this->translate->__invoke(reset($meta)['o:label']);
             return [
                 'type' => 'resource_classes',
                 'output' => [
@@ -2694,14 +2668,7 @@ class References extends AbstractPlugin
 
         $meta = $this->getResourceTemplates($fields);
         if ($meta) {
-            foreach ($meta as &$metaElement) {
-                unset($metaElement['@language']);
-                $metaElement = [
-                    '@type' => 'o:ResourceTemplate',
-                ] + $metaElement;
-            }
-            unset($metaElement);
-            $labelFirst = $translate(reset($meta)['o:label']);
+            $labelFirst = $this->translate->__invoke(reset($meta)['o:label']);
             return [
                 'type' => 'resource_templates',
                 'output' => [
@@ -2721,12 +2688,9 @@ class References extends AbstractPlugin
         if ($meta) {
             foreach ($meta as &$metaElement) {
                 unset($metaElement['@language']);
-                $metaElement = [
-                    '@type' => 'o:ItemSet',
-                ] + $metaElement;
             }
             unset($metaElement);
-            $labelFirst = $translate(reset($meta)['o:label']);
+            $labelFirst = $this->translate->__invoke(reset($meta)['o:label']);
             return [
                 'type' => 'item_sets',
                 'output' => [
@@ -2767,21 +2731,6 @@ class References extends AbstractPlugin
     }
 
     /**
-     * Normalize the resource name as an entity class.
-     */
-    protected function mapResourceNameToEntityClass($resourceName): string
-    {
-        $resourceEntityMap = [
-            null => \Omeka\Entity\Resource::class,
-            'items' => \Omeka\Entity\Item::class,
-            'item_sets' => \Omeka\Entity\ItemSet::class,
-            'media' => \Omeka\Entity\Media::class,
-            'resources' => \Omeka\Entity\Resource::class,
-        ];
-        return $resourceEntityMap[$resourceName] ?? \Omeka\Entity\Resource::class;
-    }
-
-    /**
      * Normalize the resource name as a database table.
      */
     protected function mapResourceNameToTable($resourceName): string
@@ -2797,354 +2746,120 @@ class References extends AbstractPlugin
     }
 
     /**
-     * Get the api resource name from the entity class.
-     */
-    protected function mapEntityClassToResourceName($entityClass): ?string
-    {
-        $entityResourceMap = [
-            \Omeka\Entity\Resource::class => 'resources',
-            \Omeka\Entity\Item::class => 'items',
-            \Omeka\Entity\ItemSet::class => 'item_sets',
-            \Omeka\Entity\Media::class => 'media',
-        ];
-        return $entityResourceMap[$entityClass] ?? null;
-    }
-
-    /**
-     * Get property ids by JSON-LD terms or by numeric ids.
+     * Get properties by JSON-LD terms or by numeric ids.
      *
-     * @return int[]
-     */
-    protected function getPropertyIds(array $termsOrIds): array
-    {
-        if (is_null($this->propertiesByTermsAndIds)) {
-            $this->prepareProperties();
-        }
-        return array_column(array_intersect_key($this->propertiesByTermsAndIds, array_flip($termsOrIds)), 'o:id');
-    }
-
-    /**
-     * Get property terms by JSON-LD terms or by numeric ids.
-     *
-     * @return string[]
-     */
-    protected function getPropertyTerms(array $termsOrIds): array
-    {
-        if (is_null($this->propertiesByTermsAndIds)) {
-            $this->prepareProperties();
-        }
-        return array_column(array_intersect_key($this->propertiesByTermsAndIds, array_flip($termsOrIds)), 'o:term');
-    }
-
-    /**
-     * Get a property id by JSON-LD term or by numeric id.
-     */
-    protected function getPropertyId($termOrId): ?int
-    {
-        if (is_null($this->propertiesByTermsAndIds)) {
-            $this->prepareProperties();
-        }
-        return $this->propertiesByTermsAndIds[$termOrId]['o:id'] ?? null;
-    }
-
-    /**
-     * Get property by JSON-LD terms or by numeric ids.
-     *
-     * @return int[]
+     * The property contains the type, the term, the label and the id.
      */
     protected function getProperties(array $termsOrIds): array
     {
-        if (is_null($this->propertiesByTermsAndIds)) {
-            $this->prepareProperties();
+        $propertyIds = $this->easyMeta->propertyIds($termsOrIds);
+        $propertyTerms = $this->easyMeta->propertyTerms($termsOrIds);
+        $propertyLabels = $this->easyMeta->propertyLabels($termsOrIds);
+        $result = [];
+        foreach ($propertyIds as $termOrId => $id) {
+            $result[] = [
+                '@type' => 'o:Property',
+                'o:term' => $propertyTerms[$termOrId],
+                'o:label' =>$propertyLabels[$termOrId],
+                'o:id' => $id,
+            ];
         }
-        return array_values(array_intersect_key($this->propertiesByTermsAndIds, array_flip($termsOrIds)));
+        return $result;
     }
 
     /**
-     * Get a property by JSON-LD term or by numeric id.
+     * Get resource class by JSON-LD term or by numeric id.
+     *
+     * The property contains the term, the label, the id and an empty language.
      */
     protected function getProperty($termOrId): ?array
     {
-        if (is_null($this->propertiesByTermsAndIds)) {
-            $this->prepareProperties();
-        }
-        return $this->propertiesByTermsAndIds[$termOrId] ?? null;
-    }
-
-    /**
-     * Prepare the list of properties.
-     */
-    protected function prepareProperties(): self
-    {
-        if (is_null($this->propertiesByTermsAndIds)) {
-            $connection = $this->entityManager->getConnection();
-            // Here, the dbal query builder is used.
-            $qb = $connection->createQueryBuilder();
-            $qb
-                // TODO Remove all "distinct" and replace them by "groupby".
-                ->select(
-                    'DISTINCT CONCAT(vocabulary.prefix, ":", property.local_name) AS "o:term"',
-                    'property.label AS "o:label"',
-                    'property.id AS "o:id"',
-                    'NULL AS "@language"',
-                    // Only the two first selects are needed, but some databases
-                    // require "order by" or "group by" value to be in the select.
-                    'vocabulary.id',
-                    'property.id'
-                )
-                ->from('property', 'property')
-                ->innerJoin('property', 'vocabulary', 'vocabulary', 'property.vocabulary_id = vocabulary.id')
-                ->orderBy('vocabulary.id', 'asc')
-                ->addOrderBy('property.id', 'asc')
-                ->addGroupBy('property.id')
-            ;
-            $results = $connection->executeQuery($qb)->fetchAllAssociative();
-            $this->propertiesByTermsAndIds = [];
-            foreach ($results as $result) {
-                unset($result['id']);
-                $result['o:id'] = (int) $result['o:id'];
-                $this->propertiesByTermsAndIds[$result['o:id']] = $result;
-                $this->propertiesByTermsAndIds[$result['o:term']] = $result;
-            }
-        }
-        return $this;
-    }
-
-    /**
-     * Get resource class ids by JSON-LD terms or by numeric ids.
-     *
-     * @return int[]
-     */
-    protected function getResourceClassIds(array $termsOrIds): array
-    {
-        if (is_null($this->resourceClassesByTermsAndIds)) {
-            $this->prepareResourceClasses();
-        }
-        return array_column(array_intersect_key($this->resourceClassesByTermsAndIds, array_flip($termsOrIds)), 'o:id');
-    }
-
-    /**
-     * Get resource class terms by JSON-LD terms or by numeric ids.
-     *
-     * @return string[]
-     */
-    protected function getResourceClassTerms(array $termsOrIds): array
-    {
-        if (is_null($this->resourceClassesByTermsAndIds)) {
-            $this->prepareResourceClasses();
-        }
-        return array_column(array_intersect_key($this->resourceClassesByTermsAndIds, array_flip($termsOrIds)), 'o:term');
-    }
-
-    /**
-     * Get resource class id by JSON-LD term or by numeric id.
-     */
-    protected function getResourceClassId($termOrId): ?int
-    {
-        if (is_null($this->resourceClassesByTermsAndIds)) {
-            $this->prepareResourceClasses();
-        }
-        return $this->resourceClassesByTermsAndIds[$termOrId]['o:id'] ?? null;
+        $propertyId = $this->easyMeta->propertyId($termOrId);
+        return $propertyId
+            ? [
+                'o:term' => $this->easyMeta->propertyTerm($propertyId),
+                'o:label' => $this->easyMeta->propertyLabel($propertyId),
+                'o:id' => $propertyId,
+                '@language' => null,
+            ]
+            : null;
     }
 
     /**
      * Get resource classes by JSON-LD terms or by numeric ids.
      *
-     * @return int[]
+     * The class contains the type, the term, the label and the id.
      */
     protected function getResourceClasses(array $termsOrIds): array
     {
-        if (is_null($this->resourceClassesByTermsAndIds)) {
-            $this->prepareResourceClasses();
+        $classIds = $this->easyMeta->resourceClassIds($termsOrIds);
+        $classTerms = $this->easyMeta->resourceClassTerms($termsOrIds);
+        $classLabels = $this->easyMeta->resourceClassLabels($termsOrIds);
+        $result = [];
+        foreach ($classIds as $termOrId => $id) {
+            $result[] = [
+                '@type' => 'o:ResourceClass',
+                'o:term' => $classTerms[$termOrId],
+                'o:label' =>$classLabels[$termOrId],
+                'o:id' => $id,
+            ];
         }
-        return array_values(array_intersect_key($this->resourceClassesByTermsAndIds, array_flip($termsOrIds)));
+        return $result;
     }
 
     /**
      * Get resource class by JSON-LD term or by numeric id.
+     *
+     * The class contains the term, the label, the id and an empty language.
      */
     protected function getResourceClass($termOrId): ?array
     {
-        if (is_null($this->resourceClassesByTermsAndIds)) {
-            $this->prepareResourceClasses();
-        }
-        return $this->resourceClassesByTermsAndIds[$termOrId] ?? null;
-    }
-
-    /**
-     * Prepare the list of resource classes.
-     */
-    protected function prepareResourceClasses(): self
-    {
-        if (is_null($this->resourceClassesByTermsAndIds)) {
-            $connection = $this->entityManager->getConnection();
-            // Here, the dbal query builder is used.
-            $qb = $connection->createQueryBuilder();
-            $qb
-                ->select(
-                    'DISTINCT CONCAT(vocabulary.prefix, ":", resource_class.local_name) AS "o:term"',
-                    'resource_class.label AS "o:label"',
-                    'resource_class.id AS "o:id"',
-                    'NULL AS "@language"',
-                    // Only the two first selects are needed, but some databases
-                    // require "order by" or "group by" value to be in the select.
-                    'vocabulary.id',
-                    'resource_class.id'
-                )
-                ->from('resource_class', 'resource_class')
-                ->innerJoin('resource_class', 'vocabulary', 'vocabulary', 'resource_class.vocabulary_id = vocabulary.id')
-                ->orderBy('vocabulary.id', 'asc')
-                ->addOrderBy('resource_class.id', 'asc')
-                ->addGroupBy('resource_class.id')
-            ;
-            $results = $connection->executeQuery($qb)->fetchAllAssociative();
-            $this->resourceClassesByTermsAndIds = [];
-            foreach ($results as $result) {
-                unset($result['id']);
-                $result['o:id'] = (int) $result['o:id'];
-                $this->resourceClassesByTermsAndIds[$result['o:id']] = $result;
-                $this->resourceClassesByTermsAndIds[$result['o:term']] = $result;
-            }
-        }
-        return $this;
+        $classId = $this->easyMeta->resourceClassId($termOrId);
+        return $classId
+            ? [
+                'o:term' => $this->easyMeta->resourceClassTerm($classId),
+                'o:label' => $this->easyMeta->resourceClassLabel($classId),
+                'o:id' => $classId,
+                '@language' => null,
+            ]
+            : null;
     }
 
     /**
      * Get resource template ids by labels or by numeric ids.
      *
-     * @return int[]
-     */
-    protected function getResourceTemplateIds(array $labelsOrIds): array
-    {
-        if (is_null($this->resourceTemplatesByLabelsAndIds)) {
-            $this->prepareResourceTemplates();
-        }
-        return array_column(array_intersect_key($this->resourceTemplatesByLabelsAndIds, array_flip($labelsOrIds)), 'o:id');
-    }
-
-    /**
-     * Get resource template labels by labels or by numeric ids.
-     *
-     * @return string[]
-     */
-    protected function getResourceTemplateLabels(array $labelsOrIds): array
-    {
-        if (is_null($this->resourceTemplatesByLabelsAndIds)) {
-            $this->prepareResourceTemplates();
-        }
-        return array_column(array_intersect_key($this->resourceTemplatesByLabelsAndIds, array_flip($labelsOrIds)), 'o:label');
-    }
-
-    /**
-     * Get resource template id by label or by numeric id.
-     */
-    protected function getResourceTemplateId($labelOrId): ?int
-    {
-        if (is_null($this->resourceTemplatesByLabelsAndIds)) {
-            $this->prepareResourceTemplates();
-        }
-        return $this->resourceTemplatesByLabelsAndIds[$labelOrId]['o:id'] ?? null;
-    }
-
-    /**
-     * Get resource template ids by labels or by numeric ids.
-     *
-     * @return int[]
+     * The template contains the type, the label and the id.
      */
     protected function getResourceTemplates(array $labelsOrIds): array
     {
-        if (is_null($this->resourceTemplatesByLabelsAndIds)) {
-            $this->prepareResourceTemplates();
+        $templateIds = $this->easyMeta->resourceTemplateIds($labelsOrIds);
+        $templateLabels = $this->easyMeta->resourceTemplateLabels($labelsOrIds);
+        $result = [];
+        foreach ($templateIds as $labelOrId => $id) {
+            $result[] = [
+                '@type' => 'o:ResourceTemplate',
+                'o:label' => $templateLabels[$labelOrId],
+                'o:id' => $id,
+            ];
         }
-        return array_values(array_intersect_key($this->resourceTemplatesByLabelsAndIds, array_flip($labelsOrIds)));
+        return $result;
     }
 
     /**
      * Get resource template by label or by numeric id.
+     *
+     * The template contains the label, the id and an empty language.
      */
     protected function getResourceTemplate($labelOrId): ?array
     {
-        if (is_null($this->resourceTemplatesByLabelsAndIds)) {
-            $this->prepareResourceTemplates();
-        }
-        return $this->resourceTemplatesByLabelsAndIds[$labelOrId] ?? null;
-    }
-
-    /**
-     * Prepare the list of resource templates.
-     */
-    protected function prepareResourceTemplates(): self
-    {
-        if (is_null($this->resourceTemplatesByLabelsAndIds)) {
-            $connection = $this->entityManager->getConnection();
-            // Here, the dbal query builder is used.
-            $qb = $connection->createQueryBuilder();
-            $qb
-                ->select(
-                    'DISTINCT resource_template.label AS "o:label"',
-                    'resource_template.id AS "o:id"',
-                    'NULL AS "@language"',
-                    // Only the two first selects are needed, but some databases
-                    // require "order by" or "group by" value to be in the select.
-                    'resource_template.id'
-                )
-                ->from('resource_template', 'resource_template')
-                ->orderBy('resource_template.id', 'asc')
-                ->addGroupBy('resource_template.id')
-            ;
-            $results = $connection->executeQuery($qb)->fetchAllAssociative();
-            $this->resourceTemplatesByLabelsAndIds = [];
-            foreach ($results as $result) {
-                unset($result['id']);
-                $result['o:id'] = (int) $result['o:id'];
-                $this->resourceTemplatesByLabelsAndIds[$result['o:id']] = $result;
-                $this->resourceTemplatesByLabelsAndIds[$result['o:label']] = $result;
-            }
-        }
-        return $this;
-    }
-
-    /**
-     * Get item set ids by title or by numeric ids.
-     *
-     * Warning, titles are not unique.
-     *
-     * @return int[]
-     */
-    protected function getItemSetIds(array $titlesOrIds): array
-    {
-        if (is_null($this->itemSetsByTitlesAndIds)) {
-            $this->prepareItemSets();
-        }
-        return array_column(array_intersect_key($this->itemSetsByTitlesAndIds, array_flip($titlesOrIds)), 'o:id');
-    }
-
-    /**
-     * Get item set titles by title or by numeric ids.
-     *
-     * Warning, titles are not unique.
-     *
-     * @return string[]
-     */
-    protected function getItemSetTitles(array $titlesOrIds): array
-    {
-        if (is_null($this->itemSetsByTitlesAndIds)) {
-            $this->prepareItemSets();
-        }
-        return array_column(array_intersect_key($this->itemSetsByTitlesAndIds, array_flip($titlesOrIds)), 'o:label');
-    }
-
-    /**
-     * Get item set id by title or by numeric id.
-     *
-     * Warning, titles are not unique.
-     */
-    protected function getItemSetId($labelOrId): ?int
-    {
-        if (is_null($this->itemSetsByTitlesAndIds)) {
-            $this->prepareItemSets();
-        }
-        return $this->itemSetsByTitlesAndIds[$labelOrId]['o:id'] ?? null;
+        $templateId = $this->easyMeta->resourceTemplateId($labelOrId);
+        return $templateId
+            ? [
+                'o:label' => $this->easyMeta->resourceTemplateLabel($templateId),
+                'o:id' => $templateId,
+                '@language' => null,
+            ]
+            : null;
     }
 
     /**
@@ -3152,7 +2867,7 @@ class References extends AbstractPlugin
      *
      * Warning, titles are not unique.
      *
-     * @return int[]
+     * The item set contains the type, the label, the id and an empty language.
      */
     protected function getItemSets(array $titlesOrIds): array
     {
@@ -3166,6 +2881,8 @@ class References extends AbstractPlugin
      * Get item set by title or by numeric id.
      *
      * Warning, titles are not unique.
+     *
+     * The item set contains the type, the id, the label, and an empty language.
      */
     protected function getItemSet($labelOrId): ?array
     {
@@ -3183,20 +2900,18 @@ class References extends AbstractPlugin
     protected function prepareItemSets(): self
     {
         if (is_null($this->itemSetsByTitlesAndIds)) {
-            $connection = $this->entityManager->getConnection();
-            // Here, the dbal query builder is used.
-            $qb = $connection->createQueryBuilder();
+            $qb = $this->connection->createQueryBuilder();
             $qb
                 ->select(
-                    // Labels are not unique.
-                    'DISTINCT resource.id AS "o:id"',
                     '"o:ItemSet" AS "@type"',
                     'resource.title AS "o:label"',
+                    'resource.id AS "o:id"',
                     'NULL AS "@language"',
                     // Only the two first selects are needed, but some databases
                     // require "order by" or "group by" value to be in the select.
                     'resource.id'
                 )
+                ->distinct()
                 ->from('resource', 'resource')
                 ->innerJoin('resource', 'item_set', 'item_set', 'resource.id = item_set.id')
                 // TODO Improve return of private item sets.
@@ -3204,7 +2919,7 @@ class References extends AbstractPlugin
                 ->orderBy('resource.id', 'asc')
                 ->addGroupBy('resource.id')
             ;
-            $results = $connection->executeQuery($qb)->fetchAllAssociative();
+            $results = $this->connection->executeQuery($qb)->fetchAllAssociative();
             $this->itemSetsByTitlesAndIds = [];
             foreach ($results as $result) {
                 unset($result['id']);
@@ -3218,6 +2933,8 @@ class References extends AbstractPlugin
 
     /**
      * Get owner by user name or by numeric id.
+     *
+     * The user contains the type, the label, the id and an empty language.
      */
     protected function getOwner($nameOrId): ?array
     {
@@ -3229,21 +2946,21 @@ class References extends AbstractPlugin
 
     /**
      * Prepare the list of owners (users with resources).
+     *
+     * Warning, user names are not unique.
      */
     protected function prepareOwners(): self
     {
         if (is_null($this->ownersByNameAndIds)) {
-            $connection = $this->entityManager->getConnection();
-            // Here, the dbal query builder is used.
-            $qb = $connection->createQueryBuilder();
+            $qb = $this->connection->createQueryBuilder();
             $qb
                 ->select(
-                    // Labels are not unique.
-                    'DISTINCT user.name AS "o:label"',
                     '"o:User" AS "@type"',
+                    'user.name AS "o:label"',
                     'user.id AS "o:id"',
                     'NULL AS "@language"'
                 )
+                ->distinct()
                 ->from('user', 'user')
                 ->innerJoin('user', 'resource', 'resource', 'resource.user_id = user.id')
                 // TODO Improve return of private resource for owners.
@@ -3251,7 +2968,7 @@ class References extends AbstractPlugin
                 ->orderBy('user.id', 'asc')
                 ->addGroupBy('user.id')
             ;
-            $results = $connection->executeQuery($qb)->fetchAllAssociative();
+            $results = $this->connection->executeQuery($qb)->fetchAllAssociative();
             $this->ownersByNameAndIds = [];
             foreach ($results as $result) {
                 unset($result['id']);
@@ -3265,6 +2982,10 @@ class References extends AbstractPlugin
 
     /**
      * Get site by slug or by numeric id.
+     *
+     * Warning, site title are not unique.
+     *
+     * The site contains the typethe label, the id, the slug and an empty language.
      */
     protected function getSite($slugOrId): ?array
     {
@@ -3280,25 +3001,24 @@ class References extends AbstractPlugin
     protected function prepareSites(): self
     {
         if (is_null($this->sitesBySlugAndIds)) {
-            $connection = $this->entityManager->getConnection();
-            // Here, the dbal query builder is used.
-            $qb = $connection->createQueryBuilder();
+            $qb = $this->connection->createQueryBuilder();
             $qb
                 ->select(
                     // Labels are not unique.
-                    'DISTINCT site.slug AS "o:slug"',
-                    'site.title AS "o:label"',
                     '"o:Site" AS "@type"',
+                    'site.title AS "o:label"',
                     'site.id AS "o:id"',
+                    'site.slug AS "o:slug"',
                     'NULL AS "@language"'
                 )
+                ->distinct()
                 ->from('site', 'site')
                 // TODO Improve return of private sites.
                 ->where('site.is_public', '1')
                 ->orderBy('site.id', 'asc')
                 ->addGroupBy('site.id')
             ;
-            $results = $connection->executeQuery($qb)->fetchAllAssociative();
+            $results = $this->connection->executeQuery($qb)->fetchAllAssociative();
             $this->sitesBySlugAndIds = [];
             foreach ($results as $result) {
                 unset($result['id']);
@@ -3448,27 +3168,16 @@ class References extends AbstractPlugin
 
     /**
      * Get the last day of a given year/month.
-     *
-     * @param int $year
-     * @param int $month
-     * @return int
      */
-    protected function getLastDay($year, $month)
+    protected function getLastDay($year, $month): int
     {
-        switch ($month) {
-            case 2:
-                // February (accounting for leap year)
-                $leapYear = date('L', mktime(0, 0, 0, 1, 1, $year));
-                return $leapYear ? 29 : 28;
-            case 4:
-            case 6:
-            case 9:
-            case 11:
-                // April, June, September, November
-                return 30;
-            default:
-                // January, March, May, July, August, October, December
-                return 31;
+        $month = (int) $month;
+        if (in_array($month, [4, 6, 9, 11], true)) {
+            return 30;
+        } elseif ($month === 2) {
+            return date('L', mktime(0, 0, 0, 1, 1, $year)) ? 29 : 28;
+        } else {
+            return 31;
         }
     }
 }
