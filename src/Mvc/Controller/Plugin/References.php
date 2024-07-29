@@ -997,8 +997,8 @@ class References extends AbstractPlugin
                 ->leftJoin('value', 'resource', 'value_resource', $expr->eq('value_resource.id', 'value.value_resource_id'));
         } else {
             $qb
-                ->innerJoin('value', 'resource', 'resource', $expr->andX($expr->eq('resource.id', 'value.resource_id'), $expr->eq('resource.resource_type', ':entity_class')))
-                ->leftJoin('value', 'resource', 'value_resource', $expr->andX($expr->eq('value_resource.id', 'value.value_resource_id'), $expr->eq('value_resource.resource_type', ':entity_class')))
+                ->innerJoin('value', 'resource', 'resource', $expr->and($expr->eq('resource.id', 'value.resource_id'), $expr->eq('resource.resource_type', ':entity_class')))
+                ->leftJoin('value', 'resource', 'value_resource', $expr->and($expr->eq('value_resource.id', 'value.value_resource_id'), $expr->eq('value_resource.resource_type', ':entity_class')))
                 ->setParameter('entity_class', $this->optionsCurrent['entity_class'], ParameterType::STRING);
         }
 
@@ -1513,7 +1513,7 @@ class References extends AbstractPlugin
             ->from('resource', 'resource')
             ->innerJoin('resource', 'item', 'item', $expr->eq('item.id', 'resource.id'))
             // The left join allows to get the total of items without item set.
-            ->leftJoin('item', 'item_item_set', 'item_set', $expr->andX($expr->eq('item_set.item_id', 'item.id'), $expr->neq('item_set.item_set_id', 0)))
+            ->leftJoin('item', 'item_item_set', 'item_set', $expr->and($expr->eq('item_set.item_id', 'item.id'), $expr->neq('item_set.item_set_id', 0)))
             ->leftJoin('item_set', 'resource', 'resource_item_set', $expr->eq('resource_item_set.id', 'item_set.item_set_id'))
             ->groupBy('val')
         ;
@@ -1771,7 +1771,7 @@ class References extends AbstractPlugin
         switch ($type) {
             case 'o:item_set':
                 $qb
-                    ->andWhere($expr->orX(
+                    ->andWhere($expr->or(
                         'resource_item_set.is_public = 1',
                         'resource_item_set.owner_id = :user_id'
                     ))
@@ -1787,7 +1787,7 @@ class References extends AbstractPlugin
             case 'o:site':
             case 'access':
                 $qb
-                    ->andWhere($expr->orX(
+                    ->andWhere($expr->or(
                         'resource.is_public = 1',
                         'resource.owner_id = :user_id'
                     ))
@@ -1797,11 +1797,11 @@ class References extends AbstractPlugin
             case 'properties':
             case 'o:property':
                 $qb
-                    ->andWhere($expr->orX(
+                    ->andWhere($expr->or(
                         'resource.is_public = 1',
                         'resource.owner_id = :user_id'
                     ))
-                    ->andWhere($expr->orX(
+                    ->andWhere($expr->or(
                         'value.is_public = 1',
                         'value.resource_id = (SELECT r.id FROM resource r WHERE r.owner_id = :user_id AND r.id = value.resource_id)'
                     ))
@@ -1856,7 +1856,7 @@ class References extends AbstractPlugin
             // some non-reproductible cases. Db version related?
             $hasEmptyLanguage = in_array('', $this->optionsCurrent['filters']['languages']);
             $in = $expr->in('value.lang', ':languages');
-            $filter = $hasEmptyLanguage ? $expr->orX($in, $expr->isNull('value.lang')) : $in;
+            $filter = $hasEmptyLanguage ? $expr->or($in, $expr->isNull('value.lang')) : $in;
             $qb
                 ->andWhere($filter)
                 ->setParameter('languages', $this->optionsCurrent['filters']['languages'], Connection::PARAM_STR_ARRAY);
@@ -1920,7 +1920,7 @@ class References extends AbstractPlugin
                             );
                     }
                     $qb
-                        ->andWhere($expr->orX(...$orX));
+                        ->andWhere($expr->or(...$orX));
                 } else {
                     $regexp = implode('|', array_map('preg_quote', $this->optionsCurrent['filters'][$filter]));
                     $qb
@@ -2041,7 +2041,7 @@ class References extends AbstractPlugin
                     $coalesce[] = "ress_$strLocale.text";
                     $qb
                         // The join is different than in listDataForProperties().
-                        ->leftJoin('value', 'reference_metadata', "ress_$strLocale", $expr->andX(
+                        ->leftJoin('value', 'reference_metadata', "ress_$strLocale", $expr->and(
                             $expr->eq("ress_$strLocale.resource_id", 'value.resource_id'),
                             $expr->eq("ress_$strLocale.field", ':display_title'),
                             $expr->eq("ress_$strLocale.lang", ':locale_' . $strLocale)
@@ -2054,7 +2054,7 @@ class References extends AbstractPlugin
                     : 'COALESCE(' . implode(', ', $coalesce) . ')';
                 $qb
                     // The join is different than in listDataForProperties().
-                    ->leftJoin('value', 'reference_metadata', 'ress', $expr->andX(
+                    ->leftJoin('value', 'reference_metadata', 'ress', $expr->and(
                         $expr->eq('ress.resource_id', 'value.resource_id'),
                         $expr->eq('ress.field', ':display_title')
                     ))
