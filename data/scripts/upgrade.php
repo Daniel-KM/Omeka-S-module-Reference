@@ -576,3 +576,166 @@ if (version_compare($oldVersion, '3.4.49', '<')) {
         $logger->warn($message->getMessage(), $message->getContext());
     }
 }
+
+if (version_compare($oldVersion, '3.4.50', '<')) {
+    /**
+     * Migrate blocks of this module to new blocks of Omeka S v4.1.
+     *
+     * Migrate templates.
+     * Replace filled settting "heading" by a specific block "Heading" or "Html".
+     * Update settings of block Reference to make it flat.
+     *
+     * @var \Laminas\Log\Logger $logger
+     *
+     * @see \Omeka\Db\Migrations\MigrateBlockLayoutData
+     */
+
+    // It is not possible to search for templates that use heading, because it
+    // is used in many places. So only in doc block.
+
+    // Check themes that use "$heading" in block
+    $strings = [
+        'themes/*/view/common/block-layout/reference*' => [
+            '* @var string $heading',
+            'if ($options[\'heading\'])',
+        ],
+        'themes/*/view/common/block-template/reference*' => [
+            '* @var string $heading',
+            'if ($options[\'heading\'])',
+        ],
+        'themes/*/view/common/reference*' => [
+            '* @var string $heading',
+            'if ($options[\'heading\'])',
+        ],
+    ];
+    $manageModuleAndResources = $this->getManageModuleAndResources();
+    $results = [];
+    foreach ($strings as $path => $strings) {
+        $result = $manageModuleAndResources->checkStringsInFiles($strings, $path);
+        if ($result) {
+            $results[] = $result;
+        }
+    }
+    if ($results) {
+        $message = new PsrMessage(
+            'The option "heading" was removed from block Reference and replaced by a block Heading (if module Block Plus is present) or Html. Remove it in the following files before upgrade and automatic conversion: {json}', // @translate
+            ['json' => json_encode($results, 448)]
+        );
+        throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message->setTranslator($translator));
+    }
+
+    $logger = $services->get('Omeka\Logger');
+    $pageRepository = $entityManager->getRepository(\Omeka\Entity\SitePage::class);
+    $blocksRepository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
+
+    $viewHelpers = $services->get('ViewHelperManager');
+    $escape = $viewHelpers->get('escapeHtml');
+    $hasBlockPlus = $this->isModuleActive('BlockPlus');
+
+    $pagesUpdated = [];
+    $pagesUpdated2 = [];
+    foreach ($pageRepository->findAll() as $page) {
+        $pageSlug = $page->getSlug();
+        $siteSlug = $page->getSite()->getSlug();
+        $position = 0;
+        foreach ($page->getBlocks() as $block) {
+            $block->setPosition(++$position);
+            $layout = $block->getLayout();
+            if ($layout !== 'reference' && $layout !== 'referenceTree') {
+                continue;
+            }
+            $data = $block->getData() ?: [];
+            $layoutData = $block->getLayoutData() ?? [];
+
+            // Migrate template.
+            $template = $data['template'] ?? '';
+            $layoutData = $block->getLayoutData() ?? [];
+            $existingTemplateName = $layoutData['template_name'] ?? null;
+            $templateName = pathinfo($template, PATHINFO_FILENAME);
+            $templateCheck = $layout === 'referenceTree' ? 'reference-tree' : 'reference';
+            if ($templateName
+                && $templateName !== $templateCheck
+                && (!$existingTemplateName || $existingTemplateName === $templateCheck)
+            ) {
+                $layoutData['template_name'] = $templateName;
+                $pagesUpdated[$siteSlug][$pageSlug] = $pageSlug;
+            }
+            unset($data['template']);
+
+            // Make config of block reference flat.
+            if ($layout === 'reference' && isset($data['args'])) {
+                $heading = $data['options']['heading'] ?? '';
+                $order = empty($data['args']['order']) ? ['alphabetic' => 'ASC'] : $data['args']['order'];
+                $sortBy = key($order) === 'alphabetic' ? 'alphabetic' : 'total';
+                $sortOrder = reset($order);
+                $data = [
+                    'fields' => $data['args']['fields'] ?? [],
+                    'type' => $data['args']['type'] ?? 'properties',
+                    'resource_name' => $data['args']['resource_name'] ?? 'items',
+                    'query' => $data['args']['query'] ?? [],
+                    'languages' => $data['args']['languages'] ?? [],
+                    'sort_by' => $sortBy,
+                    'sort_order' => $sortOrder,
+                    'by_initial' => !empty($data['options']['by_initial']),
+                    'link_to_single' => !empty($data['options']['link_to_single']),
+                    'custom_url' => !empty($data['options']['custom_url']),
+                    'skiplinks' => !empty($data['options']['skiplinks']),
+                    'headings' => !empty($data['options']['headings']),
+                    'total' => !empty($data['options']['total']),
+                    'list_by_max' => empty($data['options']['list_by_max']) ? 0 : (int) $data['options']['list_by_max'],
+                    'subject_property' => $data['options']['subject_property'] ?? null,
+                ];
+            } else {
+                $heading = $data['options']['heading'] ?? $data['heading'] ?? '';
+            }
+
+            // Replace setting "heading".
+            if (strlen($heading)) {
+                $b = new \Omeka\Entity\SitePageBlock();
+                $b->setPage($page);
+                $b->setPosition(++$position);
+                if ($hasBlockPlus) {
+                    $b->setLayout('heading');
+                    $b->setData([
+                        'text' => $heading,
+                        'level' => 2,
+                    ]);
+                } else {
+                    $b->setLayout('html');
+                    $b->setData([
+                        'html' => '<h2>' . $escape($heading) . '</h2>',
+                    ]);
+                }
+                $entityManager->persist($b);
+                $block->setPosition(++$position);
+                $pagesUpdated2[$siteSlug][$pageSlug] = $pageSlug;
+            }
+            unset($data['heading']);
+
+            $block->setData($data);
+            $block->setLayoutData($layoutData);
+        }
+    }
+
+    $entityManager->flush();
+
+    if ($pagesUpdated) {
+        $result = array_map('array_values', $pagesUpdated);
+        $message = new PsrMessage(
+            'The setting "template" was moved to the new block layout settings available since Omeka S v4.1. You may check pages for styles: {json}', // @translate
+            ['json' => json_encode($result, 448)]
+        );
+        $messenger->addWarning($message);
+        $logger->warn($message->getMessage(), $message->getContext());
+    }
+
+    if ($pagesUpdated2) {
+        $result = array_map('array_values', $pagesUpdated2);
+        $message = new PsrMessage(
+            'The option "heading" was removed from block Reference. New block "Heading" (if module Block Plus id present) or "Html" was prepended to all blocks that had a filled heading. You may check pages for styles: {json}', // @translate
+            ['json' => json_encode($result, 448)]
+        );
+        $messenger->addWarning($message);
+        $logger->warn($message->getMessage(), $message->getContext());
+    }
+}
