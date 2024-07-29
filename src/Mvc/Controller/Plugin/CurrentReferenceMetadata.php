@@ -176,11 +176,11 @@ class CurrentReferenceMetadata extends AbstractPlugin
             $subValueResource = $subValue->getValueResource();
             if ($subValueResource) {
                 if ($count > 10) {
-                    $this->logger->warn(sprintf(
-                        'Resource #%d has a recursive title.', // @translate
+                    $this->logger->warn(
+                        'Resource #{resource_id} has a recursive title.', // @translate
                         // TODO Ideally, get initial source value id. Anyway, this case never occurs above one or two levels in real life.
-                        $value->getResource()->getId()
-                    ));
+                        ['resource_id' => $value->getResource()->getId()]
+                    );
                     $lang = '';
                     $text = $subValueResource->getTitle();
                     $isPublicSubValueResource = $isPublicSubValue && $subValueResource->isPublic();
