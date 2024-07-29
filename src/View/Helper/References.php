@@ -61,7 +61,9 @@ class References extends AbstractHelper
      *     "resources".
      *   - page (int): the page to output, the first one in most of the cases.
      *   - per_page (int): the number of references to output.
-     *   - sort_by (string): "alphabetic" (default), "total", or any available column.
+     *   - sort_by (string): "alphabetic" (default), "total", "values", or any
+     *     available column in the table of the database. For values, they
+     *     should be set as filters values.
      *   - sort_order (string): "asc" (default) or "desc".
      *   - filters (array): Limit values to the specified data. The passed
      *     settings may be a string separated by "|" (recommended) or ",", that

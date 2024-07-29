@@ -233,7 +233,9 @@ class References extends AbstractPlugin
      *     "resources".
      *   - page (int): the page to output, the first one in most of the cases.
      *   - per_page (int): the number of references to output.
-     *   - sort_by (string): "alphabetic" (default), "total", or any available column.
+     *   - sort_by (string): "alphabetic" (default), "total", "values", or any
+     *     available column in the table of the database. For values, they
+     *     should be set as filters values.
      *   - sort_order (string): "asc" (default) or "desc".
      *   - filters (array): Limit values to the specified data. The passed
      *     settings may be a string separated by "|" (recommended) or ",", that
@@ -940,6 +942,14 @@ class References extends AbstractPlugin
             $options['filters']['end'] = $explode($options['filters']['end']);
         }
         $options['filters']['end'] = $cleanNoTrim($options['filters']['end']);
+
+        // Check for sort by values when no values are defined.
+        if ($options['sort_by'] === 'values' && empty($options['filters']['values'])) {
+            $this->logger->err(
+                'The order for facets is "by a list of values", but no values are defined.' // @translate
+            );
+            $options['sort_by'] = 'alphabetic';
+        }
 
         return $options;
     }
@@ -2135,22 +2145,37 @@ class References extends AbstractPlugin
         // Furthermore, it may break mySql 5.7.5 and later, where ONLY_FULL_GROUP_BY
         // is set by default and requires to be grouped.
 
+        // Add alphabetic order (val asc) for ergonomy when total is the same.
+
         $sortBy = $this->optionsCurrent['sort_by'];
         $sortOrder = $this->optionsCurrent['sort_order'];
+
         switch ($sortBy) {
+            case 'alphabetic':
+                $qb
+                    ->orderBy('val', $sortOrder);
+                break;
             case 'total':
                 $qb
                     ->orderBy('total', $sortOrder)
-                    // Add alphabetic order for ergonomy.
                     ->addOrderBy('val', 'ASC');
                 break;
-            case 'alphabetic':
-                $sortBy = 'val';
-                // Any available column.
-                // no break
-            default:
+            case 'values':
+                // Values are already checked in options.
+                // To order by field requires the package beberlei/doctrineextensions,
+                // that is provided by omeka, but that may not be available by
+                // other databases (sqlite for test).
                 $qb
-                    ->orderBy($sortBy, $sortOrder);
+                    ->orderBy('FIELD(val, :order_values)', $sortOrder)
+                    ->setParameter(':order_values', $this->optionsCurrent['filters']['values'], Connection::PARAM_STR_ARRAY)
+                    ->addOrderBy('val', 'ASC');
+                break;
+            default:
+                // Any available column.
+                $qb
+                    ->orderBy($sortBy, $sortOrder)
+                    ->orderBy('val', 'ASC');
+                break;
         }
 
         if ($this->optionsCurrent['per_page']) {
