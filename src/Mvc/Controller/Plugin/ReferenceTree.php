@@ -165,14 +165,14 @@ class ReferenceTree extends AbstractPlugin
                 $branches[] = $branch;
                 $lowerBranches[] = mb_strtolower($branch);
             }
-            $options['values'] = $lowerBranches;
+            $options['filters']['values'] = $lowerBranches;
         }
         // Simple tree.
         else {
             $lowerReferences = array_map(function ($v) {
                 return mb_strtolower((string) key($v));
             }, $referenceLevels);
-            $options['values'] = $lowerReferences;
+            $options['filters']['values'] = $lowerReferences;
         }
         $totals = $this->references->__invoke(['tree' => $options['fields']], $query, $options)->list();
         $totals = isset($totals['tree']) ? $totals['tree']['o:references'] : [];

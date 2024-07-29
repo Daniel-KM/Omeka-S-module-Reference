@@ -78,11 +78,11 @@ class References extends AbstractHelper
      *       Warning: "resource" is not the same than specific resources.
      *       Use module Bulk Edit or Easy Admin to specify all resources
      *       automatically.
+     *     - values (array): Allow to limit the answer to the specified values,
+     *       for example a short list of keywords.
      *     - begin (array): Filter property values that begin with these
      *       strings, generally one or more initials.
      *     - end (array): Filter property values that end with these strings.
-     *   - values (array): Allow to limit the answer to the specified values,
-     *     for example a short list of keywords.
      * - Options for output:
      *   - first (bool): Append the id of the first resource (default false).
      *   - list_by_max (int): 0 (default), or the max number of resources for

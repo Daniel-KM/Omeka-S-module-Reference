@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\ORM\EntityManager;
+use Laminas\Log\Logger;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use Omeka\Api\Adapter\Manager as AdapterManager;
 use Omeka\Api\Manager as ApiManager;
@@ -39,6 +40,11 @@ class References extends AbstractPlugin
      * @var \Doctrine\ORM\EntityManager
      */
     protected $entityManager;
+
+    /**
+     * @var \Laminas\Log\Logger
+     */
+    protected $logger;
 
     /**
      * @var \Omeka\Mvc\Controller\Plugin\Translate
@@ -138,10 +144,10 @@ class References extends AbstractPlugin
             'languages' => [],
             'main_types' => [],
             'datatypes' => [],
+            'values' => [],
             'begin' => [],
             'end' => [],
         ],
-        'values' => [],
         // Output options.
         'first' => false,
         'list_by_max' => 0,
@@ -175,6 +181,7 @@ class References extends AbstractPlugin
         ApiManager $api,
         Connection $connection,
         EntityManager $entityManager,
+        Logger $logger,
         Translate $translate,
         ?User $user,
         bool $hasAccess,
@@ -185,6 +192,7 @@ class References extends AbstractPlugin
         $this->api = $api;
         $this->connection = $connection;
         $this->entityManager = $entityManager;
+        $this->logger = $logger;
         $this->translate = $translate;
         $this->user = $user;
         $this->hasAccess = $hasAccess;
@@ -224,11 +232,11 @@ class References extends AbstractPlugin
      *       Warning: "resource" is not the same than specific resources.
      *       Use module Bulk Edit or Easy Admin to specify all resources
      *       automatically.
+     *     - values (array): Allow to limit the answer to the specified values,
+     *       for example a short list of keywords.
      *     - begin (array): Filter property values that begin with these
      *       strings, generally one or more initials.
      *     - end (array): Filter property values that end with these strings.
-     *   - values (array): Allow to limit the answer to the specified values,
-     *     for example a short list of keywords.
      * - Options for output:
      *   - first (bool): Append the id of the first resource (default false).
      *   - list_by_max (int): 0 (default), or the max number of resources for
@@ -343,6 +351,13 @@ class References extends AbstractPlugin
         if (!$options) {
             $this->options = $this->optionsDefaults;
             return $this;
+        }
+
+        if (isset($options['values'])) {
+            $options['filters']['values'] ??= $options['values'];
+            $this->logger->err(
+                'To get references, to pass the option "values" as main key is deprecated. it should be set as a sub-key of filters.' // @ŧranslate
+            );
         }
 
         $options += $this->optionsDefaults;
@@ -1969,32 +1984,32 @@ class References extends AbstractPlugin
             }
         }
 
-        if ($this->options['values']) {
+        if ($this->options['filters']['values']) {
             switch ($type) {
                 case 'properties':
                 case 'resource_classes':
                 case 'resource_templates':
                     $qb
                         ->andWhere($expr->in('value.value', ':values'))
-                        ->setParameter('values', $this->options['values'], Connection::PARAM_STR_ARRAY);
+                        ->setParameter('values', $this->options['filters']['values'], Connection::PARAM_STR_ARRAY);
                     break;
                 case 'resource_titles':
                     // TODO Nothing to filter for resource titles?
                     break;
                 case 'o:property':
-                    $values = $this->getPropertyIds($this->options['values']) ?: [0];
+                    $values = $this->getPropertyIds($this->options['filters']['values']) ?: [0];
                     $qb
                         ->andWhere($expr->in('property.id', ':ids'))
                         ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:resource_class':
-                    $values = $this->getResourceClassIds($this->options['values']) ?: [0];
+                    $values = $this->getResourceClassIds($this->options['filters']['values']) ?: [0];
                     $qb
                         ->andWhere($expr->in('resource_class.id', ':ids'))
                         ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:resource_template':
-                    $values = $this->getResourceTemplateIds($this->options['values']) ?: [0];
+                    $values = $this->getResourceTemplateIds($this->options['filters']['values']) ?: [0];
                     $qb
                         ->andWhere($expr->in('resource_template.id', ':ids'))
                         ->setParameter('ids', $values, Connection::PARAM_INT_ARRAY);
@@ -2002,22 +2017,22 @@ class References extends AbstractPlugin
                 case 'o:item_set':
                     $qb
                         ->andWhere($expr->in('item_set.id', ':ids'))
-                        ->setParameter('ids', array_map('intval', $this->options['values']), Connection::PARAM_INT_ARRAY);
+                        ->setParameter('ids', array_map('intval', $this->options['filters']['values']), Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:owner':
                     $qb
                         ->andWhere($expr->in('user.id', ':ids'))
-                        ->setParameter('ids', array_map('intval', $this->options['values']), Connection::PARAM_INT_ARRAY);
+                        ->setParameter('ids', array_map('intval', $this->options['filters']['values']), Connection::PARAM_INT_ARRAY);
                     break;
                 case 'o:site':
                     $qb
                         ->andWhere($expr->in('site.id', ':ids'))
-                        ->setParameter('ids', array_map('intval', $this->options['values']), Connection::PARAM_INT_ARRAY);
+                        ->setParameter('ids', array_map('intval', $this->options['filters']['values']), Connection::PARAM_INT_ARRAY);
                     break;
                 case 'access':
                     $qb
                         ->andWhere($expr->in('access_status.level', ':values'))
-                        ->setParameter('values', $this->options['values'], Connection::PARAM_STR_ARRAY);
+                        ->setParameter('values', $this->options['filters']['values'], Connection::PARAM_STR_ARRAY);
                     break;
                 default:
                     break;
