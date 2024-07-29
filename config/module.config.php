@@ -173,7 +173,6 @@ return [
                 'languages' => [],
                 'sort_by' => 'alphabetic',
                 'sort_order' => 'asc',
-                'heading' => 'Subjects', // @translate
                 'by_initial' => false,
                 'link_to_single' => true,
                 'custom_url' => false,
@@ -184,7 +183,6 @@ return [
                 'subject_property' => null,
             ],
             'referenceTree' => [
-                'heading' => 'Tree of subjects', // @translate
                 'fields' => [
                     'dcterms:subject',
                 ],

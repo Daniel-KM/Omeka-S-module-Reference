@@ -142,17 +142,6 @@ class ReferenceFieldset extends Fieldset
 
         $this
             ->add([
-                'name' => 'o:block[__blockIndex__][o:data][heading]',
-                'type' => Element\Text::class,
-                'options' => [
-                    'label' => 'Heading', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'reference-options-heading',
-                    'data-fieldset' => 'options',
-                ],
-            ])
-            ->add([
                 'name' => 'o:block[__blockIndex__][o:data][by_initial]',
                 'type' => Element\Checkbox::class,
                 'options' => [

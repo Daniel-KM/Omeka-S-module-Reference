@@ -8,14 +8,10 @@
  */
 
 $plugins = $this->getHelperPluginManager();
-$escape = $plugins->get('escapeAttr');
 $translate = $plugins->get('translate');
 ?>
 
 <div class="reference-block">
-    <?php if ($options['heading']): ?>
-    <h2><?= $escape($options['heading']) ?></h2>
-    <?php endif; ?>
     <?php if (empty($fields)): ?>
     <p><?= $translate('There is no references.') ?></p>
     <?php else: ?>

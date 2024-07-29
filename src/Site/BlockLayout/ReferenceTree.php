@@ -117,19 +117,16 @@ class ReferenceTree extends AbstractBlockLayout implements TemplateableBlockLayo
     public function render(PhpRenderer $view, SitePageBlockRepresentation $block, $templateViewScript = self::PARTIAL_NAME)
     {
         $options = $block->data() + [
-            'heading' => '',
             'tree' => [],
             'query' => [],
         ];
 
-        $heading = $options['heading'];
         $tree = $options['tree'];
         $query = $options['query'];
-        unset($options['heading'], $options['tree']);
+        unset($options['tree']);
 
         $vars = [
             'block' => $block,
-            'heading' => $heading,
             'total' => count($tree),
             'tree' => $tree,
             'query' => $query,

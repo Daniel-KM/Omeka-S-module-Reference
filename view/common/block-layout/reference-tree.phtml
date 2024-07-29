@@ -2,7 +2,6 @@
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
  * @var \Omeka\Api\Representation\SitePageBlockRepresentation $block
- * @var string $heading
  * @var int $total
  * @var array $tree
  * @var string $query
@@ -15,9 +14,6 @@ $references = $plugins->get('references');
 ?>
 
 <div class="reference-block">
-    <?php if (!empty($heading)): ?>
-    <h2><?= $escape($heading) ?></h2>
-    <?php endif; ?>
     <?php if ($total): ?>
     <?= $references->displayTree($tree, $query, $options) ?>
     <?php else: ?>
