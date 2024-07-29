@@ -217,7 +217,9 @@ class References extends AbstractPlugin
      *   - per_page (int): the number of references to output.
      *   - sort_by (string): "alphabetic" (default), "total", or any available column.
      *   - sort_order (string): "asc" (default) or "desc".
-     *   - filters (array): Limit values to the specified data:
+     *   - filters (array): Limit values to the specified data. The passed
+     *     settings may be a string separated by "|" (recommended) or ",", that
+     *     will be exploded with the separator "|" if present, else ",".
      *     - languages (array): list of languages. Values without language are
      *       defined with a null or the string "null" (the empty string "" is
      *       deprecated). It is recommended to append the empty language when a
@@ -413,48 +415,70 @@ class References extends AbstractPlugin
         ];
 
         // Set keys for all default filters.
-        $this->options['filters'] += $this->optionsDefaults['filters'];
+        $this->options['filters'] = array_intersect_key($this->options['filters'] + $this->optionsDefaults['filters'], $this->optionsDefaults['filters']);
+
+        // Explode with separator "|" if present, else ",". For complex cases,
+        // an array should be used.
+        $explode = fn($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
+
+        $clean = fn(array $array): array => array_unique(array_filter(array_map('trim', $array)));
+        $cleanAllow0 = fn(array $array): array => array_unique(array_filter(array_map('trim', $array), fn($v) => $v || $v === '0'));
+        $cleanNoTrim = fn(array $array): array => array_unique(array_filter($array));
 
         // The check for length avoids to add a filter on values without any
         // language. It should be specified as "||" (or leading/trailing "|").
         // The value "null" can be used too and is recommended instead of an
         // empty string.
         if (!is_array($this->options['filters']['languages'])) {
-            $this->options['filters']['languages'] = explode('|', str_replace(',', '|', $this->options['filters']['languages'] ?: ''));
+            $this->options['filters']['languages'] = $explode($this->options['filters']['languages']);
+        }
+        // Clean the empty language as empty string.
+        if (in_array('', $this->options['filters']['languages'], true)) {
+            $this->logger->warn(
+                'To get references, the empty string as option for languages is deprecated in favor of null or the string "null".' // @ŧranslate
+            );
         }
         $noEmptyLanguages = array_diff($this->options['filters']['languages'], ['null', null, '', 0, '0']);
         if (count($noEmptyLanguages) !== count($this->options['filters']['languages'])) {
             $this->options['filters']['languages'] = $noEmptyLanguages;
             $this->options['filters']['languages'][] = '';
         }
+        // No filter in order to manage the empty language.
         $this->options['filters']['languages'] = array_unique(array_map('trim', $this->options['filters']['languages']));
 
         // May be an array or a string (literal, uri or resource, in this order).
         if (!is_array($this->options['filters']['main_types'])) {
-            $this->options['filters']['main_types'] = explode('|', str_replace(',', '|', $this->options['filters']['main_types'] ?: ''));
+            $this->options['filters']['main_types'] = $explode($this->options['filters']['main_types']);
         }
-        $this->options['filters']['main_types'] = array_unique(array_filter(array_map('trim', $this->options['filters']['main_types'])));
+        $this->options['filters']['main_types'] = $clean($this->options['filters']['main_types']);
         $this->options['filters']['main_types'] = array_values(array_intersect(['value', 'resource', 'uri'], $this->options['filters']['main_types']));
         $this->options['filters']['main_types'] = array_combine($this->options['filters']['main_types'], $this->options['filters']['main_types']);
+
         if (!is_array($this->options['filters']['datatypes'])) {
-            $this->options['filters']['datatypes'] = explode('|', str_replace(',', '|', $this->options['filters']['datatypes'] ?: ''));
+            $this->options['filters']['datatypes'] = $explode($this->options['filters']['datatypes']);
         }
-        $this->options['filters']['datatypes'] = array_unique(array_filter(array_map('trim', $this->options['filters']['datatypes'])));
+        $this->options['filters']['datatypes'] = $clean($this->options['filters']['datatypes']);
+
+        if (!is_array($this->options['filters']['values'])) {
+            $this->options['filters']['values'] = $explode($this->options['filters']['values']);
+        }
+        $this->options['filters']['values'] = $cleanAllow0($this->options['filters']['values']);
 
         // No trim for begin/end.
         if (!is_array($this->options['filters']['begin'])) {
-            $this->options['filters']['begin'] = explode('|', str_replace(',', '|', $this->options['filters']['begin'] ?? ''));
+            $this->options['filters']['begin'] = $explode($this->options['filters']['begin']);
         }
-        $this->options['filters']['begin'] = array_unique(array_filter($this->options['filters']['begin']));
+        $this->options['filters']['begin'] = $cleanNoTrim($this->options['filters']['begin']);
+
         if (!is_array($this->options['filters']['end'])) {
-            $this->options['filters']['end'] = explode('|', str_replace(',', '|', $this->options['filters']['end'] ?? ''));
+            $this->options['filters']['end'] = $explode($this->options['filters']['end']);
         }
-        $this->options['filters']['end'] = array_unique(array_filter($this->options['filters']['end']));
+        $this->options['filters']['end'] = $cleanNoTrim($this->options['filters']['end']);
 
         if (!is_array($this->options['fields'])) {
-            $this->options['fields'] = explode('|', str_replace(',', '|', $this->options['fields'] ?? ''));
+            $this->options['fields'] = $explode($this->options['fields']);
         }
-        $this->options['fields'] = array_unique(array_filter(array_map('trim', $this->options['fields'])));
+        $this->options['fields'] = $clean($this->options['fields']);
 
         return $this;
     }

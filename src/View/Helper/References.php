@@ -63,7 +63,9 @@ class References extends AbstractHelper
      *   - per_page (int): the number of references to output.
      *   - sort_by (string): "alphabetic" (default), "total", or any available column.
      *   - sort_order (string): "asc" (default) or "desc".
-     *   - filters (array): Limit values to the specified data:
+     *   - filters (array): Limit values to the specified data. The passed
+     *     settings may be a string separated by "|" (recommended) or ",", that
+     *     will be exploded with the separator "|" if present, else ",".
      *     - languages (array): list of languages. Values without language are
      *       defined with a null or the string "null" (the empty string "" is
      *       deprecated). It is recommended to append the empty language when a
