@@ -30,6 +30,9 @@ See general end user documentation for [installing a module].
 
 This module requires the module [Common], that should be installed first.
 
+If your records contains diacritic letters like É, Ù, etc., it is recommended to
+install the php extension `intl`.
+
 * From the zip
 
 Download the last release [Reference.zip] from the list of releases, and
