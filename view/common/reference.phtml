@@ -56,6 +56,7 @@ $controllerName = $mapResourcesControllers[$options['resource_name']];
 // Set default values.
 $options += [
     'by_initial' => false,
+    'search_config' => null,
     'link_to_single' => true,
     'total' => true,
     'raw' => false,
@@ -74,6 +75,7 @@ $hasSubjectProperty = !empty($options['subject_property']);
 $options['link_to_single'] = $options['link_to_single'] && !$listByMax;
 $isRecursive = $listByMax || $hasSubjectProperty;
 $options['raw_sub'] = $options['raw_sub'] || !$isRecursive;
+$searchConfigSlug = $options['search_config'] ?? null;
 
 $querySource = $query;
 
@@ -142,24 +144,40 @@ if ($options['raw']) {
                 $queryEmpty[$fieldType][] = $field['o:id'];
                 if (!$hasEmptyFieldProperty) {
                     $hasEmptyFieldProperty = true;
-                    $query['property'][] = ['joiner' => 'or', 'property' => 'dcterms:title', 'type' => 'eq', 'text' => '__temp_placeholder__'];
-                    $queryEmpty['property'][] = ['joiner' => 'and', 'property' => 'dcterms:title', 'type' => 'nex'];
+                    if ($searchConfigSlug) {
+                        $query['filter'][] = ['join' => 'or', 'field' => 'dcterms:title', 'type' => 'eq', 'val' => '__temp_placeholder__'];
+                        $queryEmpty['property'][] = ['join' => 'and', 'field' => 'dcterms:title', 'type' => 'nex'];
+                    } else {
+                        $query['property'][] = ['joiner' => 'or', 'property' => 'dcterms:title', 'type' => 'eq', 'text' => '__temp_placeholder__'];
+                        $queryEmpty['property'][] = ['joiner' => 'and', 'property' => 'dcterms:title', 'type' => 'nex'];
+                    }
                 }
             } else {
-                $query['property'][] = ['joiner' => 'or', 'property' => $field['o:term'], 'type' => 'eq', 'text' => '__temp_placeholder__'];
+                if ($searchConfigSlug) {
+                    $query['filter'][] = ['join' => 'or', 'field' => $field['o:term'], 'type' => 'eq', 'val' => '__temp_placeholder__'];
+                } else {
+                    $query['property'][] = ['joiner' => 'or', 'property' => $field['o:term'], 'type' => 'eq', 'text' => '__temp_placeholder__'];
+                }
             }
         }
         // The default url helper doesn't encode "&" as "&amp;", so append it manually.
-        $templateUrlEmpty = str_replace('__temp_placeholder__', '{reference}',
-            $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986));
-        $templateUrl = str_replace('__temp_placeholder__', '{reference}',
-            $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
+        if ($searchConfigSlug) {
+            $templateUrlEmpty = str_replace('__temp_placeholder__', '{reference}',
+                $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986));
+            $templateUrl = str_replace('__temp_placeholder__', '{reference}',
+                $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
+        } else {
+            $templateUrlEmpty = str_replace('__temp_placeholder__', '{reference}',
+                $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986));
+            $templateUrl = str_replace('__temp_placeholder__', '{reference}',
+                $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
+        }
     }
 }
 
 $replaceBase['{thumbnail}'] = '';
 
-$querier = function ($reference, $emptyReferenceValue, $limit = null) use ($querySource, $request, $fieldTypes) {
+$querier = function ($reference, $emptyReferenceValue, $limit = null) use ($querySource, $request, $fieldTypes, $searchConfigSlug) {
     $query = $querySource;
     // Normally, types cannot be mixed, so it should be possible to use the main field type.
     $hasEmptyFieldProperty = false;
@@ -170,13 +188,25 @@ $querier = function ($reference, $emptyReferenceValue, $limit = null) use ($quer
             if ($emptyReferenceValue) {
                 if (!$hasEmptyFieldProperty) {
                     $hasEmptyFieldProperty = true;
-                    $query['property'][] = ['joiner' => 'or', 'property' => 'dcterms:title', 'type' => 'nex'];
+                    if ($searchConfigSlug) {
+                        $query['filter'][] = ['join' => 'or', 'field' => 'dcterms:title', 'type' => 'nex'];
+                    } else {
+                        $query['property'][] = ['joiner' => 'or', 'property' => 'dcterms:title', 'type' => 'nex'];
+                    }
                 }
             } else {
-                $query['property'][] = ['joiner' => 'or', 'property' =>  'dcterms:title', 'type' => 'eq', 'text' => $reference];
+                if ($searchConfigSlug) {
+                    $query['filter'][] = ['join' => 'or', 'field' =>  'dcterms:title', 'type' => 'eq', 'val' => $reference];
+                } else {
+                    $query['property'][] = ['joiner' => 'or', 'property' =>  'dcterms:title', 'type' => 'eq', 'text' => $reference];
+                }
             }
         } else {
-            $query['property'][] = ['joiner' => 'or', 'property' => $field['o:term'], 'type' => 'eq', 'text' => $reference];
+            if ($searchConfigSlug) {
+                $query['filter'][] = ['join' => 'or', 'field' => $field['o:term'], 'type' => 'eq', 'val' => $reference];
+            } else {
+                $query['property'][] = ['joiner' => 'or', 'property' => $field['o:term'], 'type' => 'eq', 'text' => $reference];
+            }
         }
     }
     $query['limit'] = $limit;
@@ -244,13 +274,16 @@ if ($options['skiplinks']):
 
             if ($options['custom_url']) {
                 if ($referenceNumber) {
-                    $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $querier($reference, $emptyReferenceValue)], false);
+                    if ($searchConfigSlug) {
+                        $referenceUrl = $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], ['query' => $querier($reference, $emptyReferenceValue)], false);
+                    } else {
+                        $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $querier($reference, $emptyReferenceValue)], false);
+                    }
                 } else {
                     // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
                     // $referenceUrl = $api->read($resourceName, $referenceData['first'])->getContent()->siteUrl();
                     $referenceUrl = str_replace('{reference}', rawurlencode($referenceData['first']), $templateUrlSingle);
                 }
-
             } else {
                 if ($referenceNumber) {
                     if ($mainFieldType) {

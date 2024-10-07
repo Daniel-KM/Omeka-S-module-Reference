@@ -191,6 +191,8 @@ class References extends AbstractHelper
      * - template (string): the template to use (default: "common/reference")
      * - raw (bool): Show references as raw text, not links (default to false)
      * - raw_sub (bool): Show sub references as raw text, not links (default to false)
+     * - search_config (string): Link to browse or search engine slug (module
+     *   Advanced Search)
      * - link_to_single (bool): When there is one result for a term, link it
      *   directly to the resource, and not to the list page (default to config)
      * - custom_url (bool): with modules such Clean Url or Ark, use the url
@@ -240,6 +242,15 @@ class References extends AbstractHelper
 
         // Keep original option for key first.
         $options['first'] = $firstId;
+
+        /** @var \AdvancedSearch\Api\Representation\SearchConfigRepresentation $searchConfig */
+        $plugins = $this->getView()->getHelperPluginManager();
+        if (!empty($options['search_config']) && $plugins->has('getSearchConfig')) {
+            $options['search_config'] = $plugins->get('getSearchConfig')($options['search_config'] === 'default' ? null : $options['search_config']);
+            $options['search_config'] = $options['search_config'] ? $options['search_config']->slug() : null;
+        } else {
+            $options['search_config'] = null;
+        }
 
         $template = empty($options['template']) ? 'common/reference' : $options['template'];
         unset($options['template']);
@@ -347,6 +358,8 @@ class References extends AbstractHelper
      * - resource_name: items (default), "item_sets", "media", "resources".
      * - branch: Managed terms are branches (path separated with " :: ")
      * - raw (bool): Show references as raw text, not links (default to false)
+     * - search_config (string): Link to browse or search engine slug (module
+     *   Advanced Search)
      * - thumbnail (string): display the thumbnail of the first reference
      * - link_to_single (bool): When there is one result for a term, link it
      *   directly to the resource, and not to the list page (default to config)
@@ -366,6 +379,7 @@ class References extends AbstractHelper
             'resource_name' => 'items',
             'branch' => null,
             'raw' => false,
+            'search_config' => '',
             'thumbnail' => '',
             'link_to_single' => null,
             'custom_url' => false,
@@ -382,6 +396,15 @@ class References extends AbstractHelper
         $result = $this->tree($referenceLevels, $query, $options);
 
         $options['first'] = $firstId;
+
+        /** @var \AdvancedSearch\Api\Representation\SearchConfigRepresentation $searchConfig */
+        $plugins = $this->getView()->getHelperPluginManager();
+        if (!empty($options['search_config']) && $plugins->has('getSearchConfig')) {
+            $options['search_config'] = $plugins->get('getSearchConfig')($options['search_config'] === 'default' ? null : $options['search_config']);
+            $options['search_config'] = $options['search_config'] ? $options['search_config']->slug() : null;
+        } else {
+            $options['search_config'] = null;
+        }
 
         $template = empty($options['template']) ? 'common/reference-tree' : $options['template'];
         unset($options['template']);

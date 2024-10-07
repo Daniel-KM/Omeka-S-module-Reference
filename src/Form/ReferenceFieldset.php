@@ -9,6 +9,13 @@ use Omeka\Form\Element as OmekaElement;
 
 class ReferenceFieldset extends Fieldset
 {
+    /**
+     * List of search configs  when module Advanced Search is used.
+     *
+     * @var array
+     */
+    protected $searchConfigs = [];
+
     public function init(): void
     {
         // Args and options cannot use sub-fieldsets for compatibility with
@@ -157,6 +164,22 @@ class ReferenceFieldset extends Fieldset
                 ],
             ])
             ->add([
+                'name' => 'o:block[__blockIndex__][o:data][search_config]',
+                'type' => Element\Select::class,
+                'options' => [
+                    'label' => 'Link to browse or search engine', // @translate
+                    'info' => 'This options is useful when the module Advanced Search is used.', // @translate
+                    'value_options' => [
+                        'default' => 'Search config of the site', // @translate
+                    ] + $this->searchConfigs,
+                    'empty_option' => '',
+                ],
+                'attributes' => [
+                    'id' => 'reference-options-search-config',
+                    'data-fieldset' => 'options',
+                ],
+            ])
+            ->add([
                 'name' => 'o:block[__blockIndex__][o:data][link_to_single]',
                 'type' => Element\Checkbox::class,
                 'options' => [
@@ -276,5 +299,11 @@ class ReferenceFieldset extends Fieldset
                 ],
             ])
         ;
+    }
+
+    public function setSearchConfigs(array $searchConfigs): self
+    {
+        $this->searchConfigs = $searchConfigs;
+        return $this;
     }
 }

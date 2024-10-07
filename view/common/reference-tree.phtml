@@ -30,6 +30,7 @@ $controllerName = $mapResourcesControllers[$resourceName];
 // Set default values.
 $options += [
     'query_type' => 'eq',
+    'search_config' => null,
     'link_to_single' => true,
     'total' => true,
     'raw' => false,
@@ -37,6 +38,7 @@ $options += [
     'expanded' => true,
     'custom_url' => false,
 ];
+$searchConfigSlug = $options['search_config'] ?? null;
 $options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
 if (!$options['custom_url']) {
     $templateUrlSingle = str_replace('__temp_placeholder__', '{reference}',
@@ -50,8 +52,13 @@ if (!$options['custom_url']) {
         ];
     }
     // The default url helper doesn't encode "&" as "&amp;", so append it manually.
-    $templateUrl = str_replace('__temp_placeholder__', '{reference}',
-        $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
+    if ($searchConfigSlug) {
+        $templateUrl = str_replace('__temp_placeholder__', '{reference}',
+            $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
+    } else {
+        $templateUrl = str_replace('__temp_placeholder__', '{reference}',
+            $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
+    }
 }
 ?>
 
@@ -101,10 +108,17 @@ if (!$options['custom_url']) {
                             if ($options['custom_url']) {
                                 // Keep the original query.
                                 $queryForUrl = $query;
-                                foreach ($fields as $field) {
-                                    $queryForUrl['property'][] = ['joiner' => 'or', 'property' => $field, 'type' => $options['query_type'], 'text' => $referenceOrBranch];
+                                if ($searchConfigSlug) {
+                                    foreach ($fields as $field) {
+                                        $queryForUrl['filter'][] = ['join' => 'or', 'field' => $field, 'type' => $options['query_type'], 'val' => $referenceOrBranch];
+                                    }
+                                    $referenceUrl = $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], ['query' => $queryForUrl], false);
+                                } else {
+                                    foreach ($fields as $field) {
+                                        $queryForUrl['property'][] = ['joiner' => 'or', 'property' => $field, 'type' => $options['query_type'], 'text' => $referenceOrBranch];
+                                    }
+                                    $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $queryForUrl], false);
                                 }
-                                $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $queryForUrl], false);
                             } else {
                                 $referenceUrl = str_replace('{reference}', rawurlencode($referenceOrBranch), $templateUrl);
                             }
