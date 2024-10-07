@@ -133,7 +133,9 @@ if (!$options['custom_url']) {
                 echo $referenceText;
                 // Can be null when references are set directly.
                 if ($options['total'] && $referenceNumber && ($referenceData['total'] ?? false)):
-                    echo ' (' . $referenceData['total'] . ')';
+                    echo $options['raw']
+                        ? ' (' . $referenceData['total'] . ')'
+                        : ' <span class="reference-total"> (' . $referenceData['total'] . ')</span>';
                 endif;
 
                 $previous_level = $level;

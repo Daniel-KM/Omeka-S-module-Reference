@@ -115,16 +115,18 @@ if ($options['raw']) {
     if ($options['total']) {
         $template .= '<div class="reference-record">{thumbnail}{reference_text}{reference_total}{recursive}</div>' . PHP_EOL;
         $replaceBase['{reference_total}'] = '';
+        $referenceTotal = ' (%d)';
     } else {
         $template .= '<div class="reference-record">{thumbnail}{reference_text}{recursive}</div>' . PHP_EOL;
     }
 } else {
     $replaceBase['{reference_url}'] = '';
     if ($options['total']) {
-        $template .= '<div class="reference-record">{thumbnail}<a href="{reference_url}">{reference_text}</a>{reference_total}{recursive}</div>' . PHP_EOL;
+        $template .= '<div class="reference-record">{thumbnail}<a href="{reference_url}"><span class="reference-label">{reference_text}</span></a>{reference_total}{recursive}</div>' . PHP_EOL;
         $replaceBase['{reference_total}'] = '';
+        $referenceTotal = ' <span class="reference-total"> (%d)</span>';
     } else {
-        $template .= '<div class="reference-record">{thumbnail}<a href="{reference_url}">{reference_text}</a>{recursive}</div>' . PHP_EOL;
+        $template .= '<div class="reference-record">{thumbnail}<a href="{reference_url}"><span class="reference-label">{reference_text}</span></a>{recursive}</div>' . PHP_EOL;
     }
     if (!$options['custom_url']) {
         // Prepare the custom url one time with the original query as the base of the url,
@@ -269,8 +271,7 @@ if ($options['skiplinks']):
 
         // Can be null when references are set directly.
         if ($options['total'] && $referenceNumber && @$referenceData['total']) {
-            $referenceTotal = ' (' . $referenceData['total'] . ')';
-            $replace['{reference_total}'] = $referenceTotal;
+            $replace['{reference_total}'] = sprintf($referenceTotal, $referenceData['total']);
         }
 
         // To set the thumbnail is slow, because the resource should be loaded.
