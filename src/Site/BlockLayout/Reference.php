@@ -78,6 +78,7 @@ class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutIn
         $data['skiplinks'] = !empty($data['skiplinks']);
         $data['headings'] = !empty($data['headings']);
         $data['total'] = !empty($data['total']);
+        $data['thumbnail'] = $data['thumbnail'] ?? null;
         $data['list_by_max'] = (int) $data['list_by_max'];
 
         $block->setData($data);

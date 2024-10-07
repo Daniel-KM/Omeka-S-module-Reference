@@ -2,6 +2,7 @@
 
 namespace Reference\Form;
 
+use Common\Form\Element as CommonElement;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 use Omeka\Form\Element as OmekaElement;
@@ -137,6 +138,17 @@ Asia
                 ],
                 'attributes' => [
                     'id' => 'reference-tree-total',
+                ],
+            ])
+            ->add([
+                'name' => 'o:block[__blockIndex__][o:data][thumbnail]',
+                'type' => CommonElement\ThumbnailTypeSelect::class,
+                'options' => [
+                    'label' => 'Add the thumbnail of the first resource', // @translate
+                    'empty_option' => '',
+                ],
+                'attributes' => [
+                    'id' => 'reference-tree-thumbnail',
                 ],
             ])
             ->add([

@@ -229,6 +229,18 @@ class ReferenceFieldset extends Fieldset
                 ],
             ])
             ->add([
+                'name' => 'o:block[__blockIndex__][o:data][thumbnail]',
+                'type' => CommonElement\ThumbnailTypeSelect::class,
+                'options' => [
+                    'label' => 'Add the thumbnail of the first resource', // @translate
+                    'empty_option' => '',
+                ],
+                'attributes' => [
+                    'id' => 'reference-options-thumbnail',
+                    'data-fieldset' => 'options',
+                ],
+            ])
+            ->add([
                 'name' => 'o:block[__blockIndex__][o:data][list_by_max]',
                 'type' => Element\Number::class,
                 'options' => [

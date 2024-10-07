@@ -196,6 +196,7 @@ class References extends AbstractHelper
      * - custom_url (bool): with modules such Clean Url or Ark, use the url
      *   generator instad the standard item/id. May slow the display when there
      *   are many single references
+     * - thumbnail (string): display the thumbnail of the first reference
      * - skiplinks (bool): Add the list of letters at top and bottom of the page
      * - headings (bool): Add each letter as headers
      * - subject_property (string|int): property to use for second level list
@@ -227,6 +228,9 @@ class References extends AbstractHelper
                 unset($options['subject_property']);
             }
         }
+
+        // To display a thumbnail, the first resource is needed.
+        $options['first'] = @$options['first'] || @$options['thumbnail'];
 
         $ref = $this->references->__invoke($fields, $query, $options);
         $list = $ref->list();
@@ -336,13 +340,14 @@ class References extends AbstractHelper
      * @param array $query An Omeka search query to limit results. It is used in
      *   for urls in the tree too.
      * @param array $options Options to display the references.
-     * - template (string): the template to use (default: "common/reference")
+     * - template (string): the template to use (default: "common/reference-tree")
      * - term (string): Term or id to search (dcterms:subject by default).
      * - type (string): "properties" (default), "resource_classes", "item_sets"
      *   "resource_templates".
      * - resource_name: items (default), "item_sets", "media", "resources".
      * - branch: Managed terms are branches (path separated with " :: ")
      * - raw (bool): Show references as raw text, not links (default to false)
+     * - thumbnail (string): display the thumbnail of the first reference
      * - link_to_single (bool): When there is one result for a term, link it
      *   directly to the resource, and not to the list page (default to config)
      * - custom_url (bool): with modules such Clean Url or Ark, use the url
@@ -361,6 +366,7 @@ class References extends AbstractHelper
             'resource_name' => 'items',
             'branch' => null,
             'raw' => false,
+            'thumbnail' => '',
             'link_to_single' => null,
             'custom_url' => false,
             'expanded' => null,
@@ -369,7 +375,13 @@ class References extends AbstractHelper
         $options['first'] = $options['link_to_single'] || $options['custom_url'];
         $options['initial'] = false;
 
+        // To display a thumbnail, the first resource is needed.
+        $firstId = $options['first'];
+        $options['first'] = @$options['first'] || @$options['thumbnail'];
+
         $result = $this->tree($referenceLevels, $query, $options);
+
+        $options['first'] = $firstId;
 
         $template = empty($options['template']) ? 'common/reference-tree' : $options['template'];
         unset($options['template']);

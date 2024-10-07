@@ -9,7 +9,9 @@ if (!count($references)) return;
 
 $plugins = $this->getHelperPluginManager();
 $url = $plugins->get('url');
-$escape = $this->plugin('escapeHtml');
+$api = $plugins->get('api');
+$escape = $plugins->get('escapeHtml');
+$thumbnail = $plugins->get('thumbnail');
 
 $siteSlug = $this->params()->fromRoute('site-slug');
 $fields = $options['fields'];
@@ -31,6 +33,7 @@ $options += [
     'link_to_single' => true,
     'total' => true,
     'raw' => false,
+    'thumbnail' => false,
     'expanded' => true,
     'custom_url' => false,
 ];
@@ -52,7 +55,7 @@ if (!$options['custom_url']) {
 }
 ?>
 
-<div id="reference-headings">
+<div id="reference-headings" class="references-tree">
     <ul class="tree">
         <?php
             // Create the tree.
@@ -115,7 +118,15 @@ if (!$options['custom_url']) {
                                 $referenceUrl = str_replace('{reference}', rawurldecode($referenceData['first']), $templateUrlSingle);
                             }
                         }
-                        $referenceText = '<a href="' . $referenceUrl . '">' . $escape($reference) . '</a>';
+                        // To set the thumbnail is slow, because the resource should be loaded.
+                        // Currently only possible with items and media, checked above.
+                        $thumbnailResource = '';
+                        if ($options['thumbnail'] && $referenceData['first']) {
+                            /** @var \Omeka\Api\Representation\ItemRepresentation|\Omeka\Api\Representation\MediaRepresentation $resource */
+                            $resource = $api->read($options['resource_name'], $referenceData['first'])->getContent();
+                            $thumbnailResource = $thumbnail($resource, $options['thumbnail']);
+                        }
+                        $referenceText = '<a href="' . $referenceUrl . '">' . $thumbnailResource . $escape($reference) . '</a>';
                     }
                 }
 

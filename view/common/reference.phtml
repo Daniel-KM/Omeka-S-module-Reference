@@ -38,6 +38,7 @@ $url = $plugins->get('url');
 $api = $plugins->get('api');
 $escape = $plugins->get('escapeHtml');
 $translate = $plugins->get('translate');
+$thumbnail = $plugins->get('thumbnail');
 
 // This is the Omeka default title. May be different in the database.
 $emptyTitle = $translate('[Untitled]');
@@ -59,6 +60,7 @@ $options += [
     'total' => true,
     'raw' => false,
     'raw_sub' => false,
+    'thumbnail' => false,
     'skiplinks' => true,
     'headings' => true,
     'custom_url' => false,
@@ -111,18 +113,18 @@ if (!$options['raw'] || ($listByMax && !$options['raw_sub'])) {
 
 if ($options['raw']) {
     if ($options['total']) {
-        $template .= '<div class="reference-record">{reference_text}{reference_total}{recursive}</div>' . PHP_EOL;
+        $template .= '<div class="reference-record">{thumbnail}{reference_text}{reference_total}{recursive}</div>' . PHP_EOL;
         $replaceBase['{reference_total}'] = '';
     } else {
-        $template .= '<div class="reference-record">{reference_text}{recursive}</div>' . PHP_EOL;
+        $template .= '<div class="reference-record">{thumbnail}{reference_text}{recursive}</div>' . PHP_EOL;
     }
 } else {
     $replaceBase['{reference_url}'] = '';
     if ($options['total']) {
-        $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}</a>{reference_total}{recursive}</div>' . PHP_EOL;
+        $template .= '<div class="reference-record">{thumbnail}<a href="{reference_url}">{reference_text}</a>{reference_total}{recursive}</div>' . PHP_EOL;
         $replaceBase['{reference_total}'] = '';
     } else {
-        $template .= '<div class="reference-record"><a href="{reference_url}">{reference_text}</a>{recursive}</div>' . PHP_EOL;
+        $template .= '<div class="reference-record">{thumbnail}<a href="{reference_url}">{reference_text}</a>{recursive}</div>' . PHP_EOL;
     }
     if (!$options['custom_url']) {
         // Prepare the custom url one time with the original query as the base of the url,
@@ -152,6 +154,8 @@ if ($options['raw']) {
             $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
     }
 }
+
+$replaceBase['{thumbnail}'] = '';
 
 $querier = function ($reference, $emptyReferenceValue, $limit = null) use ($querySource, $request, $fieldTypes) {
     $query = $querySource;
@@ -267,6 +271,14 @@ if ($options['skiplinks']):
         if ($options['total'] && $referenceNumber && @$referenceData['total']) {
             $referenceTotal = ' (' . $referenceData['total'] . ')';
             $replace['{reference_total}'] = $referenceTotal;
+        }
+
+        // To set the thumbnail is slow, because the resource should be loaded.
+        // Currently only possible with items and media, checked above.
+        if ($options['thumbnail']) {
+            /** @var \Omeka\Api\Representation\ItemRepresentation|\Omeka\Api\Representation\MediaRepresentation $resource */
+            $resource = $api->read($options['resource_name'], $referenceData['first'])->getContent();
+            $replace['{thumbnail}'] = $thumbnail($resource, $options['thumbnail']);
         }
 
         $recursive = '';
