@@ -51,12 +51,13 @@ if (!$options['custom_url']) {
             'text' => '__temp_placeholder__',
         ];
     }
+    $query['reference'] = '__temp_placeholder_text_enc__';
     // The default url helper doesn't encode "&" as "&amp;", so append it manually.
     if ($searchConfigSlug) {
-        $templateUrl = str_replace('__temp_placeholder__', '{reference}',
+        $templateUrl = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
             $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
     } else {
-        $templateUrl = str_replace('__temp_placeholder__', '{reference}',
+        $templateUrl = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
             $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
     }
 }
@@ -112,15 +113,17 @@ if (!$options['custom_url']) {
                                     foreach ($fields as $field) {
                                         $queryForUrl['filter'][] = ['join' => 'or', 'field' => $field, 'type' => $options['query_type'], 'val' => $referenceOrBranch];
                                     }
+                                    $queryForUrl['reference'] = $reference;
                                     $referenceUrl = $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], ['query' => $queryForUrl], false);
                                 } else {
                                     foreach ($fields as $field) {
                                         $queryForUrl['property'][] = ['joiner' => 'or', 'property' => $field, 'type' => $options['query_type'], 'text' => $referenceOrBranch];
                                     }
+                                    $queryForUrl['reference'] = $reference;
                                     $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $queryForUrl], false);
                                 }
                             } else {
-                                $referenceUrl = str_replace('{reference}', rawurlencode($referenceOrBranch), $templateUrl);
+                                $referenceUrl = str_replace(['{reference}', '{reference_text_enc}'], [rawurlencode($referenceOrBranch), rawurlencode($reference)], $templateUrl);
                             }
                         } else {
                             if ($options['custom_url']) {

@@ -160,16 +160,17 @@ if ($options['raw']) {
                 }
             }
         }
+        $query['reference'] = '__temp_placeholder_text_enc__';
         // The default url helper doesn't encode "&" as "&amp;", so append it manually.
         if ($searchConfigSlug) {
-            $templateUrlEmpty = str_replace('__temp_placeholder__', '{reference}',
+            $templateUrlEmpty = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
                 $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986));
-            $templateUrl = str_replace('__temp_placeholder__', '{reference}',
+            $templateUrl = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
                 $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
         } else {
-            $templateUrlEmpty = str_replace('__temp_placeholder__', '{reference}',
+            $templateUrlEmpty = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
                 $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986));
-            $templateUrl = str_replace('__temp_placeholder__', '{reference}',
+            $templateUrl = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
                 $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
         }
     }
@@ -210,6 +211,7 @@ $querier = function ($reference, $emptyReferenceValue, $limit = null) use ($quer
         }
     }
     $query['limit'] = $limit;
+    $query['reference'] = $reference;
     return $query;
 };
 ?>
@@ -298,8 +300,9 @@ if ($options['skiplinks']):
                 }
             }
 
-            $replace['{reference_text}'] = $referenceValue;
             $replace['{reference_url}'] = $referenceUrl;
+            $replace['{reference_text}'] = $referenceValue;
+            $replace['{reference_text_enc}'] = rawurlencode($referenceValue);
         }
 
         // Can be null when references are set directly.
