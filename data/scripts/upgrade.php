@@ -11,6 +11,7 @@ use Common\Stdlib\PsrMessage;
  * @var string $oldVersion
  *
  * @var \Omeka\Api\Manager $api
+ * @var \Laminas\Log\Logger $logger
  * @var \Omeka\Settings\Settings $settings
  * @var \Doctrine\DBAL\Connection $connection
  * @var \Doctrine\ORM\EntityManager $entityManager
@@ -18,6 +19,7 @@ use Common\Stdlib\PsrMessage;
  */
 $plugins = $services->get('ControllerPluginManager');
 $api = $plugins->get('api');
+$logger = $services->get('Omeka\Logger');
 $settings = $services->get('Omeka\Settings');
 $translate = $plugins->get('translate');
 $translator = $services->get('MvcTranslator');
@@ -515,6 +517,7 @@ if (version_compare($oldVersion, '3.4.49', '<')) {
                 'Because of the integration of block templates in Omeka S v4.1, you should move custom templates before upgrading the module: move following files from directory "view/common/block-layout/" to "view/common/block-template/" of each theme, except the default files "reference.phtml" and "reference-tree.phtml". Then, you should add all templates from the directory "view/common/block-template/" at the bottom of the file "config/theme.ini" of each theme, for example `block_templates.reference.reference-index = "Reference index custom"`. This process can be done automatically via a task of the module Easy Admin before upgrading the module (important: backup your themes first). Matching files: {json}', // @translate
                 ['json' => json_encode($result, 448)]
             );
+            $logger->warn($message->getMessage(), $message->getContext());
             throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message->setTranslator($translator));
         }
     }
@@ -523,8 +526,6 @@ if (version_compare($oldVersion, '3.4.49', '<')) {
 
     $pageRepository = $entityManager->getRepository(\Omeka\Entity\SitePage::class);
     $blocksRepository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
-
-    $logger = $services->get('Omeka\Logger');
 
     /**
      * Replace filled settings "template" by the new layout data for reference.
@@ -621,10 +622,10 @@ if (version_compare($oldVersion, '3.4.50', '<')) {
             'The option "heading" was removed from block Reference and replaced by a block Heading (if module Block Plus is present) or Html. Remove it in the following files before upgrade and automatic conversion: {json}', // @translate
             ['json' => json_encode($results, 448)]
         );
+        $logger->err($message->getMessage(), $message->getContext());
         throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
 
-    $logger = $services->get('Omeka\Logger');
     $pageRepository = $entityManager->getRepository(\Omeka\Entity\SitePage::class);
     $blocksRepository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
 
