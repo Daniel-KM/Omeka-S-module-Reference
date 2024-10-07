@@ -20,12 +20,12 @@ $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 ?>
 
 <ul class="references">
-    <?php foreach ($fields as $field): ?>
+    <?php foreach ($fields['fields'] ?? [] as $field): ?>
     <li><?php
-    if (@$options['total']):
+    if ($options['total'] ?? false):
         // TODO Get the properties and classes labels one time.
         $element = $api->searchOne('properties', ['term' => $field])->getContent() ?: $api->searchOne('resource_classes', ['term' => $field])->getContent();
-        $total = $totals[$field];
+        $total = $totals[$field] ?? 0;
         echo $hyperlink(
             sprintf($translate('%s (%d)'), $element->label(), $total),
             // TODO Define the link to the reference page.
