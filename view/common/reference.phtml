@@ -115,20 +115,20 @@ if (!$options['raw'] || ($listByMax && !$options['raw_sub'])) {
 
 if ($options['raw']) {
     if ($options['total']) {
-        $template .= '<div class="reference-record">{thumbnail}{reference_text}{reference_total}{recursive}</div>' . PHP_EOL;
+        $template .= '<li class="reference-record">{thumbnail}{reference_text}{reference_total}{recursive}</li>' . PHP_EOL;
         $replaceBase['{reference_total}'] = '';
         $referenceTotal = ' (%d)';
     } else {
-        $template .= '<div class="reference-record">{thumbnail}{reference_text}{recursive}</div>' . PHP_EOL;
+        $template .= '<li class="reference-record">{thumbnail}{reference_text}{recursive}</li>' . PHP_EOL;
     }
 } else {
     $replaceBase['{reference_url}'] = '';
     if ($options['total']) {
-        $template .= '<div class="reference-record">{thumbnail}<a href="{reference_url}"><span class="reference-label">{reference_text}</span></a>{reference_total}{recursive}</div>' . PHP_EOL;
+        $template .= '<li class="reference-record"><a href="{reference_url}">{thumbnail}<span class="reference-label">{reference_text}</span></a>{reference_total}{recursive}</li>' . PHP_EOL;
         $replaceBase['{reference_total}'] = '';
         $referenceTotal = ' <span class="reference-total"> (%d)</span>';
     } else {
-        $template .= '<div class="reference-record">{thumbnail}<a href="{reference_url}"><span class="reference-label">{reference_text}</span></a>{recursive}</div>' . PHP_EOL;
+        $template .= '<li class="reference-record"><a href="{reference_url}">{thumbnail}<span class="reference-label">{reference_text}</span></a>{recursive}</li>' . PHP_EOL;
     }
     if (!$options['custom_url']) {
         // Prepare the custom url one time with the original query as the base of the url,
@@ -226,7 +226,7 @@ if ($options['skiplinks']):
 </div>
 <?php endif; ?>
 
-<div id="reference-headings">
+<ul id="reference-headings" class="references-list">
     <?php
 
     $referenceUrl = '';
@@ -384,7 +384,7 @@ if ($options['skiplinks']):
         echo str_replace(array_keys($replace), array_values($replace), $template);
         ?>
     <?php endforeach; ?>
-</div>
+</ul>
 
 <?php if ($options['skiplinks']): ?>
 <div id="reference-skiplinks-bottom" class="pagination reference-pagination pagination-bottom">

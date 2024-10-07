@@ -1,4 +1,8 @@
 /* Reference pages */
+.references-list {
+    padding-left: 0;
+}
+
 .reference-pagination.pagination {
     display: inline-block;
     float: none;
@@ -62,6 +66,22 @@ ul.references ol {
 ul.references li {
     margin-top: 12px;
     margin-bottom: 12px;
+}
+
+/* Use flexbox when there is a thumbnail. */
+.reference-record {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+.reference-record a {
+    display: inline-flex;
+    align-items: center;
+}
+.reference-record a img {
+    height: auto;
+    width: 36px;
+    margin-right: 6px;
 }
 
 /* Recursive list */
