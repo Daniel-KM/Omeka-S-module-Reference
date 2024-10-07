@@ -276,33 +276,33 @@ if ($options['skiplinks']):
             $recursive .= '<ul class="recursive-list">';
             if ($options['raw_sub']) {
                 foreach ($referenceData['resources'] as $resId => $resTitle) {
-                    $recursive .= '<li>';
-                    $recursive .= $escape($resTitle);
-                    $recursive .= '</li>';
+                    $recursive .= '<li>'
+                        . $escape($resTitle)
+                        . '</li>';
                 }
                 $hasMore = $referenceData['total'] > $listByMax;
                 if ($hasMore) {
-                    $recursive .= '<li class="see-all">';
-                    $recursive .= sprintf($andMore, $referenceData['total'] - $listByMax);
-                    $recursive .= '</li>';
+                    $recursive .= '<li class="see-all">'
+                        . sprintf($andMore, $referenceData['total'] - $listByMax)
+                        . '</li>';
                 }
             } elseif ($referenceData['total'] === 1) {
-                $recursive .= '<li>';
-                $recursive .= '<a href="' . $referenceUrl . '">' . $escape(reset($referenceData['resources'])) . '</a>';
-                $recursive .= '</li>';
+                $recursive .= '<li>'
+                    . '<a href="' . $referenceUrl . '">' . $escape(reset($referenceData['resources'])) . '</a>'
+                    . '</li>';
             } else {
                 // The link is not pretty for speed purpose.
                 foreach ($referenceData['resources'] as $resId => $resTitle) {
-                    $recursive .= '<li>';
-                    $recursive .= '<a href="' . str_replace('{reference}', $resId, $templateUrlSingle) . '">' . $escape($resTitle) . '</a>';
-                    $recursive .= '</li>';
+                    $recursive .= '<li>'
+                        . '<a href="' . str_replace('{reference}', $resId, $templateUrlSingle) . '">' . $escape($resTitle) . '</a>'
+                        . '</li>';
                 }
             }
             $hasMore = $referenceData['total'] > $listByMax;
             if ($hasMore) {
-                $recursive .= '<li class="see-all">';
-                $recursive .= '<a href="' . $referenceUrl . '">' . $seeAll . '</a>';
-                $recursive .= '</li>';
+                $recursive .= '<li class="see-all">'
+                    . '<a href="' . $referenceUrl . '">' . $seeAll . '</a>'
+                    . '</li>';
             }
             $recursive .= '</ul>';
         } elseif ($hasSubjectProperty && !empty($referenceData['first'])) {
@@ -315,15 +315,15 @@ if ($options['skiplinks']):
                 /** @var \Omeka\Api\Representation\ValueRepresentation $subjectValue */
                 if ($options['raw_sub']) {
                     foreach ($subjectValues[$options['subject_property']['term']] as $subjectValue) {
-                        $recursive .= '<li>';
-                        $recursive .= $escape($subjectValue->resource()->displayTitle());
-                        $recursive .= '</li>';
+                        $recursive .= '<li>'
+                            . $escape($subjectValue->resource()->displayTitle())
+                            . '</li>';
                     }
                 } else {
                     foreach ($subjectValues[$options['subject_property']['term']] as $subjectValue) {
-                        $recursive .= '<li>';
-                        $recursive .= $subjectValue->resource()->linkPretty();
-                        $recursive .= '</li>';
+                        $recursive .= '<li>'
+                            . $subjectValue->resource()->linkPretty()
+                            . '</li>';
                     }
                 }
                 $recursive .= '</ul>';

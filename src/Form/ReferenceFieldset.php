@@ -160,7 +160,7 @@ class ReferenceFieldset extends Fieldset
                 'name' => 'o:block[__blockIndex__][o:data][link_to_single]',
                 'type' => Element\Checkbox::class,
                 'options' => [
-                    'label' => 'Link to single records', // @translate
+                    'label' => 'Direct link for single records', // @translate
                     'info' => 'When a reference has only one item, link to it directly instead of to the items/browse page.', // @translate
                 ],
                 'attributes' => [
@@ -175,7 +175,7 @@ class ReferenceFieldset extends Fieldset
                 'name' => 'o:block[__blockIndex__][o:data][custom_url]',
                 'type' => Element\Checkbox::class,
                 'options' => [
-                    'label' => 'Custom url for single', // @translate
+                    'label' => 'Custom url for single records', // @translate
                     'info' => 'May be set with modules such Clean Url or Ark. May slow the display when there are many single references.', // @translate
                 ],
                 'attributes' => [
