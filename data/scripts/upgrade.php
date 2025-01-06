@@ -514,7 +514,7 @@ if (version_compare($oldVersion, '3.4.49', '<')) {
 
         if ($result) {
             $message = new PsrMessage(
-                'Because of the integration of block templates in Omeka S v4.1, you should move custom templates before upgrading the module: move following files from directory "view/common/block-layout/" to "view/common/block-template/" of each theme, except the default files "reference.phtml" and "reference-tree.phtml". Then, you should add all templates from the directory "view/common/block-template/" at the bottom of the file "config/theme.ini" of each theme, for example `block_templates.reference.reference-index = "Reference index custom"`. This process can be done automatically via a task of the module Easy Admin before upgrading the module (important: backup your themes first). Matching files: {json}', // @translate
+                'Because of the integration of block templates in Omeka S v4.1, you should move custom templates before upgrading the module: move following files from directory "view/common/block-layout/" to "view/common/block-template/" of each theme, except the default files "reference.phtml" and "reference-tree.phtml". Then, you should add all templates from the directory "view/common/block-template/" at the bottom of the file "config/theme.ini" of each theme, for example `block_templates.reference.reference-index = "Reference index custom"`. Matching files: {json}', // @translate
                 ['json' => json_encode($result, 448)]
             );
             $logger->warn($message->getMessage(), $message->getContext());
@@ -733,10 +733,17 @@ if (version_compare($oldVersion, '3.4.50', '<')) {
     if ($pagesUpdated2) {
         $result = array_map('array_values', $pagesUpdated2);
         $message = new PsrMessage(
-            'The option "heading" was removed from block Reference. New block "Heading" (if module Block Plus id present) or "Html" was prepended to all blocks that had a filled heading. You may check pages for styles: {json}', // @translate
+            'The option "heading" was removed from block Reference. New block "Heading" (if module Block Plus is present) or "Html" was prepended to all blocks that had a filled heading. You may check pages for styles: {json}', // @translate
             ['json' => json_encode($result, 448)]
         );
         $messenger->addWarning($message);
         $logger->warn($message->getMessage(), $message->getContext());
     }
+}
+
+if (version_compare($oldVersion, '3.4.51', '<')) {
+    $message = new PsrMessage(
+        'A template has been added to display references as list/grid (mansory).' // @translate
+    );
+    $messenger->addSuccess($message);
 }
