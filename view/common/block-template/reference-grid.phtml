@@ -1,0 +1,25 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \Omeka\Api\Representation\SitePageBlockRepresentation $block
+ * @var array $fields
+ * @var array $query
+ * @var array $options
+ */
+
+$plugins = $this->getHelperPluginManager();
+$translate = $plugins->get('translate');
+$references = $plugins->get('references');
+
+// The new format is used in block, but there is only one list of fields.
+// If total is not correct, reindex the references in main settings.
+$total = $references->count($fields, $query, $options)['fields'];
+?>
+
+<div class="reference-block">
+    <?php if ($total): ?>
+    <?= $references->displayListForFields($fields, $query, ['template' => 'common/reference-grid'] + $options) ?>
+    <?php else: ?>
+    <p><?= $translate('There is no references.') ?></p>
+    <?php endif; ?>
+</div>

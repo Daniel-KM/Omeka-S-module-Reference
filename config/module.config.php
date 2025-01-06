@@ -37,6 +37,7 @@ return [
     ],
     'block_templates' => [
         'reference' => [
+            'reference-grid' => 'Reference grid', // @translate
             'reference-index' => 'Reference (index)', // @translate
         ],
     ],

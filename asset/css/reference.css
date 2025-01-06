@@ -107,3 +107,20 @@ ul.references li {
     font-style: italic;
     list-style: none;
 }
+
+/* Grid */
+.reference-grid {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.reference-grid .reference-record a {
+    display: flex;
+    flex-direction: column;
+    align-items: initial;
+}
+.reference-grid .reference-record a img {
+    height: auto;
+    width: 200px;
+}

@@ -1,0 +1,397 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var array $currentField
+ * @var array $query
+ * @var array $options
+ * @var array $request
+ * @var array $references
+ * @var array $initials
+ */
+
+// The process seems complex because it uses many ways to display big lists.
+// The templates are prepared for each case, in particular to avoid to call url(),
+// then the references are looped to replace placeholders.
+
+// The sub-level (list by) is limited to 1024 resources by mysql (group_concat).
+
+// It is recommended to skip "link_to_single" or to filter by initial when there are
+// more than 5000 references on a page and there are custom_url (clean url, ark...)
+// with many single values.
+
+if (!count($references)): ?>
+    <?php // Prepare and display skip links.
+    if ($options['skiplinks']):
+        $paginationList = $this->partial('common/reference-skiplinks');
+        ?>
+<div id="reference-skiplinks" class="pagination reference-pagination pagination-top">
+    <?= $paginationList ?>
+</div>
+<?php endif; ?>
+<div id="reference-headings">
+</div>
+    <?php return;
+endif;
+
+$plugins = $this->getHelperPluginManager();
+$url = $plugins->get('url');
+$api = $plugins->get('api');
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+$thumbnail = $plugins->get('thumbnail');
+
+// This is the Omeka default title. May be different in the database.
+$emptyTitle = $translate('[Untitled]');
+$siteSlug = $this->params()->fromRoute('site-slug')
+    ?? (($site = $plugins->get('Laminas\View\Helper\ViewModel')->getRoot()->getVariable('site')) ? $site->slug() : null)
+    // TODO Store the default site slug, not only the default site id.
+    // If no default site, get the first public one.
+    ?? (($site = $api->searchOne('sites', ['id' => $plugins->get('setting')('default_site'), 'sort_by' => 'is_public', 'sort_order' => 'desc'])->getContent()) ? $site->slug() : null);
+
+$this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Reference'));
+
+$mapResourcesControllers = ['resources' => 'resource', 'items' => 'item', 'item_sets' => 'item-set', 'media' => 'media'];
+$controllerName = $mapResourcesControllers[$options['resource_name']];
+
+// Set default values.
+$options += [
+    'by_initial' => false,
+    'search_config' => null,
+    'link_to_single' => true,
+    'total' => true,
+    'raw' => false,
+    'raw_sub' => false,
+    'thumbnail' => false,
+    'skiplinks' => true,
+    'headings' => true,
+    'custom_url' => false,
+];
+$options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
+$hasInitial = array_key_exists('initial', $references[key($references)]);
+$listByMax = empty($options['list_by_max']) ? false : (int) $options['list_by_max'];
+$seeAll = $escape($translate('See all…')); // @translate
+$andMore = $escape($translate('And %d more.')); // @translate
+$hasSubjectProperty = !empty($options['subject_property']);
+$options['link_to_single'] = $options['link_to_single'] && !$listByMax;
+$isRecursive = $listByMax || $hasSubjectProperty;
+$options['raw_sub'] = $options['raw_sub'] || !$isRecursive;
+$searchConfigSlug = $options['search_config'] ?? null;
+
+$querySource = $query;
+
+// Normally, field types should not be mixed currently.
+$fieldTypes = [
+    'o:ResourceClass' => 'resource_class_id',
+    'o:ResourceTemplate' => 'resource_template_id',
+    'o:ItemSet' => 'item_set_id',
+    'resource_classes' => 'resource_class_id',
+    'resource_templates' => 'resource_template_id',
+    'item_sets' => 'item_set_id',
+    // Other cases are properties.
+];
+$mainFieldType = $fieldTypes[$request['o:field'][0]['@type']] ?? null;
+
+// Set default templates according to options for improved performance.
+$template = '';
+$replaceBase = [];
+
+if ($options['headings']) {
+    if ($options['skiplinks']) {
+        $templateHeading = '<h3 class="reference-heading" id="{heading_id}"><a href="#reference-skiplinks">{heading_text}</a></h3>' . PHP_EOL;
+    } else {
+        $templateHeading = '<h3 class="reference-heading" id="{heading_id}">{heading_text}</h3>' . PHP_EOL;
+    }
+    $template .= '{heading}';
+    $replaceBase['{heading}'] = '';
+}
+
+$replaceBase['{reference_text}'] = '';
+
+// List by max may require templateUrlSingle.
+if (!$options['raw'] || ($listByMax && !$options['raw_sub'])) {
+    $tempPlaceholder = '__temp_placeholder__';
+    $templateUrlSingle = str_replace($tempPlaceholder, '{reference}', $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $tempPlaceholder], false));
+}
+
+$labelSeeResources = '<span class="reference-see">' . $translate('See resources') . '</span>';
+
+if ($options['raw']) {
+    if ($options['total']) {
+        $template .= '<li class="reference-record">{thumbnail}{reference_text}{reference_total}{recursive}</li>' . PHP_EOL;
+        $replaceBase['{reference_total}'] = '';
+        $referenceTotal = ' ' . $translate('(%d resources)');
+        $referenceTotalSingle = ' ' . $translate('(%d resource)');
+    } else {
+        $template .= '<li class="reference-record">{thumbnail}{reference_text}{recursive}</li>' . PHP_EOL;
+    }
+} else {
+    $replaceBase['{reference_url}'] = '';
+    if ($options['total']) {
+        $template .= '<li class="reference-record"><a href="{reference_url}">{thumbnail}<span class="reference-label">{reference_text}</span>{reference_total}' . $labelSeeResources . '</a>{recursive}</li>' . PHP_EOL;
+        $replaceBase['{reference_total}'] = '';
+        $referenceTotal = ' <span class="reference-total"> ' . $translate('(%d resources)') . '</span>';
+        $referenceTotalSingle = ' <span class="reference-total"> ' . $translate('(%d resource)') . '</span>';
+    } else {
+        $template .= '<li class="reference-record"><a href="{reference_url}">{thumbnail}<span class="reference-label">{reference_text}</span>' . $labelSeeResources . '</a>{recursive}</li>' . PHP_EOL;
+    }
+    if (!$options['custom_url']) {
+        // Prepare the custom url one time with the original query as the base of the url,
+        // avoiding overriding with the reference value.
+        $query = $querySource;
+        $queryEmpty = $querySource;
+        // Normally, types cannot be mixed, so it should be possible to use the main field type.
+        $hasEmptyFieldProperty = false;
+        foreach ($request['o:field'] as $field) {
+            $fieldType = $fieldTypes[$field['@type']] ?? null;
+            if ($fieldType) {
+                $query[$fieldType][] = $field['o:id'];
+                $queryEmpty[$fieldType][] = $field['o:id'];
+                if (!$hasEmptyFieldProperty) {
+                    $hasEmptyFieldProperty = true;
+                    if ($searchConfigSlug) {
+                        $query['filter'][] = ['join' => 'or', 'field' => 'dcterms:title', 'type' => 'eq', 'val' => '__temp_placeholder__'];
+                        $queryEmpty['property'][] = ['join' => 'and', 'field' => 'dcterms:title', 'type' => 'nex'];
+                    } else {
+                        $query['property'][] = ['joiner' => 'or', 'property' => 'dcterms:title', 'type' => 'eq', 'text' => '__temp_placeholder__'];
+                        $queryEmpty['property'][] = ['joiner' => 'and', 'property' => 'dcterms:title', 'type' => 'nex'];
+                    }
+                }
+            } else {
+                if ($searchConfigSlug) {
+                    $query['filter'][] = ['join' => 'or', 'field' => $field['o:term'], 'type' => 'eq', 'val' => '__temp_placeholder__'];
+                } else {
+                    $query['property'][] = ['joiner' => 'or', 'property' => $field['o:term'], 'type' => 'eq', 'text' => '__temp_placeholder__'];
+                }
+            }
+        }
+        $query['reference'] = '__temp_placeholder_text_enc__';
+        // The default url helper doesn't encode "&" as "&amp;", so append it manually.
+        if ($searchConfigSlug) {
+            $templateUrlEmpty = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
+                $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986));
+            $templateUrl = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
+                $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
+        } else {
+            $templateUrlEmpty = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
+                $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986));
+            $templateUrl = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
+                $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
+        }
+    }
+}
+
+$replaceBase['{thumbnail}'] = '';
+
+$querier = function ($reference, $emptyReferenceValue, $limit = null) use ($querySource, $request, $fieldTypes, $searchConfigSlug) {
+    $query = $querySource;
+    // Normally, types cannot be mixed, so it should be possible to use the main field type.
+    $hasEmptyFieldProperty = false;
+    foreach ($request['o:field'] as $field) {
+        $fieldType = $fieldTypes[$field['@type']] ?? null;
+        if ($fieldType) {
+            $query[$fieldType][] = $field['o:id'];
+            if ($emptyReferenceValue) {
+                if (!$hasEmptyFieldProperty) {
+                    $hasEmptyFieldProperty = true;
+                    if ($searchConfigSlug) {
+                        $query['filter'][] = ['join' => 'or', 'field' => 'dcterms:title', 'type' => 'nex'];
+                    } else {
+                        $query['property'][] = ['joiner' => 'or', 'property' => 'dcterms:title', 'type' => 'nex'];
+                    }
+                }
+            } else {
+                if ($searchConfigSlug) {
+                    $query['filter'][] = ['join' => 'or', 'field' =>  'dcterms:title', 'type' => 'eq', 'val' => $reference];
+                } else {
+                    $query['property'][] = ['joiner' => 'or', 'property' =>  'dcterms:title', 'type' => 'eq', 'text' => $reference];
+                }
+            }
+        } else {
+            if ($searchConfigSlug) {
+                $query['filter'][] = ['join' => 'or', 'field' => $field['o:term'], 'type' => 'eq', 'val' => $reference];
+            } else {
+                $query['property'][] = ['joiner' => 'or', 'property' => $field['o:term'], 'type' => 'eq', 'text' => $reference];
+            }
+        }
+    }
+    $query['limit'] = $limit;
+    $query['reference'] = $reference;
+    return $query;
+};
+?>
+
+<?php
+// Prepare and display skip links.
+if ($options['skiplinks']):
+    $paginationList = $this->partial('common/reference-skiplinks');
+?>
+<div id="reference-skiplinks" class="pagination reference-pagination pagination-top">
+    <?= $paginationList ?>
+</div>
+<?php endif; ?>
+
+<ul id="reference-headings" class="references-list reference-grid mode-grid">
+    <?php
+
+    $referenceUrl = '';
+    $currentHeading = '';
+    $currentHeadingId = '';
+    foreach ($references as $referenceData):
+        $emptyReferenceValue = is_null($referenceData['val']);
+        $referenceValue = $emptyReferenceValue ? $emptyTitle : $referenceData['val'];
+        $reference = (string) $referenceData['val'];
+
+        $replace = $replaceBase;
+
+        // Add the first character as header if wanted.
+        if ($options['headings']) {
+            if ($hasInitial) {
+                $firstChar = $referenceData['initial'];
+            } else {
+                $firstChar = mb_strtoupper(mb_substr($reference, 0, 1));
+                if (!strlen($firstChar)) {
+                    $firstChar = '0-9';
+                }
+            }
+            if (preg_match('/\W|\d/u', $firstChar)) {
+                $firstChar = '0-9';
+            }
+            $currentFirstChar = $firstChar;
+            if ($currentHeading !== $currentFirstChar) {
+                $currentHeading = $currentFirstChar;
+                $currentHeadingId = $currentHeading;
+                $heading = [
+                    '{heading_id}' => $currentHeadingId,
+                    '{heading_text}' => $currentHeading,
+                ];
+                $heading = str_replace(array_keys($heading), array_values($heading), $templateHeading);
+                $replace['{heading}'] = $heading;
+            }
+        }
+
+        // FIXME ListByMax may need referenceUrl.
+
+        if ($options['raw']) {
+            $referenceText = $reference;
+            $referenceNumber = true;
+            $replace['{reference_text}'] = $referenceText;
+        } else {
+            $referenceNumber = !$options['link_to_single'] || $referenceData['total'] > 1;
+
+            if ($options['custom_url']) {
+                if ($referenceNumber) {
+                    if ($searchConfigSlug) {
+                        $referenceUrl = $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], ['query' => $querier($reference, $emptyReferenceValue)], false);
+                    } else {
+                        $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $querier($reference, $emptyReferenceValue)], false);
+                    }
+                } else {
+                    // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
+                    // $referenceUrl = $api->read($resourceName, $referenceData['first'])->getContent()->siteUrl();
+                    $referenceUrl = str_replace('{reference}', rawurlencode($referenceData['first']), $templateUrlSingle);
+                }
+            } else {
+                if ($referenceNumber) {
+                    if ($mainFieldType) {
+                        $referenceUrl = $emptyReferenceValue
+                            ? $templateUrlEmpty
+                            : str_replace('{reference}', rawurlencode($reference), $templateUrl);
+                    } else {
+                        $referenceUrl = str_replace('{reference}', rawurlencode($reference), $templateUrl);
+                    }
+                } else {
+                    $referenceUrl = str_replace('{reference}', rawurlencode($referenceData['first']), $templateUrlSingle);
+                }
+            }
+
+            $replace['{reference_url}'] = $referenceUrl;
+            $replace['{reference_text}'] = $referenceValue;
+            $replace['{reference_text_enc}'] = rawurlencode($referenceValue);
+        }
+
+        // Can be null when references are set directly.
+        if ($options['total'] && $referenceNumber && @$referenceData['total']) {
+            $replace['{reference_total}'] = sprintf($referenceData['total'] <= 1 ? $referenceTotalSingle : $referenceTotal, $referenceData['total']);
+        }
+
+        // To set the thumbnail is slow, because the resource should be loaded.
+        // Currently only possible with items and media, checked above.
+        if ($options['thumbnail']) {
+            /** @var \Omeka\Api\Representation\ItemRepresentation|\Omeka\Api\Representation\MediaRepresentation $resource */
+            $resource = $api->read($options['resource_name'], $referenceData['first'])->getContent();
+            $replace['{thumbnail}'] = $thumbnail($resource, $options['thumbnail']);
+        }
+
+        $recursive = '';
+        // TODO To be improved to avoid to read from the api (resources by reference or linked resources).
+        // TODO Make it recursive.
+        if ($listByMax) {
+            $recursive .= '<ul class="recursive-list">';
+            if ($options['raw_sub']) {
+                foreach ($referenceData['resources'] as $resId => $resTitle) {
+                    $recursive .= '<li>'
+                        . $escape($resTitle)
+                        . '</li>';
+                }
+                $hasMore = $referenceData['total'] > $listByMax;
+                if ($hasMore) {
+                    $recursive .= '<li class="see-all">'
+                        . sprintf($andMore, $referenceData['total'] - $listByMax)
+                        . '</li>';
+                }
+            } elseif ($referenceData['total'] === 1) {
+                $recursive .= '<li>'
+                    . '<a href="' . $referenceUrl . '">' . $escape(reset($referenceData['resources'])) . '</a>'
+                    . '</li>';
+            } else {
+                // The link is not pretty for speed purpose.
+                foreach ($referenceData['resources'] as $resId => $resTitle) {
+                    $recursive .= '<li>'
+                        . '<a href="' . str_replace('{reference}', $resId, $templateUrlSingle) . '">' . $escape($resTitle) . '</a>'
+                        . '</li>';
+                }
+            }
+            $hasMore = $referenceData['total'] > $listByMax;
+            if ($hasMore) {
+                $recursive .= '<li class="see-all">'
+                    . '<a href="' . $referenceUrl . '">' . $seeAll . '</a>'
+                    . '</li>';
+            }
+            $recursive .= '</ul>';
+        } elseif ($hasSubjectProperty && !empty($referenceData['first'])) {
+            /** @var \Omeka\Api\Representation\AbstractResourceEntityRepresentation $res */
+            $res = $api->read('resources', $referenceData['first'])->getContent();
+            // $res = $api->read($res->resourceName(), $referenceData['first'])->getContent();
+            $subjectValues = $res->subjectValues(null, null, $options['subject_property']['id']);
+            if (count($subjectValues)) {
+                $recursive .= '<ul class="recursive-list">';
+                /** @var \Omeka\Api\Representation\ValueRepresentation $subjectValue */
+                if ($options['raw_sub']) {
+                    foreach ($subjectValues[$options['subject_property']['term']] as $subjectValue) {
+                        $recursive .= '<li>'
+                            . $escape($subjectValue->resource()->displayTitle())
+                            . '</li>';
+                    }
+                } else {
+                    foreach ($subjectValues[$options['subject_property']['term']] as $subjectValue) {
+                        $recursive .= '<li>'
+                            . $subjectValue->resource()->linkPretty()
+                            . '</li>';
+                    }
+                }
+                $recursive .= '</ul>';
+            }
+        }
+        $replace['{recursive}'] = $recursive;
+
+        // Process the output of one reference (and eventually the initial heading).
+        echo str_replace(array_keys($replace), array_values($replace), $template);
+        ?>
+    <?php endforeach; ?>
+</ul>
+
+<?php if ($options['skiplinks']): ?>
+<div id="reference-skiplinks-bottom" class="pagination reference-pagination pagination-bottom">
+    <?= $paginationList ?>
+</div>
+<?php endif;

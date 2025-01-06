@@ -1,0 +1,136 @@
+@media all {
+    .reference-tools {
+        display: flex;
+        justify-content: center;
+        gap: 36px;
+        margin-top: 25px;
+        padding-bottom: 15px;
+        border-bottom: 7px solid rgb(198, 198, 198);
+    }
+
+    .reference-grid .reference-record a img {
+        width: 100%;
+    }
+
+    ul.references-list.reference-grid {
+        display: block;
+        margin-top: 35px;
+
+        &.mode-grid {
+            columns: 4;
+            column-gap: 18px;
+        }
+
+        & > li.reference-record {
+            break-inside: avoid;
+            margin-bottom: 30px;
+
+            a {
+                display: block;
+                width: 100%;
+
+                & > span {
+                    display: block;
+
+                    &.reference-label {
+                        margin-bottom: 15px;
+                        font-weight: 600;
+                        color: #333333;
+                        text-align: left;
+                        text-decoration: none;
+                    }
+
+                    &.reference-total {
+                        margin-bottom: 15px;
+                        color: #333333;
+                        text-align: left;
+                        text-decoration: none;
+                    }
+
+                    &.reference-see {
+                        font-style: italic;
+                        color: #000000;
+                        text-align: left;
+                        text-decoration: underline;
+                    }
+                }
+            }
+        }
+
+        &.mode-list {
+            margin-left: 110px;
+            margin-right: 110px;
+
+            & > li.reference-record {
+                padding-bottom: 15px;
+                border-bottom: 1px solid #000000;
+
+                a img {
+                    display: none;
+                }
+            }
+        }
+    }
+}
+
+@media screen and (min-width:1280px) {
+}
+
+@media screen and (max-width:1279px) {
+    ul.references-list.reference-grid {
+        &.mode-grid {
+            columns: 3;
+            column-gap: 18px;
+        }
+    }
+
+    ul.references-list.reference-grid.mode-list {
+        margin-left: 50px;
+        margin-right: 50px;
+    }
+}
+
+@media screen and (max-width:1023px) {
+    .reference-tools {
+        gap: 30px;
+
+        padding-top: 12px;
+        border-top: 7px solid #c6c6c6;
+    }
+
+    ul.references-list.reference-grid {
+
+        &.mode-list {
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        &.mode-grid {
+            columns: 2;
+            column-gap: 18px;
+        }
+
+        & > li.reference-record {
+
+            a > span.reference-label {
+                font-size: 25px;
+                margin-bottom: 0;
+            }
+
+            a > span.reference-see,
+            a > span.reference-total {
+                font-size: 16px;
+                margin-bottom: 0;
+            }
+        }
+    }
+}
+
+@media screen and (max-width:639px) {
+    ul.references-list.reference-grid {
+        &.mode-grid {
+            columns: 1;
+            column-gap: 12px;
+        }
+    }
+}
