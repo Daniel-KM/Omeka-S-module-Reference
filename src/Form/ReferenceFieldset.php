@@ -168,7 +168,7 @@ class ReferenceFieldset extends Fieldset
                 'type' => Element\Select::class,
                 'options' => [
                     'label' => 'Link to browse or search engine', // @translate
-                    'info' => 'This options is useful when the module Advanced Search is used.', // @translate
+                    'info' => 'This option is useful when the module Advanced Search is used.', // @translate
                     'value_options' => [
                         'default' => 'Search config of the site', // @translate
                     ] + $this->searchConfigs,
