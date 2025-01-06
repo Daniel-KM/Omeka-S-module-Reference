@@ -287,6 +287,7 @@ TODO
 - [ ] Use the new table `reference_metadata` when possible.
 - [ ] Simplify queries for aggregated fields (see AdvancedSearch).
 - [ ] Order by years instead of alphabetic.
+- [ ] Get thumbnail url directly from references for performance.
 
 
 Warning
