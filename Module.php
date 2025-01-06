@@ -143,7 +143,7 @@ class Module extends AbstractModule
             [$this, 'handleEasyAdminJobsForm']
             );
         $sharedEventManager->attach(
-            \EasyAdmin\Controller\CheckAndFixController::class,
+            \EasyAdmin\Controller\Admin\CheckAndFixController::class,
             'easyadmin.job',
             [$this, 'handleEasyAdminJobs']
         );
