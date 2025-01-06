@@ -110,10 +110,10 @@ ul.references li {
 
 /* Grid */
 .reference-grid {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-  gap: 12px;
+      display: flex;
+      flex-direction: column;
+      flex-wrap: wrap;
+      gap: 12px;
 }
 .reference-grid .reference-record a {
     display: flex;

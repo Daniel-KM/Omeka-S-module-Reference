@@ -37,6 +37,7 @@ $plugins = $this->getHelperPluginManager();
 $url = $plugins->get('url');
 $api = $plugins->get('api');
 $escape = $plugins->get('escapeHtml');
+$assetUrl = $plugins->get('assetUrl');
 $translate = $plugins->get('translate');
 $thumbnail = $plugins->get('thumbnail');
 
@@ -48,7 +49,18 @@ $siteSlug = $this->params()->fromRoute('site-slug')
     // If no default site, get the first public one.
     ?? (($site = $api->searchOne('sites', ['id' => $plugins->get('setting')('default_site'), 'sort_by' => 'is_public', 'sort_order' => 'desc'])->getContent()) ? $site->slug() : null);
 
-$this->headLink()->prependStylesheet($this->assetUrl('css/reference.css', 'Reference'));
+$script = <<<'JS'
+function referenceToggleMode(viewType) {
+    const element = document.querySelector('#reference-headings.reference-grid');
+    element.className = element.className.replace(' mode-grid', '').replace(' mode-list', '') + ' ' + viewType;
+}
+JS;
+$this->headLink()
+    ->prependStylesheet($assetUrl('css/reference.css', 'Reference'))
+    ->prependStylesheet($assetUrl('css/reference-grid.css', 'Reference'));
+
+$this->headScript()
+    ->appendScript($script);
 
 $mapResourcesControllers = ['resources' => 'resource', 'items' => 'item', 'item_sets' => 'item-set', 'media' => 'media'];
 $controllerName = $mapResourcesControllers[$options['resource_name']];
@@ -229,6 +241,11 @@ if ($options['skiplinks']):
     <?= $paginationList ?>
 </div>
 <?php endif; ?>
+
+<div class="reference-tools">
+    <button type="button" class="mode-list" onclick="referenceToggleMode('mode-list')"><?= $translate('List') ?></button>
+    <button type="button" class="mode-grid" onclick="referenceToggleMode('mode-grid')"><?= $translate('Grid') ?></button>
+</div>
 
 <ul id="reference-headings" class="references-list reference-grid mode-grid">
     <?php
