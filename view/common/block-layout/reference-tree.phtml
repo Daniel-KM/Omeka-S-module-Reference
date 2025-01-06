@@ -13,7 +13,7 @@ $translate = $plugins->get('translate');
 $references = $plugins->get('references');
 ?>
 
-<div class="reference-block">
+<div class="block block-reference reference-block">
     <?php if ($total): ?>
     <?= $references->displayTree($tree, $query, $options) ?>
     <?php else: ?>

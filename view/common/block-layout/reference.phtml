@@ -16,7 +16,7 @@ $references = $plugins->get('references');
 $total = $references->count($fields, $query, $options)['fields'];
 ?>
 
-<div class="reference-block">
+<div class="block block-reference reference-block">
     <?php if ($total): ?>
     <?= $references->displayListForFields($fields, $query, $options) ?>
     <?php else: ?>
