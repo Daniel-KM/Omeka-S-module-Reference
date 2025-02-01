@@ -502,12 +502,10 @@ class References extends AbstractPlugin
                     break;
 
                 case 'o:item_set':
-                    // Manage an exception for the resource "items".
-                    if ($dataFields['type'] === 'o:item_set' && $this->optionsCurrent['resource_name'] !== 'items') {
-                        $values = [];
-                    } else {
-                        $values = $this->listItemSets();
-                    }
+                    // Quick check for resource: only "items" have item sets.
+                    $values = in_array($this->optionsCurrent['resource_name'], ['items', 'resources'])
+                        ? $this->listItemSets()
+                        : [];
                     if ($isOutputSimple) {
                         $result[$keyResult]['o:references'] = $values;
                     } else {
@@ -712,12 +710,10 @@ class References extends AbstractPlugin
                     break;
 
                 case 'o:item_set':
-                    // Manage an exception for the resource "items".
-                    if ($dataFields['type'] === 'o:item_set' && $this->optionsCurrent['resource_name'] !== 'items') {
-                        $values = [];
-                    } else {
-                        $values = $this->listItemSets();
-                    }
+                    // Quick check for resource: only "items" have item sets.
+                    $values = in_array($this->optionsCurrent['resource_name'], ['items', 'resources'])
+                        ? $this->listItemSets()
+                        : [];
                     $result[$keyResult]['o:references'] = $values;
                     break;
 
@@ -1177,9 +1173,12 @@ class References extends AbstractPlugin
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
-        if ($this->optionsCurrent['resource_name'] !== 'items') {
+        if (!in_array($this->optionsCurrent['resource_name'], ['items', 'resources'])) {
             return [];
         }
+
+        $this->storeOptionCurrentResourceName();
+        $this->optionsCurrent['resource_name'] = 'items';
 
         if ($this->process === 'initials') {
             $qb
@@ -1212,6 +1211,7 @@ class References extends AbstractPlugin
             ->filterByVisibility($qb, 'item_sets')
             ->filterByBeginOrEnd($qb, 'resource.title')
             ->manageOptions($qb, 'item_sets')
+            ->storeOptionCurrentResourceName(true)
             ->outputMetadata($qb, 'item_sets');
     }
 
@@ -1437,6 +1437,9 @@ class References extends AbstractPlugin
      */
     protected function listItemSets(): array
     {
+        $this->storeOptionCurrentResourceName();
+        $this->optionsCurrent['resource_name'] = 'items';
+
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
@@ -1486,6 +1489,7 @@ class References extends AbstractPlugin
             // because item sets are limited by sites.
             ->limitItemSetsToSite($qb)
             ->manageOptions($qb, 'o:item_set')
+            ->storeOptionCurrentResourceName(true)
             ->outputMetadata($qb, 'o:item_set');
     }
 
@@ -2122,8 +2126,14 @@ class References extends AbstractPlugin
 
         switch ($sortBy) {
             case 'alphabetic':
-                $qb
-                    ->orderBy('val', $sortOrder);
+                // Item sets are output by id, so the title is required.
+                if ($type === 'o:item_set') {
+                    $qb
+                        ->orderBy('resource_item_set.title', $sortOrder);
+                } else {
+                    $qb
+                        ->orderBy('val', $sortOrder);
+                }
                 break;
             case 'total':
                 $qb
@@ -2154,6 +2164,19 @@ class References extends AbstractPlugin
                 $offset = ($this->optionsCurrent['page'] - 1) * $this->optionsCurrent['per_page'];
                 $qb->setFirstResult($offset);
             }
+        }
+
+        return $this;
+    }
+
+    protected function storeOptionCurrentResourceName(bool $restore = false): self
+    {
+        static $rn;
+
+        if ($restore) {
+            $this->optionsCurrent['resource_name'] = $rn;
+        } else {
+            $rn = $this->optionsCurrent['resource_name'];
         }
 
         return $this;
@@ -2400,7 +2423,7 @@ class References extends AbstractPlugin
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
 
-        if ($this->optionsCurrent['resource_name'] !== 'items') {
+        if (!in_array($this->optionsCurrent['resource_name'], ['items', 'resources'])) {
             return 0;
         }
 
