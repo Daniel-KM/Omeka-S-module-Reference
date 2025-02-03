@@ -126,10 +126,10 @@ if (version_compare($oldVersion, '3.4.7', '<')) {
 if (version_compare($oldVersion, '3.4.9', '<')) {
     // Append item pool (query) to reference block.
     $sql = <<<'SQL'
-UPDATE site_page_block
-SET data = CONCAT('{"reference":{"order":{"alphabetic":"ASC"},"query":[],', SUBSTR(data, 15))
-WHERE layout = "reference";
-SQL;
+        UPDATE site_page_block
+        SET data = CONCAT('{"reference":{"order":{"alphabetic":"ASC"},"query":[],', SUBSTR(data, 15))
+        WHERE layout = "reference";
+        SQL;
     $connection->executeStatement($sql);
 }
 
@@ -478,8 +478,8 @@ if (version_compare($oldVersion, '3.4.43', '<')) {
 
 if (version_compare($oldVersion, '3.4.47', '<')) {
     $sql = <<<'SQL'
-ALTER TABLE `reference_metadata` ADD INDEX `idx_is_public` (`is_public`);
-SQL;
+        ALTER TABLE `reference_metadata` ADD INDEX `idx_is_public` (`is_public`);
+        SQL;
     try {
         $connection->executeStatement($sql);
     } catch (\Exception $e) {
@@ -489,9 +489,9 @@ SQL;
 
 if (version_compare($oldVersion, '3.4.48', '<')) {
     $sql = <<<'SQL'
-ALTER TABLE `reference_metadata`
-CHANGE `lang` `lang` varchar(190) NOT NULL DEFAULT '' AFTER `field`;
-SQL;
+        ALTER TABLE `reference_metadata`
+        CHANGE `lang` `lang` varchar(190) NOT NULL DEFAULT '' AFTER `field`;
+        SQL;
     $connection->executeStatement($sql);
 }
 
