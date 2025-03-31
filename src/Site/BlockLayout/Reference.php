@@ -105,8 +105,8 @@ class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutIn
                 if (empty($value)) {
                     continue;
                 } else {
-                    // Properties and resource classes cannot be mixed
-                    $key = $this->easyMeta->resourceClassTerm($key)
+                    // Properties and resource classes cannot be mixed.
+                    $key = $this->easyMeta->resourceClassTerms($value)
                         ? 'resource_classes'
                         : 'properties';
                 }
