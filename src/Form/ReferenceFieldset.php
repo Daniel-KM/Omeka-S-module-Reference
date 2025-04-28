@@ -114,7 +114,7 @@ class ReferenceFieldset extends Fieldset
                 // 'type' => CommonElement\OptionalRadio::class,
                 'type' => Element\Select::class,
                 'options' => [
-                    'label' => 'Select order', // @translate
+                    'label' => 'Sort by', // @translate
                     'value_options' => [
                         'alphabetic' => 'Alphabetic',  // @translate
                         'total' => 'Total',  // @translate
@@ -131,10 +131,10 @@ class ReferenceFieldset extends Fieldset
                 // 'type' => CommonElement\OptionalRadio::class,
                 'type' => Element\Select::class,
                 'options' => [
-                    'label' => 'Select order', // @translate
+                    'label' => 'Sort order', // @translate
                     'value_options' => [
-                        'asc' => 'Ascendant',  // @translate
-                        'desc' => 'Descendant',  // @translate
+                        'asc' => 'Ascending',  // @translate
+                        'desc' => 'Descending',  // @translate
                     ],
                 ],
                 'attributes' => [
