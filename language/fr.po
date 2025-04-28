@@ -553,11 +553,11 @@ msgid "Total"
 msgstr "Total"
 
 #: src/Form/ReferenceFieldset.php:136
-msgid "Ascendant"
+msgid "Ascending"
 msgstr "Croissant"
 
 #: src/Form/ReferenceFieldset.php:137
-msgid "Descendant"
+msgid "Descending"
 msgstr "Décroissant"
 
 #: src/Form/ReferenceFieldset.php:155
