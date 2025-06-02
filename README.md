@@ -287,7 +287,7 @@ TODO
 - [ ] Use the new table `reference_metadata` when possible.
 - [ ] Simplify queries for aggregated fields (see AdvancedSearch).
 - [ ] Order by years instead of alphabetic.
-- [ ] Get thumbnail url directly from references for performance.
+- [ ] Get thumbnail url directly from references for performance.
 
 
 Warning
@@ -350,7 +350,7 @@ Performance fixes were made for Article 19.
 [Reference]: https://gitlab.com/Daniel-KM/Omeka-S-module-Reference
 [Omeka]: https://omeka.org/classic
 [Reference plugin]: https://gitlab.com/Daniel-KM/Omeka-plugin-Reference
-[Reference.zip]: https://gitlab.com/Daniel-KM/Omeka-S-module-Reference/-/releases
+[Reference.zip]: https://github.com/Daniel-KM/Omeka-S-module-Reference/releases
 [installing a module]: https://omeka.org/s/docs/user-manual/modules/#installing-modules
 [Api Info]: https://gitlab.com/Daniel-KM/Omeka-S-module-ApiInfo
 [Bulk Edit]: https://gitlab.com/Daniel-KM/Omeka-S-module-BulkEdit
