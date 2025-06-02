@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Reference\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-06 00:00+0000\n"
-"PO-Revision-Date: 2025-01-06 00:00+0000\n"
+"POT-Creation-Date: 2025-06-02 00:00+0000\n"
+"PO-Revision-Date: 2025-06-02 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -26,11 +26,11 @@ msgstr "Le module %1$s doit être mis à niveau à la version %2$s ou supérieur
 msgid "Method Not Allowed"
 msgstr "Méthode non autorisée"
 
-#: src/Site/BlockLayout/Reference.php:130
+#: src/Site/BlockLayout/Reference.php:131
 msgid "Choose one or more properties or one or more resource classes."
 msgstr "Choisir une propriété ou une classe de ressource."
 
-#: src/Site/BlockLayout/Reference.php:131
+#: src/Site/BlockLayout/Reference.php:132
 msgid ""
 "With the layout template \"Reference Index\", the pages for the selected "
 "terms should be created manually with the terms as slug, with the \":\" "
@@ -47,30 +47,30 @@ msgstr ""
 msgid "There is no references."
 msgstr "Il n’y a aucune référence."
 
-#: view/common/reference-grid.phtml:84 view/common/reference.phtml:72
+#: view/common/reference-grid.phtml:86 view/common/reference.phtml:74
 msgid "See all…"
 msgstr "Tout voir…"
 
-#: view/common/reference-grid.phtml:85 view/common/reference.phtml:73
+#: view/common/reference-grid.phtml:87 view/common/reference.phtml:75
 #, php-format
 msgid "And %d more."
 msgstr "Et %d de plus."
 
-#: view/common/reference-grid.phtml:128
+#: view/common/reference-grid.phtml:130
 msgid "See resources"
 msgstr "Voir les ressources"
 
-#: view/common/reference-grid.phtml:134 view/common/reference-grid.phtml:144
+#: view/common/reference-grid.phtml:136 view/common/reference-grid.phtml:146
 #, php-format
 msgid "(%d resources)"
 msgstr "(%d ressources)"
 
-#: view/common/reference-grid.phtml:135 view/common/reference-grid.phtml:145
+#: view/common/reference-grid.phtml:137 view/common/reference-grid.phtml:147
 #, php-format
 msgid "(%d resource)"
 msgstr "(%d ressource)"
 
-#: view/common/reference-grid.phtml:246
+#: view/common/reference-grid.phtml:251
 msgid "List"
 msgstr "Liste"
 
@@ -79,7 +79,7 @@ msgstr "Liste"
 msgid "%s (%d)"
 msgstr "%s (%d)"
 
-#: view/common/reference-index.phtml:33 view/common/reference-index.phtml:42
+#: view/common/reference-index.phtml:34
 #: view/reference/site/reference/browse.phtml:38
 #: view/reference/site/reference/browse.phtml:67
 #, php-format
@@ -297,18 +297,18 @@ msgstr ""
 "utiliser pour utiliser le nouveau format ou ajouter l’option "
 "\"single_reference_format\" pour supprimer cet avertissement."
 
-#: src/Mvc/Controller/Plugin/References.php:927
+#: src/Mvc/Controller/Plugin/References.php:923
 msgid ""
 "The order for facets is \"by a list of values\", but no values are defined."
 msgstr ""
 "Le tri des facettes est « par liste de valeurs », mais aucune valeur n’est "
 "définie."
 
-#: src/Mvc/Controller/Plugin/References.php:2526
+#: src/Mvc/Controller/Plugin/References.php:2549
 msgid "Owners"
 msgstr "Propriétaires"
 
-#: src/Mvc/Controller/Plugin/References.php:2528
+#: src/Mvc/Controller/Plugin/References.php:2551
 msgid "Access"
 msgstr "Accès"
 
@@ -370,7 +370,7 @@ msgstr "Total individuel"
 msgid "Link to single records"
 msgstr "Lien vers les documents isolés"
 
-#: src/Form/SiteSettingsFieldset.php:70 src/Form/ReferenceTreeFieldset.php:148
+#: src/Form/SiteSettingsFieldset.php:70 src/Form/ReferenceTreeFieldset.php:151
 #: src/Form/ReferenceFieldset.php:201
 msgid "Custom url for single records"
 msgstr "Url personnalisée pour les références uniques"
@@ -488,7 +488,7 @@ msgstr ""
 "Quand une référence contient un seul document, faire le lien directement "
 "vers lui plutôt que vers la page items/browse."
 
-#: src/Form/ReferenceTreeFieldset.php:149 src/Form/ReferenceFieldset.php:202
+#: src/Form/ReferenceTreeFieldset.php:152 src/Form/ReferenceFieldset.php:202
 msgid ""
 "May be set with modules such Clean Url or Ark. May slow the display when "
 "there are many single references."
@@ -496,23 +496,27 @@ msgstr ""
 "Peut être utilisé avec les modules tels que CleanUrl et Ark. Peut ralentir "
 "l'affichage quand les références uniques sont nombreuses."
 
-#: src/Form/ReferenceTreeFieldset.php:159 src/Form/ReferenceFieldset.php:244
+#: src/Form/ReferenceTreeFieldset.php:165 src/Form/ReferenceFieldset.php:244
 msgid "Add the total of resources for each reference"
 msgstr "Indiquer le total de ressources pour chaque référence"
 
-#: src/Form/ReferenceTreeFieldset.php:169 src/Form/ReferenceFieldset.php:258
+#: src/Form/ReferenceTreeFieldset.php:178 src/Form/ReferenceFieldset.php:258
+msgid "Append \"reference\" as argument to query urls for themes"
+msgstr "Ajouter l’argument « reference » aux urls pour les thèmes"
+
+#: src/Form/ReferenceTreeFieldset.php:191 src/Form/ReferenceFieldset.php:272
 msgid "Add the thumbnail of the first resource"
 msgstr "Ajouter la vignette de la première ressource"
 
-#: src/Form/ReferenceTreeFieldset.php:180
+#: src/Form/ReferenceTreeFieldset.php:202
 msgid "Expand the tree"
 msgstr "Développer l’arborescence"
 
-#: src/Form/ReferenceTreeFieldset.php:190
+#: src/Form/ReferenceTreeFieldset.php:215
 msgid "Managed as branch"
 msgstr "Gérée comme branches"
 
-#: src/Form/ReferenceTreeFieldset.php:191
+#: src/Form/ReferenceTreeFieldset.php:216
 msgid ""
 "Check this box if the tree is managed as branch (the path is saved with "
 "\" :: \" between each branch)."
@@ -540,10 +544,6 @@ msgstr ""
 "Limiter les résultats aux langues indiquées. Utiliser \"|\" pour séparer "
 "plusieurs langues. Utiliser \"||\" pour les valeurs sans langue."
 
-#: src/Form/ReferenceFieldset.php:117 src/Form/ReferenceFieldset.php:134
-msgid "Select order"
-msgstr "Choisir l’ordre"
-
 #: src/Form/ReferenceFieldset.php:119
 msgid "Alphabetic"
 msgstr "Alphabétique"
@@ -551,14 +551,6 @@ msgstr "Alphabétique"
 #: src/Form/ReferenceFieldset.php:120
 msgid "Total"
 msgstr "Total"
-
-#: src/Form/ReferenceFieldset.php:136
-msgid "Ascending"
-msgstr "Croissant"
-
-#: src/Form/ReferenceFieldset.php:137
-msgid "Descending"
-msgstr "Décroissant"
 
 #: src/Form/ReferenceFieldset.php:155
 msgid "One page by initial"
@@ -576,11 +568,11 @@ msgstr "Ajouter des raccourcis au dessus et en dessous de la liste"
 msgid "Add first letter as headings between references"
 msgstr "Ajouter l’initiale comme entête entre les références"
 
-#: src/Form/ReferenceFieldset.php:270
+#: src/Form/ReferenceFieldset.php:284
 msgid "Maximum resources to display by reference"
 msgstr "Nombre de ressources maximum à afficher par référence"
 
-#: src/Form/ReferenceFieldset.php:271
+#: src/Form/ReferenceFieldset.php:285
 msgid ""
 "For example, display the items by subject. Let 0 to display a simple list. "
 "Maximum is 1024."
@@ -588,11 +580,11 @@ msgstr ""
 "Par exemple, afficher les contenus par sujet. Laisser 0 pour afficher une "
 "liste simple. Le maximum est 1024."
 
-#: src/Form/ReferenceFieldset.php:288
+#: src/Form/ReferenceFieldset.php:302
 msgid "Subject values"
 msgstr "Valeurs sujet"
 
-#: src/Form/ReferenceFieldset.php:289
+#: src/Form/ReferenceFieldset.php:303
 msgid ""
 "Allow to list related resources. For example, in a library where there are "
 "items of types \"Authors\" and \"Documents\", and if the creator of the "
@@ -606,7 +598,7 @@ msgstr ""
 "voir la liste des documents par auteur. Cette option est ignorée quand "
 "l’option \"maximum par référence\" est utilisée."
 
-#: src/Form/ReferenceFieldset.php:297
+#: src/Form/ReferenceFieldset.php:311
 msgid "Select a property…"
 msgstr "Choisir une propriété…"
 
@@ -629,6 +621,15 @@ msgstr "Références en grille"
 #: config/module.config.php:41
 msgid "Reference (index)"
 msgstr "Références (index)"
+
+#~ msgid "Select order"
+#~ msgstr "Choisir l’ordre"
+
+#~ msgid "Ascending"
+#~ msgstr "Croissant"
+
+#~ msgid "Descending"
+#~ msgstr "Décroissant"
 
 #, php-format
 #~ msgid "This module requires the module \"%s\"."
