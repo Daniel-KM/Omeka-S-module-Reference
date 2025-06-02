@@ -42,8 +42,7 @@ $options += [
 $searchConfigSlug = $options['search_config'] ?? null;
 $options['custom_url'] = $options['custom_url'] && $options['link_to_single'];
 if (!$options['custom_url']) {
-    $templateUrlSingle = str_replace('__temp_placeholder__', '{reference}',
-        $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => '__temp_placeholder__'], false));
+    $templateUrlSingle = strtr($url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => '__temp_placeholder__'], false), ['__temp_placeholder__' => '{reference}']);
     foreach ($fields as $field) {
         $query['property'][] = [
             'joiner' => 'or',
@@ -127,7 +126,7 @@ if (!$options['custom_url']) {
                                     $referenceUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], ['query' => $queryForUrl], false);
                                 }
                             } else {
-                                $referenceUrl = str_replace(['{reference}', '{reference_text_enc}'], [rawurlencode($referenceOrBranch), rawurlencode($reference)], $templateUrl);
+                                $referenceUrl = strtr($templateUrl, ['{reference}' => rawurlencode($referenceOrBranch), '{reference_text_enc}' => rawurlencode($reference)]);
                             }
                         } else {
                             if ($options['custom_url']) {

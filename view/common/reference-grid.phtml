@@ -123,7 +123,7 @@ $replaceBase['{reference_text}'] = '';
 // List by max may require templateUrlSingle.
 if (!$options['raw'] || ($listByMax && !$options['raw_sub'])) {
     $tempPlaceholder = '__temp_placeholder__';
-    $templateUrlSingle = str_replace($tempPlaceholder, '{reference}', $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $tempPlaceholder], false));
+    $templateUrlSingle = strtr($url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $tempPlaceholder], false), [$tempPlaceholder => '{reference}']);
 }
 
 $labelSeeResources = '<span class="reference-see">' . $translate('See resources') . '</span>';
@@ -285,7 +285,7 @@ if ($options['skiplinks']):
                     '{heading_id}' => $currentHeadingId,
                     '{heading_text}' => $currentHeading,
                 ];
-                $heading = str_replace(array_keys($heading), array_values($heading), $templateHeading);
+                $heading = strtr($templateHeading, $heading);
                 $replace['{heading}'] = $heading;
             }
         }
@@ -372,7 +372,7 @@ if ($options['skiplinks']):
                 // The link is not pretty for speed purpose.
                 foreach ($referenceData['resources'] as $resId => $resTitle) {
                     $recursive .= '<li>'
-                        . '<a href="' . str_replace('{reference}', $resId, $templateUrlSingle) . '">' . $escape($resTitle) . '</a>'
+                        . '<a href="' . strtr($templateUrlSingle, ['{reference}' => $resId]) . '">' . $escape($resTitle) . '</a>'
                         . '</li>';
                 }
             }
@@ -410,7 +410,7 @@ if ($options['skiplinks']):
         $replace['{recursive}'] = $recursive;
 
         // Process the output of one reference (and eventually the initial heading).
-        echo str_replace(array_keys($replace), array_values($replace), $template);
+        echo strtr($template, $replace);
         ?>
     <?php endforeach; ?>
 </ul>

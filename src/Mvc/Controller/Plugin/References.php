@@ -831,7 +831,7 @@ class References extends AbstractPlugin
             $locales = [];
         } else {
             $locales = is_array($options['locale']) ? $options['locale'] : [$options['locale']];
-            $locales = array_filter(array_unique(array_map('trim', array_map('strval', $locales))), fn ($v) => ctype_alnum(str_replace(['-', '_'], ['', ''], $v)));
+            $locales = array_filter(array_unique(array_map('trim', array_map('strval', $locales))), fn ($v) => ctype_alnum(strtr($v, ['-' => '', '_' => ''])));
             if (($pos = array_search('null', $locales)) !== false) {
                 $locales[$pos] = '';
             }
@@ -1878,7 +1878,7 @@ class References extends AbstractPlugin
                             ->andWhere($expr->like($column, ":filter_$filter"))
                             ->setParameter(
                                 "filter_$filter",
-                                $filterB . str_replace(['%', '_'], ['\%', '\_'], $firstFilter) . $filterE,
+                                $filterB . strtr($firstFilter, ['%' => '\%', '_' => '\_']) . $filterE,
                                 ParameterType::STRING
                             );
                     }
@@ -1889,7 +1889,7 @@ class References extends AbstractPlugin
                         $qb
                             ->setParameter(
                                 "filter_{$filter}_$key",
-                                $filterB . str_replace(['%', '_'], ['\%', '\_'], $string) . $filterE,
+                                $filterB . strtr($string, ['%' => '\%', '_' => '\_']) . $filterE,
                                 ParameterType::STRING
                             );
                     }
@@ -2011,7 +2011,7 @@ class References extends AbstractPlugin
             if ($this->optionsCurrent['locale'] && $type !== 'resource_titles') {
                 $coalesce = [];
                 foreach ($this->optionsCurrent['locale'] as $locale) {
-                    $strLocale = str_replace('-', '_', $locale);
+                    $strLocale = strtr($locale, ['-' => '_']);
                     $coalesce[] = "ress_$strLocale.text";
                     $qb
                         // The join is different than in listDataForProperties().

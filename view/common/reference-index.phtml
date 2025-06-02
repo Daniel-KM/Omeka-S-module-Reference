@@ -29,7 +29,7 @@ $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
         echo $hyperlink(
             sprintf($translate('%s (%d)'), $element->label(), $total),
             // TODO Define the link to the reference page.
-            $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $field)]),
+            $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => strtr($field, [':' => '-'])]),
             ['title' => sprintf($translate('Browse %s'), $element->label())]
         );
     else:
@@ -38,7 +38,7 @@ $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
         echo $hyperlink(
             $element->label(),
             // TODO Define the link to the reference page.
-            $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => str_replace(':', '-', $field)]),
+            $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => strtr($field, [':' => '-'])]),
             ['title' => sprintf($translate('Browse %s'), $element->label())]
         );
     endif;

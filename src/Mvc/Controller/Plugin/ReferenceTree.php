@@ -63,8 +63,8 @@ class ReferenceTree extends AbstractPlugin
      */
     public function convertTreeToLevels(string $dashTree): array
     {
-        // The str_replace() allows to fix Apple copy/paste.
-        $values = array_filter(array_map('trim', explode("\n", str_replace(["\r\n", "\n\r", "\r"], ["\n", "\n", "\n"], $dashTree))));
+        // The strtr() allows to fix Apple copy/paste.
+        $values = array_filter(array_map('trim', explode("\n", strtr($dashTree, ["\r\n" => "\n", "\n\r" => "\n", "\r" => "\n"]))));
         return array_reduce($values, function ($result, $item) {
             $first = substr($item, 0, 1);
             $space = strpos($item, ' ');
