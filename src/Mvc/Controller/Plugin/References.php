@@ -439,7 +439,7 @@ class References extends AbstractPlugin
             }
 
             if (in_array($dataFields['type'], ['properties', 'resource_classes', 'resource_templates', 'item_sets'])) {
-                $ids = array_column($dataFields['output']['o:request']['o:field'], 'o:id');
+                $ids = array_values(array_unique(array_map('intval', array_column($dataFields['output']['o:request']['o:field'], 'o:id'))));
             }
 
             switch ($dataFields['type']) {
@@ -602,7 +602,7 @@ class References extends AbstractPlugin
                 continue;
             }
 
-            $ids = array_column($dataFields['output']['o:request']['o:field'], 'o:id');
+            $ids = array_values(array_unique(array_map('intval', array_column($dataFields['output']['o:request']['o:field'], 'o:id'))));
             switch ($dataFields['type']) {
                 case 'properties':
                     $result[$keyResult] = $this->countResourcesForProperties($ids);
@@ -670,7 +670,7 @@ class References extends AbstractPlugin
             $result[$keyResult] = $dataFields['output'];
 
             if (in_array($dataFields['type'], ['properties', 'resource_classes', 'resource_templates', 'item_sets'])) {
-                $ids = array_column($dataFields['output']['o:request']['o:field'], 'o:id');
+                $ids = array_values(array_unique(array_map('intval', array_column($dataFields['output']['o:request']['o:field'], 'o:id'))));
             }
 
             switch ($dataFields['type']) {
@@ -960,7 +960,7 @@ class References extends AbstractPlugin
             ->distinct()
             ->from('value', 'value')
             ->where($expr->in('value.property_id', ':properties'))
-            ->setParameter('properties', array_map('intval', $propertyIds), Connection::PARAM_INT_ARRAY)
+            ->setParameter('properties', $propertyIds, Connection::PARAM_INT_ARRAY)
             ->groupBy('val')
         ;
 
