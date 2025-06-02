@@ -216,15 +216,14 @@ class References extends AbstractHelper
         $firstId = $options['first'];
         unset($options['subject_property_id'], $options['subject_property_term']);
         if (!empty($options['subject_property'])) {
-            $api = $this->getView()->api();
-            $property = is_numeric($options['subject_property'])
-                ? $api->read('properties', ['id' => $options['subject_property']])->getContent()
-                : $api->searchOne('properties', ['term' => $options['subject_property']])->getContent();
-            if ($property) {
+            /** @var \Common\View\Helper\EasyMeta $easyMeta */
+            $easyMeta = $this->getView()->easyMeta();
+            $propertyId = $easyMeta->propertyId($options['subject_property']);
+            if ($propertyId) {
                 $options['first'] = true;
                 $options['subject_property'] = [
-                    'id' => $property->id(),
-                    'term' => $property->term(),
+                    'id' => $propertyId,
+                    'term' => $easyMeta->propertyTerm($propertyId),
                 ];
             } else {
                 unset($options['subject_property']);

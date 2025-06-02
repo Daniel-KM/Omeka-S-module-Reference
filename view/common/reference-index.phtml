@@ -7,12 +7,14 @@
  * @var array $options
  */
 
-$translate = $this->plugin('translate');
-$url = $this->plugin('url');
-$api = $this->plugin('api');
+$plugins = $this->getHelperPluginManager();
+$url = $plugins->get('url');
+$translate = $plugins->get('translate');
+$hyperlink = $plugins->get('hyperlink');
+$easyMeta = $plugins->get('easyMeta');
+$references = $plugins->get('references');
+
 $siteSlug = $site->slug();
-$hyperlink = $this->plugin('hyperlink');
-$references = $this->plugin('references');
 
 $totals = $references->count($fields, $query, $options);
 
@@ -22,26 +24,15 @@ $this->htmlElement('body')->appendAttribute('class', 'reference browse list');
 <ul class="references">
     <?php foreach ($fields['fields'] ?? [] as $field): ?>
     <li><?php
-    if ($options['total'] ?? false):
-        // TODO Get the properties and classes labels one time.
-        $element = $api->searchOne('properties', ['term' => $field])->getContent() ?: $api->searchOne('resource_classes', ['term' => $field])->getContent();
-        $total = $totals[$field] ?? 0;
-        echo $hyperlink(
-            sprintf($translate('%s (%d)'), $element->label(), $total),
-            // TODO Define the link to the reference page.
-            $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => strtr($field, [':' => '-'])]),
-            ['title' => sprintf($translate('Browse %s'), $element->label())]
-        );
-    else:
-        $element = $api->searchOne('properties', ['term' => $field])->getContent() ?: $api->searchOne('resource_classes', ['term' => $field])->getContent();
-        $total = $totals[$field];
-        echo $hyperlink(
-            $element->label(),
-            // TODO Define the link to the reference page.
-            $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => strtr($field, [':' => '-'])]),
-            ['title' => sprintf($translate('Browse %s'), $element->label())]
-        );
-    endif;
+    $property = $easyMeta->propertyId($field);
+    $class = $property ? $easyMeta->resourceClassId($field) : null;
+    $label = $translate($class ? $easyMeta->resourceClassLabel($class) : $easyMeta->propertyLabel($property));
+    $labelTotal = empty($options['total']) ? $label : sprintf($translate('%s (%d)'), $label, $totals[$field] ?? 0);
+    echo $hyperlink(
+        $labelTotal,
+        $url('site/page', ['site-slug' => $siteSlug, 'page-slug' => strtr($field, [':' => '-'])]),
+        ['title' => sprintf($translate('Browse %s'), $label)]
+    );
     ?>
     </li>
     <?php endforeach; ?>

@@ -141,7 +141,7 @@ class Module extends AbstractModule
             \EasyAdmin\Form\CheckAndFixForm::class,
             'form.add_elements',
             [$this, 'handleEasyAdminJobsForm']
-            );
+        );
         $sharedEventManager->attach(
             \EasyAdmin\Controller\Admin\CheckAndFixController::class,
             'easyadmin.job',

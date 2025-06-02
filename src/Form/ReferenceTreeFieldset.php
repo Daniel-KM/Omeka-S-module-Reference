@@ -140,6 +140,9 @@ Asia
                 'attributes' => [
                     'id' => 'reference-tree-link_to_single',
                 ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
+                ],
             ])
             ->add([
                 'name' => 'o:block[__blockIndex__][o:data][custom_url]',
@@ -151,6 +154,9 @@ Asia
                 'attributes' => [
                     'id' => 'reference-tree-custom_url',
                 ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
+                ],
             ])
             ->add([
                 'name' => 'o:block[__blockIndex__][o:data][total]',
@@ -160,6 +166,9 @@ Asia
                 ],
                 'attributes' => [
                     'id' => 'reference-tree-total',
+                ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
                 ],
             ])
             ->add([
@@ -195,6 +204,9 @@ Asia
                 'attributes' => [
                     'id' => 'reference-tree-expanded',
                 ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
+                ],
             ])
             ->add([
                 'name' => 'o:block[__blockIndex__][o:data][branch]',
@@ -205,6 +217,9 @@ Asia
                 ],
                 'attributes' => [
                     'id' => 'reference-tree-branch',
+                ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
                 ],
             ]);
     }
