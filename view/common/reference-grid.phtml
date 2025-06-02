@@ -71,6 +71,7 @@ $options += [
     'search_config' => null,
     'link_to_single' => true,
     'total' => true,
+    'url_argument_reference' => false,
     'raw' => false,
     'raw_sub' => false,
     'thumbnail' => false,
@@ -176,19 +177,22 @@ if ($options['raw']) {
                 }
             }
         }
-        $query['reference'] = '__temp_placeholder_text_enc__';
         // The default url helper doesn't encode "&" as "&amp;", so append it manually.
-        if ($searchConfigSlug) {
-            $templateUrlEmpty = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
-                $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986));
-            $templateUrl = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
-                $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
-        } else {
-            $templateUrlEmpty = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
-                $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986));
-            $templateUrl = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
-                $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
+        $urlReplace = ['__temp_placeholder__' => '{reference}'];
+        if ($options['url_argument_reference']) {
+            $urlReplace['__temp_placeholder_text_enc__'] = '{reference_text_enc}';
+            $queryEmpty['reference'] = '__temp_placeholder_text_enc__';
+            $query['reference'] = '__temp_placeholder_text_enc__';
         }
+        if ($searchConfigSlug) {
+            $templateUrlEmpty = $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986);
+            $templateUrl = $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986);
+        } else {
+            $templateUrlEmpty = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($queryEmpty, '', '&amp;', PHP_QUERY_RFC3986);
+            $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986);
+        }
+        $templateUrlEmpty = strtr($templateUrlEmpty, $urlReplace);
+        $templateUrl = strtr($templateUrl, $urlReplace);
     }
 }
 
@@ -293,8 +297,9 @@ if ($options['skiplinks']):
             $referenceNumber = true;
             $replace['{reference_text}'] = $referenceText;
         } else {
+            $replace['{reference_text}'] = $referenceValue;
+            $replace['{reference_text_enc}'] = rawurlencode($referenceValue);
             $referenceNumber = !$options['link_to_single'] || $referenceData['total'] > 1;
-
             if ($options['custom_url']) {
                 if ($referenceNumber) {
                     if ($searchConfigSlug) {
@@ -305,25 +310,28 @@ if ($options['skiplinks']):
                 } else {
                     // Don't use the resource to get the url, it's too slow, even if it allows to have customized url. Disable the feature if needed.
                     // $referenceUrl = $api->read($resourceName, $referenceData['first'])->getContent()->siteUrl();
-                    $referenceUrl = str_replace('{reference}', rawurlencode($referenceData['first']), $templateUrlSingle);
+                    $encodedReference = rawurlencode($referenceData['first']);
+                    $replaceReference = ['{reference}' => $encodedReference, '{reference_text_enc}' => $encodedReference];
+                    $referenceUrl = strtr($templateUrlSingle, $replaceReference);
                 }
             } else {
                 if ($referenceNumber) {
+                    $encodedReference = rawurlencode($reference);
+                    $replaceReference = ['{reference}' => $encodedReference, '{reference_text_enc}' => $encodedReference];
                     if ($mainFieldType) {
                         $referenceUrl = $emptyReferenceValue
                             ? $templateUrlEmpty
-                            : str_replace('{reference}', rawurlencode($reference), $templateUrl);
+                            : strtr($templateUrl, $replaceReference);
                     } else {
-                        $referenceUrl = str_replace('{reference}', rawurlencode($reference), $templateUrl);
+                        $referenceUrl = strtr($templateUrl, $replaceReference);
                     }
                 } else {
-                    $referenceUrl = str_replace('{reference}', rawurlencode($referenceData['first']), $templateUrlSingle);
+                    $encodedReference = rawurlencode($referenceData['first']);
+                    $replaceReference = ['{reference}' => $encodedReference, '{reference_text_enc}' => $encodedReference];
+                    $referenceUrl = strtr($templateUrlSingle, $replaceReference);
                 }
             }
-
             $replace['{reference_url}'] = $referenceUrl;
-            $replace['{reference_text}'] = $referenceValue;
-            $replace['{reference_text_enc}'] = rawurlencode($referenceValue);
         }
 
         // Can be null when references are set directly.

@@ -33,6 +33,7 @@ $options += [
     'search_config' => null,
     'link_to_single' => true,
     'total' => true,
+    'url_argument_reference' => false,
     'raw' => false,
     'thumbnail' => false,
     'expanded' => true,
@@ -51,15 +52,18 @@ if (!$options['custom_url']) {
             'text' => '__temp_placeholder__',
         ];
     }
-    $query['reference'] = '__temp_placeholder_text_enc__';
     // The default url helper doesn't encode "&" as "&amp;", so append it manually.
-    if ($searchConfigSlug) {
-        $templateUrl = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
-            $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
-    } else {
-        $templateUrl = str_replace(['__temp_placeholder__', '__temp_placeholder_text_enc__'], ['{reference}', '{reference_text_enc}'],
-            $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986));
+    $urlReplace = ['__temp_placeholder__' => '{reference}'];
+    if ($options['url_argument_reference']) {
+        $urlReplace['__temp_placeholder_text_enc__'] = '{reference_text_enc}';
+        $query['reference'] = '__temp_placeholder_text_enc__';
     }
+    if ($searchConfigSlug) {
+        $templateUrl = $url('search-page-' . $searchConfigSlug, ['site-slug' => $siteSlug, 'search-slug' => $searchConfigSlug], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986);
+    } else {
+        $templateUrl = $url('site/resource', ['site-slug' => $siteSlug, 'controller' => $controllerName], false) . '?' . http_build_query($query, '', '&amp;', PHP_QUERY_RFC3986);
+    }
+    $templateUrl = strtr($templateUrl, $urlReplace);
 }
 ?>
 
@@ -132,7 +136,9 @@ if (!$options['custom_url']) {
                                 // $referenceUrl = $resource->siteUrl();
                                 $referenceUrl = $url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => $controllerName, 'id' => $referenceData['first']], false);
                             } else {
-                                $referenceUrl = str_replace('{reference}', rawurldecode($referenceData['first']), $templateUrlSingle);
+                                $encodedReference = rawurlencode($referenceData['first']);
+                                $replaceReference = ['{reference}' => $encodedReference, '{reference_text_enc}' => $encodedReference];
+                                $referenceUrl = strtr($templateUrlSingle, $replaceReference);
                             }
                         }
                         // To set the thumbnail is slow, because the resource should be loaded.

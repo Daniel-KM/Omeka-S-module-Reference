@@ -60,6 +60,7 @@ class ReferenceTree extends AbstractBlockLayout implements TemplateableBlockLayo
         $data['link_to_single'] = (bool) ($data['link_to_single'] ?? true);
         $data['custom_url'] = (bool) $data['custom_url'];
         $data['total'] = (bool) $data['total'];
+        $data['url_argument_reference'] = !empty($data['url_argument_reference']);
         $data['thumbnail'] = $data['thumbnail'] ?? null;
         $data['branch'] = (bool) $data['branch'];
         $data['expanded'] = (bool) $data['expanded'];

@@ -252,6 +252,20 @@ class ReferenceFieldset extends Fieldset
                 ],
             ])
             ->add([
+                'name' => 'o:block[__blockIndex__][o:data][url_argument_reference]',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Append "reference" as argument to query urls for themes', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'reference-options-url-argument-reference',
+                    'data-fieldset' => 'options',
+                ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
+                ],
+            ])
+            ->add([
                 'name' => 'o:block[__blockIndex__][o:data][thumbnail]',
                 'type' => CommonElement\ThumbnailTypeSelect::class,
                 'options' => [

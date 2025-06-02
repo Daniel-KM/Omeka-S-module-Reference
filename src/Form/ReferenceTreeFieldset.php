@@ -163,6 +163,19 @@ Asia
                 ],
             ])
             ->add([
+                'name' => 'o:block[__blockIndex__][o:data][url_argument_reference]',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Append "reference" as argument to query urls for themes', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'reference-tree-url_argument_reference',
+                ],
+                'filters' => [
+                    ['name' => \Laminas\Filter\Boolean::class],
+                ],
+            ])
+            ->add([
                 'name' => 'o:block[__blockIndex__][o:data][thumbnail]',
                 'type' => CommonElement\ThumbnailTypeSelect::class,
                 'options' => [
