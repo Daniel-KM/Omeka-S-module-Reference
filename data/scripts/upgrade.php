@@ -747,3 +747,17 @@ if (version_compare($oldVersion, '3.4.51', '<')) {
     );
     $messenger->addSuccess($message);
 }
+
+if (version_compare($oldVersion, '3.4.55', '<')) {
+    $sql = <<<'SQL'
+        SET foreign_key_checks = 0;
+        DROP TABLE IF EXISTS reference_metadata;
+        SET foreign_key_checks = 1;
+        SQL;
+    $connection->executeStatement($sql);
+
+    $message = new PsrMessage(
+        'The references with single or fallback locales was removed for now due to complex maintainability. The listing of existing references may be different when values have multiple languages. The feature could be reimplemented in a future version.' // @translate
+    );
+    $messenger->addWarning($message);
+}
