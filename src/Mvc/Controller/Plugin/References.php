@@ -428,7 +428,7 @@ class References extends AbstractPlugin
                 $result[$keyResult] = reset($dataFields['output']['o:request']['o:field']);
                 if (!$this->optionsCurrent['single_reference_format']) {
                     $result[$keyResult] = [
-                        'deprecated' => 'This output format is deprecated. Set a string key to metadata to use the new format or append option "single_reference_format" to remove this warning.', // @translate
+                            'deprecated' => 'This output format is deprecated. Set a string key to metadata to use the new format or append option "single_reference_format" to remove this warning.', // @translate
                         ]
                         + $result[$keyResult];
                 }
@@ -1402,7 +1402,7 @@ class References extends AbstractPlugin
             $qb
                 ->select(
                     'resource_template.label AS val'
-               );
+                );
         }
 
         if ($this->optionsCurrent['output'] !== 'values') {
@@ -1700,7 +1700,7 @@ class References extends AbstractPlugin
 
     protected function filterByVisibilityForAnonymous(QueryBuilder $qb, ?string $type): self
     {
-        /**
+        /*
          * @see \Omeka\Db\Filter\ResourceVisibilityFilter
          * @see \Omeka\Db\Filter\ValueVisibilityFilter
          */
@@ -2353,11 +2353,9 @@ class References extends AbstractPlugin
             return array_values($result);
         }
 
-        return array_filter($result, function ($v): array {
-            return $v['val'] !== ''
+        return array_filter($result, fn ($v): array => $v['val'] !== ''
                 || $v['type'] === 'uri'
-                || strpos($v['type'], 'resource') === 0;
-        });
+                || strpos($v['type'], 'resource') === 0);
     }
 
     /**
@@ -2423,7 +2421,7 @@ class References extends AbstractPlugin
             ->distinct()
             ->from('resource', 'resource')
             ->andWhere($expr->in('resource.resource_class_id', ':resource_classes'))
-            ->setParameter('resource_classes', array_map('intval', $resourceClassIds), Connection::PARAM_INT_ARRAY);
+            ->setParameter('resource_classes', $resourceClassIds, Connection::PARAM_INT_ARRAY);
 
         $this
             ->filterByResourceType($qb)
@@ -2454,7 +2452,7 @@ class References extends AbstractPlugin
             ->distinct()
             ->from('resource', 'resource')
             ->andWhere($expr->in('resource.resource_template_id', ':resource_templates'))
-            ->setParameter('resource_templates', array_map('intval', $resourceTemplateIds), Connection::PARAM_INT_ARRAY);
+            ->setParameter('resource_templates', $resourceTemplateIds, Connection::PARAM_INT_ARRAY);
 
         $this
             ->filterByResourceType($qb)
@@ -2491,7 +2489,7 @@ class References extends AbstractPlugin
             ->innerJoin('resource', 'item', 'res', $expr->eq('res.id', 'resource.id'))
             // See \Omeka\Api\Adapter\ItemAdapter::buildQuery()
             ->innerJoin('res', 'item_item_set', 'item_set', $expr->in('item_set.item_set_id', ':item_sets'))
-            ->setParameter('item_sets', array_map('intval', $itemSetIds), Connection::PARAM_INT_ARRAY);
+            ->setParameter('item_sets', $itemSetIds, Connection::PARAM_INT_ARRAY);
 
         $this->searchQuery($qb);
 
@@ -2539,7 +2537,7 @@ class References extends AbstractPlugin
             // the dbal qb, so it doesn't manage entities.
             // Anyway, the output is only scalar ids.
             // To avoid issues with parameters of the sub-qb, get ids from here.
-            // TODO Do a real subquery as before instead of a double query. Most of the time (facets), it should be cached by doctrine.
+            // TODO Do a real subquery as before instead of a double query. Most of the time (facets), it should be cached by doctrine. Anyway, it should be cached by mariadb too.
             // Use an api request.
 
             $ids = $this->api->search($this->optionsCurrent['resource_name'], $mainQuery, ['returnScalar' => 'id'])->getContent();

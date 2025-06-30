@@ -91,10 +91,11 @@ class SiteSettingsFieldset extends Fieldset
                 'attributes' => [
                     'id' => 'reference_slugs',
                     'rows' => 12,
-                    'placeholder' => 'slug = term = label
-dctype:Image = dctype:Image = Image
-dcterms:subject = dcterms:subject = Subjects
-',
+                    'placeholder' => <<<'TXT'
+                        slug = term = label
+                        dctype:Image = dctype:Image = Image
+                        dcterms:subject = dcterms:subject = Subjects
+                        TXT,
                 ],
             ])
         ;

@@ -56,12 +56,12 @@ class ReferenceTree extends AbstractBlockLayout implements TemplateableBlockLayo
         $data['query'] = $query;
 
         // Normalize options one time.
-        $data['search_config'] = $data['search_config'] ?? null;
+        $data['search_config'] ??= null;
         $data['link_to_single'] = !empty($data['link_to_single']);
         $data['custom_url'] = !empty($data['custom_url']);
         $data['total'] = !empty($data['total']);
         $data['url_argument_reference'] = !empty($data['url_argument_reference']);
-        $data['thumbnail'] = $data['thumbnail'] ?? null;
+        $data['thumbnail'] ??= null;
         $data['branch'] = !empty($data['branch']);
         $data['expanded'] = !empty($data['expanded']);
         $data['query_type'] ??= 'eq';

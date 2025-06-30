@@ -8,10 +8,10 @@ if (!class_exists(\Common\TraitModule::class)) {
 
 use Common\Stdlib\PsrMessage;
 use Common\TraitModule;
+use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\Mvc\MvcEvent;
 use Omeka\Module\AbstractModule;
-use Omeka\Settings\SettingsInterface;
 
 /**
  * Reference
@@ -80,68 +80,17 @@ class Module extends AbstractModule
         );
     }
 
-    protected function initDataToPopulate(SettingsInterface $settings, string $settingsType, $id = null): bool
+    public function handleSiteSettings(Event $event): void
     {
         // Check site settings, because array options cannot be set by default
         // automatically.
-        if ($settingsType === 'site_settings') {
-            $exist = $settings->get('reference_resource_name');
-            if (is_null($exist)) {
-                $config = $this->getConfig();
-                $settings->set('reference_options', $config['reference']['site_settings']['reference_options']);
-                $settings->set('reference_slugs', $config['reference']['site_settings']['reference_slugs']);
-            }
+        $settings = $this->getServiceLocator()->get('Omeka\Settings\Site');
+        $exist = $settings->get('reference_resource_name');
+        if (is_null($exist)) {
+            $config = $this->getConfig();
+            $settings->set('reference_options', $config['reference']['site_settings']['reference_options']);
+            $settings->set('reference_slugs', $config['reference']['site_settings']['reference_slugs']);
         }
-
-        // Copy of the trait method: a trait method cannot be called when
-        // overridden.
-
-        // This method is not in the interface, but is set for config, site and
-        // user settings.
-        if (!method_exists($settings, 'getTableName')) {
-            return false;
-        }
-
-        $config = $this->getConfig();
-        $space = strtolower(static::NAMESPACE);
-        if (empty($config[$space][$settingsType])) {
-            return false;
-        }
-
-        /** @var \Doctrine\DBAL\Connection $connection */
-        $services = $this->getServiceLocator();
-        $connection = $services->get('Omeka\Connection');
-        if ($id) {
-            if (!method_exists($settings, 'getTargetIdColumnName')) {
-                return false;
-            }
-            $sql = sprintf('SELECT id, value FROM %s WHERE %s = :target_id', $settings->getTableName(), $settings->getTargetIdColumnName());
-            $stmt = $connection->executeQuery($sql, ['target_id' => $id]);
-        } else {
-            $sql = sprintf('SELECT id, value FROM %s', $settings->getTableName());
-            $stmt = $connection->executeQuery($sql);
-        }
-
-        $translator = $services->get('MvcTranslator');
-
-        $currentSettings = $stmt->fetchAllKeyValue();
-        $defaultSettings = $config[$space][$settingsType];
-        // Skip settings that are arrays, because the fields "multi-checkbox"
-        // and "multi-select" are removed when no value are selected, so it's
-        // not possible to determine if it's a new setting or an old empty
-        // setting currently. So fill them via upgrade in that case or fill the
-        // values.
-        // TODO Find a way to save empty multi-checkboxes and multi-selects (core fix).
-        $defaultSettings = array_filter($defaultSettings, fn ($v) => !is_array($v));
-        $missingSettings = array_diff_key($defaultSettings, $currentSettings);
-
-        foreach ($missingSettings as $name => $value) {
-            $settings->set(
-                $name,
-                $this->isSettingTranslatable($settingsType, $name) ? $translator->translate($value) : $value
-            );
-        }
-
-        return true;
+        $this->handleAnySettings($event, 'site_settings');
     }
 }

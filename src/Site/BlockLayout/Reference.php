@@ -73,14 +73,14 @@ class Reference extends AbstractBlockLayout implements TemplateableBlockLayoutIn
 
         // Normalize options one time.
         $data['by_initial'] = !empty($data['by_initial']);
-        $data['search_config'] = $data['search_config'] ?? null;
+        $data['search_config'] ??= null;
         $data['link_to_single'] = !empty($data['link_to_single']);
         $data['custom_url'] = !empty($data['custom_url']);
         $data['skiplinks'] = !empty($data['skiplinks']);
         $data['headings'] = !empty($data['headings']);
         $data['total'] = !empty($data['total']);
         $data['url_argument_reference'] = !empty($data['url_argument_reference']);
-        $data['thumbnail'] = $data['thumbnail'] ?? null;
+        $data['thumbnail'] ??= null;
         $data['list_by_max'] = (int) $data['list_by_max'];
 
         $block->setData($data);
