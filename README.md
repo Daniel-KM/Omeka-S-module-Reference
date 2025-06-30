@@ -88,7 +88,7 @@ Available pages and options can be set in the site settings. Options are:
 
 A block allows to display the lists in any page. Furthermore,
 
-These contents can be displayed anywere via the view helper `references()`:
+These contents can be displayed anywhere via the view helper `references()`:
 
 ```php
 // With default values.
@@ -284,10 +284,15 @@ TODO
 - [ ] Get the second levels via a single sql, not via api.
 - [ ] Check if the option "include_without_meta" is still needed with data types.
 - [ ] Include the fields in the main request or get them via a second request, not via api.
-- [ ] Use the new table `reference_metadata` when possible.
 - [ ] Simplify queries for aggregated fields (see AdvancedSearch).
 - [ ] Order by years instead of alphabetic.
 - [ ] Get thumbnail url directly from references for performance.
+- [ ] Store the display title by language, in particular when the title is a resource or not dcterms:title. Use sql views? Store only ids?
+      Other properties are useless to store. Or use a double or a sub-query.
+
+No more todo:
+
+- Use the new table `reference_metadata` when possible.
 
 
 Warning
