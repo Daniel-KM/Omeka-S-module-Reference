@@ -404,8 +404,6 @@ class References extends AbstractPlugin
          *
          * Nevertheless, this solution requires to check visibility manually for
          * resource and value, but user and sites too.
-         *
-         * @todo Remove coalesce: use reference_metadata.
          */
 
         // TODO Convert all queries into a single or two sql queries (at least for properties and classes).
@@ -1003,16 +1001,16 @@ class References extends AbstractPlugin
             if ($this->optionsCurrent['locale']) {
                 $qb
                     ->select(
-                        // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert. Anyway convert should be only for diacritics.
-                        // 'CONVERT(UPPER(LEFT(refmeta.text, 1)) USING latin1) AS val',
-                        $val = "UPPER(LEFT(refmeta.text, {$this->optionsCurrent['_initials']})) AS val"
+                        // 'CONVERT(UPPER(LEFT($mainTypesString, $this->optionsCurrent['_initials'])) USING latin1) AS val',
+                        $val = $this->supportAnyValue
+                            ? "ANY_VALUE(UPPER(LEFT($mainTypesString, {$this->optionsCurrent['_initials']}))) AS val"
+                            : "UPPER(LEFT($mainTypesString, {$this->optionsCurrent['_initials']})) AS val"
                     )
-                    ->innerJoin('value', 'reference_metadata', 'refmeta', $expr->eq('refmeta.value_id', 'value.id'))
-                    ->andWhere($expr->in('refmeta.lang', ':locales'))
+                    ->andWhere($expr->in('value.lang', ':locales'))
                     ->setParameter('locales', $this->optionsCurrent['locale'], Connection::PARAM_STR_ARRAY)
                 ;
             } else {
-                // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert.
+                // TODO Doctrine doesn't manage left() and convert(), but we may not need to convert. Anyway convert should be only for diacritics.
                 $qb
                     ->select(
                         // 'CONVERT(UPPER(LEFT($mainTypesString, $this->optionsCurrent['_initials'])) USING latin1) AS val',
@@ -1026,10 +1024,9 @@ class References extends AbstractPlugin
             if ($this->optionsCurrent['locale']) {
                 $qb
                     ->select(
-                        $val = 'refmeta.text AS val'
+                        $val = 'value.value AS val'
                     )
-                    ->innerJoin('value', 'reference_metadata', 'refmeta', $expr->eq('refmeta.value_id', 'value.id'))
-                    ->andWhere($expr->in('refmeta.lang', ':locales'))
+                    ->andWhere($expr->in('value.lang', ':locales'))
                     ->setParameter('locales', $this->optionsCurrent['locale'], Connection::PARAM_STR_ARRAY)
                 ;
             } else {
@@ -1988,10 +1985,22 @@ class References extends AbstractPlugin
                 );
         }
 
+        // Manage fallback for languages of properties.
         if ($this->optionsCurrent['list_by_max']
-            // TODO May be simplified for "resource_titles".
             && ($type === 'properties' || $type === 'resource_titles')
         ) {
+            // This part was not revert back: so fallback title with title for
+            // properties is no more managed for now, in particular for resource
+            // with an uri or another resource as title: the use of the table
+            // reference_metadata was too much heavy. The point is to find
+            // the display title that may be various properties. Maybe just
+            // store the title of resources in languages in a specific table
+            // instead of all datas. To store the other metadata is useless,
+            // since a coalesce (or a nested coalesce to get value/uri/resource)
+            // may be enough. Or use a double or a subquery.
+
+            /*
+
             // Add and order by title, because it is the most common and simple.
             // Use a single select to avoid issue with null, that should not
             // exist in Omeka values. The unit separator is used in order to
@@ -2008,7 +2017,8 @@ class References extends AbstractPlugin
             // that could be a join with the table of the resources.
             // Most of the times, there are only one language anyway, and
             // rarely more than one fallback anyway.
-            if ($this->optionsCurrent['locale'] && $type !== 'resource_titles') {
+
+            if ($this->optionsCurrent['locale'] && $type === 'properties') {
                 $coalesce = [];
                 foreach ($this->optionsCurrent['locale'] as $locale) {
                     $strLocale = strtr($locale, ['-' => '_']);
@@ -2040,6 +2050,44 @@ class References extends AbstractPlugin
                     ->setParameter('unit_separator', chr(0x1F), ParameterType::STRING)
                     ->setParameter('group_separator', chr(0x1D), ParameterType::STRING)
                 ;
+
+            */
+
+            // FIXME This new query to get the title of propety or resources with fallback locales does not work.
+            if ($this->optionsCurrent['locale'] && $type === 'properties') {
+                $coalesce = [];
+                foreach ($this->optionsCurrent['locale'] as $locale) {
+                    $strLocale = strtr($locale, ['-' => '_']);
+                    $coalesce[] = "vress_$strLocale.value";
+                    $qb
+                    //  The join is different than in listDataForProperties().
+                        ->leftJoin('value', 'value', "vress_$strLocale", $expr->and(
+                            $expr->eq("vress_$strLocale.resource_id", 'value.resource_id'),
+                            $expr->eq("vress_$strLocale.property_id", ':display_title'),
+                            $expr->eq("vress_$strLocale.lang", ':locale_' . $strLocale)
+                        ))
+                        ->setParameter('locale_' . $strLocale, $locale, ParameterType::STRING);
+                    }
+                    $coalesce[] = 'vress.value';
+                    $ressText = $this->supportAnyValue
+                        ? 'ANY_VALUE(COALESCE(' . implode(', ', $coalesce) . '))'
+                        : 'COALESCE(' . implode(', ', $coalesce) . ')';
+                    $qb
+                        // The join is different than in listDataForProperties().
+                        ->leftJoin('value', 'value', 'vress', $expr->and(
+                            $expr->eq('vress.resource_id', 'value.resource_id'),
+                            $expr->eq('vress.property_id', ':display_title')
+                        ))
+                        // FIXME 1 is "dcterms:title", but it depends on resource template.
+                        ->setParameter('display_title', '1', ParameterType::STRING)
+                        ->addSelect(
+                            // Note: for doctrine orm, separators must be set as parameters.
+                            "GROUP_CONCAT(vress.resource_id, :unit_separator, $ressText SEPARATOR :group_separator) AS resources"
+                        )
+                        ->setParameter('unit_separator', chr(0x1F), ParameterType::STRING)
+                        ->setParameter('group_separator', chr(0x1D), ParameterType::STRING)
+                    ;
+
             } else {
                 $qb
                     ->leftJoin(
@@ -2264,7 +2312,7 @@ class References extends AbstractPlugin
 
             if ($this->optionsCurrent['fields']) {
                 $fields = array_fill_keys($this->optionsCurrent['fields'], true);
-                // FIXME Fix the api call inside a loop. Use the new table reference_metadata.
+                // FIXME Fix the api call inside a loop.
                 $result = array_map(function ($v) use ($fields) {
                     // Check required when a locale is used or for debug.
                     if (empty($v['resources'])) {
@@ -2323,6 +2371,11 @@ class References extends AbstractPlugin
             return 0;
         }
 
+        // Used dbal queries instead of orm to get some columns.
+        // See doctrine/orm#5961 or doctrine/orm#5980).
+
+        // TODO Check visibilities with DBAL.
+
         /** @var \Doctrine\DBAL\Query\QueryBuilder $qb */
         $qb = $this->connection->createQueryBuilder();
         $expr = $qb->expr();
@@ -2330,13 +2383,15 @@ class References extends AbstractPlugin
         $qb
             ->select(
                 // Here, this is the count of references, not resources.
-                'COUNT(refmeta.text)'
+                'COUNT(value.value)'
             )
             ->distinct()
-            ->from('reference_metadata', 'refmeta')
-            ->innerJoin('refmeta', 'resource', 'resource', $expr->eq('resource.id', 'refmeta.resource_id'))
-            ->andWhere($expr->in('refmeta.field', ':properties'))
-            ->setParameter('properties', $this->easyMeta->propertyTerms($propertyIds), Connection::PARAM_STR_ARRAY)
+            ->from('value', 'value')
+            // This join allows to check visibility automatically too.
+            ->innerJoin('value', 'resource', 'resource', $expr->eq('resource.id', 'value.resource_id'))
+            ->andWhere($expr->in('value.property', ':properties'))
+            ->setParameter('properties', $propertyIds, Connection::PARAM_INT_ARRAY)
+            ->andWhere($expr->isNotNull('value.value'))
         ;
 
         $this
@@ -3031,6 +3086,7 @@ class References extends AbstractPlugin
     {
         // Other omeka api resources are not resources.
         $resourceNamesToTables = [
+            // Api names.
             'resources' => null,
             'items' => 'item',
             'media' => 'media',
@@ -3038,6 +3094,14 @@ class References extends AbstractPlugin
             'resource_classes' => 'resource_class',
             'resource_templates' => 'resource_template',
             'annotations' => 'annotation',
+            // Classes.
+            \Omeka\Entity\Resource::class => null,
+            \Omeka\Entity\Item::class => 'item',
+            \Omeka\Entity\Media::class => 'media',
+            \Omeka\Entity\ItemSet::class => 'item_set',
+            \Omeka\Entity\ResourceClass::class => 'resource_class',
+            \Omeka\Entity\ResourceTemplate::class => 'resource_template',
+            \Annotate\Entity\Annotation::class => 'annotation',
         ];
         return $resourceNamesToTables[$resourceName] ?? null;
     }

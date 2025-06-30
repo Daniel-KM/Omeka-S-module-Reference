@@ -4,12 +4,6 @@ namespace Reference;
 
 return [
     'entity_manager' => [
-        'mapping_classes_paths' => [
-            dirname(__DIR__) . '/src/Entity',
-        ],
-        'proxy_paths' => [
-            dirname(__DIR__) . '/data/doctrine-proxies',
-        ],
         'functions' => [
             'string' => [
                 'any_value' => \DoctrineExtensions\Query\Mysql\AnyValue::class,
@@ -50,7 +44,6 @@ return [
     'form_elements' => [
         'invokables' => [
             Form\Element\DoubleArrayTextarea::class => Form\Element\DoubleArrayTextarea::class,
-            Form\SettingsFieldset::class => Form\SettingsFieldset::class,
             Form\SiteSettingsFieldset::class => Form\SiteSettingsFieldset::class,
         ],
         'factories' => [
@@ -68,7 +61,6 @@ return [
     ],
     'controller_plugins' => [
         'factories' => [
-            'currentReferenceMetadata' => Service\ControllerPlugin\CurrentReferenceMetadataFactory::class,
             'references' => Service\ControllerPlugin\ReferencesFactory::class,
             'referenceTree' => Service\ControllerPlugin\ReferenceTreeFactory::class,
         ],
