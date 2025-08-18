@@ -48,7 +48,7 @@ class ReferenceFieldsetFactory implements FactoryInterface
             'referenceFieldset' => ReferenceFieldset::class,
             'referenceTreeFieldset' => ReferenceTreeFieldset::class,
             ReferenceFieldset::class => ReferenceFieldset::class,
-            ReferenceTreeFieldset::class => ReferenceFieldset::class,
+            ReferenceTreeFieldset::class => ReferenceTreeFieldset::class,
         ];
 
         $form = $classes[$requestedName];
