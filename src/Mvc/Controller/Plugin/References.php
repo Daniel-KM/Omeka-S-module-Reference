@@ -2387,7 +2387,7 @@ class References extends AbstractPlugin
             ->from('value', 'value')
             // This join allows to check visibility automatically too.
             ->innerJoin('value', 'resource', 'resource', $expr->eq('resource.id', 'value.resource_id'))
-            ->andWhere($expr->in('value.property', ':properties'))
+            ->andWhere($expr->in('value.property_id', ':properties'))
             ->setParameter('properties', $propertyIds, Connection::PARAM_INT_ARRAY)
             ->andWhere($expr->isNotNull('value.value'))
         ;
