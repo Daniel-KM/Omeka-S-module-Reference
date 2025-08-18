@@ -239,7 +239,7 @@ if ($options['skiplinks']):
     $currentHeading = '';
     $currentHeadingId = '';
     foreach ($references as $referenceData):
-        $emptyReferenceValue = is_null($referenceData['val']);
+        $emptyReferenceValue = $referenceData['val'] === null;
         $referenceValue = $emptyReferenceValue ? $emptyTitle : $referenceData['val'];
         $reference = (string) $referenceData['val'];
 

@@ -76,7 +76,7 @@ if (!$options['custom_url']) {
                 $level = $referenceData['level'];
 
                 // Close the previous line (done before, because next line is not known yet).
-                if (is_null($previous_level)):
+                if ($previous_level === null):
                     // Nothing for the first value (first level).
                     $previous_level = 0;
                 // Deeper level is always the next one.

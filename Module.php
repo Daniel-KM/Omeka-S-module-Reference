@@ -86,7 +86,7 @@ class Module extends AbstractModule
         // automatically.
         $settings = $this->getServiceLocator()->get('Omeka\Settings\Site');
         $exist = $settings->get('reference_resource_name');
-        if (is_null($exist)) {
+        if ($exist === null) {
             $config = $this->getConfig();
             $settings->set('reference_options', $config['reference']['site_settings']['reference_options']);
             $settings->set('reference_slugs', $config['reference']['site_settings']['reference_slugs']);

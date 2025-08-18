@@ -2918,7 +2918,7 @@ class References extends AbstractPlugin
      */
     protected function getItemSets(array $titlesOrIds): array
     {
-        if (is_null($this->itemSetsByTitlesAndIds)) {
+        if ($this->itemSetsByTitlesAndIds === null) {
             $this->prepareItemSets();
         }
         return array_values(array_intersect_key($this->itemSetsByTitlesAndIds, array_flip($titlesOrIds)));
@@ -2933,7 +2933,7 @@ class References extends AbstractPlugin
      */
     protected function getItemSet($labelOrId): ?array
     {
-        if (is_null($this->itemSetsByTitlesAndIds)) {
+        if ($this->itemSetsByTitlesAndIds === null) {
             $this->prepareItemSets();
         }
         return $this->itemSetsByTitlesAndIds[$labelOrId] ?? null;
@@ -2946,7 +2946,7 @@ class References extends AbstractPlugin
      */
     protected function prepareItemSets(): self
     {
-        if (is_null($this->itemSetsByTitlesAndIds)) {
+        if ($this->itemSetsByTitlesAndIds === null) {
             $qb = $this->connection->createQueryBuilder();
             $qb
                 ->select(
@@ -2985,7 +2985,7 @@ class References extends AbstractPlugin
      */
     protected function getOwner($nameOrId): ?array
     {
-        if (is_null($this->ownersByNameAndIds)) {
+        if ($this->ownersByNameAndIds === null) {
             $this->prepareOwners();
         }
         return $this->ownersByNameAndIds[$nameOrId] ?? null;
@@ -2998,7 +2998,7 @@ class References extends AbstractPlugin
      */
     protected function prepareOwners(): self
     {
-        if (is_null($this->ownersByNameAndIds)) {
+        if ($this->ownersByNameAndIds === null) {
             $qb = $this->connection->createQueryBuilder();
             $qb
                 ->select(
@@ -3036,7 +3036,7 @@ class References extends AbstractPlugin
      */
     protected function getSite($slugOrId): ?array
     {
-        if (is_null($this->sitesBySlugAndIds)) {
+        if ($this->sitesBySlugAndIds === null) {
             $this->prepareSites();
         }
         return $this->sitesBySlugAndIds[$slugOrId] ?? null;
@@ -3047,7 +3047,7 @@ class References extends AbstractPlugin
      */
     protected function prepareSites(): self
     {
-        if (is_null($this->sitesBySlugAndIds)) {
+        if ($this->sitesBySlugAndIds === null) {
             $qb = $this->connection->createQueryBuilder();
             $qb
                 ->select(

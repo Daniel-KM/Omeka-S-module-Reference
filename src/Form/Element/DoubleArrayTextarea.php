@@ -54,7 +54,7 @@ class DoubleArrayTextarea extends ArrayTextarea
             return $string;
         }
         $values = parent::stringToArray($string);
-        if (is_null($this->secondLevelKeys)) {
+        if ($this->secondLevelKeys === null) {
             return $values;
         }
         $limit = count($this->secondLevelKeys);
