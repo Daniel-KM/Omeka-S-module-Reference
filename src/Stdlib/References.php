@@ -1916,7 +1916,7 @@ class References
                 } elseif (count($this->optionsCurrent['filters'][$filter]) <= 20) {
                     $orX = [];
                     foreach (array_values($this->optionsCurrent['filters'][$filter]) as $key => $string) {
-                        $orX[] = $expr->like($column, sprintf(':filter_%s_%d)', $filter, ++$key));
+                        $orX[] = $expr->like($column, sprintf(':filter_%s_%d', $filter, ++$key));
                         $qb
                             ->setParameter(
                                 "filter_{$filter}_$key",
