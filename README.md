@@ -45,6 +45,15 @@ the module to `Reference`.
 
 Then install it like any other Omeka module and follow the config instructions.
 
+- For test
+
+The module includes a comprehensive test suite with unit and functional tests.
+Run them from the root of Omeka:
+
+```sh
+vendor/bin/phpunit -c modules/Reference/phpunit.xml --testdox
+```
+
 ### Note for an upgrade from Omeka Classic
 
 The default slugs use the full term, with the vocabulary prefix, so the default
@@ -283,7 +292,7 @@ TODO
 - [ ] Make the reference recursive (two levels currently).
 - [ ] Get the second levels via a single sql, not via api.
 - [ ] Check if the option "include_without_meta" is still needed with data types.
-- [ ] Include the fields in the main request or get them via a second request, not via api.
+- [x] Include the fields in the main request or get them via a second request, not via api.
 - [ ] Simplify queries for aggregated fields (see AdvancedSearch).
 - [ ] Order by years instead of alphabetic.
 - [ ] Get thumbnail url directly from references for performance.
@@ -341,7 +350,7 @@ Copyright
 
 * Copyright William Mayo, 2011
 * Copyright Philip Collins, 2013 ([jQuery tree view])
-* Copyright Daniel Berthereau, 2014-2025 (see [Daniel-KM] on GitLab)
+* Copyright Daniel Berthereau, 2014-2026 (see [Daniel-KM] on GitLab)
 
 This module is inspired from earlier work done by William Mayo (see [pobocks] on
 GitLab) in [Subject Browse], with some ideas from [Metadata Browser] and
