@@ -1,20 +1,20 @@
 {
-    "name" : "daniel-km/omeka-s-module-reference",
-    "description" : "Reference (module for Omeka S)",
-    "type" : "library",
-    "license" : "CECILL-2.1",
-    "authors" : [
+    "name": "daniel-km/omeka-s-module-reference",
+    "description": "Module for Omeka S that adds glossary pages and blocks with the alphabetical indexes of specified classes and properties.",
+    "type": "library",
+    "license": "CECILL-2.1",
+    "authors": [
         {
-            "name" : "Daniel Berthereau",
-            "email" : "Daniel.packagist@Berthereau.net"
+            "name": "Daniel Berthereau",
+            "email": "Daniel.packagist@Berthereau.net"
         }
     ],
-    "homepage" : "https://gitlab.com/Daniel-KM/Omeka-S-module-Reference",
-    "support" : {
-        "issues" : "https://gitlab.com/Daniel-KM/Omeka-S-module-Reference/-/issues",
-        "forum" : "https://forum.omeka.org/"
+    "homepage": "https://gitlab.com/Daniel-KM/Omeka-S-module-Reference",
+    "support": {
+        "issues": "https://gitlab.com/Daniel-KM/Omeka-S-module-Reference/-/issues",
+        "forum": "https://forum.omeka.org/"
     },
-    "keywords" : [
+    "keywords": [
         "Omeka S",
         "module",
         "indexing",
@@ -22,9 +22,12 @@
         "tree view",
         "lexicon"
     ],
-    "autoload" : {
-        "psr-4" : {
-            "Reference\\" : "src/"
+    "autoload": {
+        "psr-4": {
+            "Reference\\": "src/"
         }
+    },
+    "extra": {
+        "installer-name": "Reference"
     }
 }
