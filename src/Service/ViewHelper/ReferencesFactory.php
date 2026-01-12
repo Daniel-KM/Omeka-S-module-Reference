@@ -12,7 +12,7 @@ class ReferencesFactory implements FactoryInterface
     {
         $plugins = $services->get('ControllerPluginManager');
         return new References(
-            $plugins->get('references'),
+            $services->get('Reference\References'),
             $plugins->get('referenceTree')
         );
     }

@@ -3,17 +3,17 @@
 namespace Reference\Mvc\Controller\Plugin;
 
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
-use Reference\Mvc\Controller\Plugin\References as ReferencesPlugin;
+use Reference\Stdlib\References;
 
 class ReferenceTree extends AbstractPlugin
 {
     /**
-     * @param ReferencesPlugin
+     * @var \Reference\Stdlib\References
      */
     protected $references;
 
     public function __construct(
-        ReferencesPlugin $references
+        References $references
     ) {
         $this->references = $references;
     }

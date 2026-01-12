@@ -3,13 +3,13 @@
 namespace Reference\View\Helper;
 
 use Laminas\View\Helper\AbstractHelper;
-use Reference\Mvc\Controller\Plugin\References as ReferencesPlugin;
 use Reference\Mvc\Controller\Plugin\ReferenceTree;
+use Reference\Stdlib\References as ReferencesService;
 
 class References extends AbstractHelper
 {
     /**
-     * @var \Reference\Mvc\Controller\Plugin\References
+     * @var \Reference\Stdlib\References
      */
     protected $references;
 
@@ -18,7 +18,7 @@ class References extends AbstractHelper
      */
     protected $referenceTree;
 
-    public function __construct(ReferencesPlugin $references, ReferenceTree $referenceTree)
+    public function __construct(ReferencesService $references, ReferenceTree $referenceTree)
     {
         $this->references = $references;
         $this->referenceTree = $referenceTree;
@@ -27,7 +27,7 @@ class References extends AbstractHelper
     /**
      * Get the references.
      *
-     * @uses \Reference\Mvc\Controller\Plugin\References
+     * @uses \Reference\Stdlib\References
      */
     public function __invoke(): self
     {
@@ -45,8 +45,8 @@ class References extends AbstractHelper
     /**
      * Get the references.
      *
-     * @uses \Reference\Mvc\Controller\Plugin\References::__invoke()
-     * @uses \Reference\Mvc\Controller\Plugin\References::list()
+     * @uses \Reference\Stdlib\References::__invoke()
+     * @uses \Reference\Stdlib\References::list()
      *
      * @param array|string $metadata List of metadata to get references for.
      * Classes, properties terms, template names, or other Omeka metadata names.
@@ -134,7 +134,7 @@ class References extends AbstractHelper
      *
      * If total is not correct, reindex the references in main settings.
      *
-     * @uses \Reference\Mvc\Controller\Plugin\References::count()
+     * @uses \Reference\Stdlib\References::count()
      * Unlike References::count(), it has arguments and may return an integer.
      *
      * @param string|array $metadata
@@ -159,7 +159,7 @@ class References extends AbstractHelper
      *
      * The filter "begin" is skipped from the query.
      *
-     * @uses \Reference\Mvc\Controller\Plugin\References::initials()
+     * @uses \Reference\Stdlib\References::initials()
      *
      * @param string|array $metadata
      * @param array $query
@@ -182,7 +182,7 @@ class References extends AbstractHelper
     /**
      * Display list of references of one or more fields via a template.
      *
-     * @uses \Reference\Mvc\Controller\Plugin\References::list()
+     * @uses \Reference\Stdlib\References::list()
      *
      * @param array $fields
      * @param array $query An Omeka search query to limit results.

@@ -10,9 +10,8 @@ class ReferenceTreeFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $name, array $options = null)
     {
-        $plugins = $services->get('ControllerPluginManager');
         return new ReferenceTree(
-            $plugins->get('references')
+            $services->get('Reference\References')
         );
     }
 }
