@@ -2346,30 +2346,151 @@ class References
 
             if ($this->optionsCurrent['fields']) {
                 $fields = array_fill_keys($this->optionsCurrent['fields'], true);
-                // FIXME Fix the api call inside a loop.
-                $result = array_map(function ($v) use ($fields) {
-                    // Check required when a locale is used or for debug.
+
+                // Collect all resource IDs from all reference values.
+                $allResourceIds = [];
+                foreach ($result as $v) {
+                    if (!empty($v['resources'])) {
+                        $allResourceIds = array_merge($allResourceIds, array_keys($v['resources']));
+                    }
+                }
+                $allResourceIds = array_unique(array_map('intval', $allResourceIds));
+
+                // Fields available directly in the resource table.
+                $resourceTableFields = [
+                    'o:id' => 'resource.id',
+                    'o:title' => 'resource.title',
+                    'o:is_public' => 'resource.is_public',
+                    'o:created' => 'resource.created',
+                    'o:modified' => 'resource.modified',
+                    'o:resource_class' => 'resource.resource_class_id',
+                    'o:resource_template' => 'resource.resource_template_id',
+                    'o:owner' => 'resource.owner_id',
+                    'o:thumbnail' => 'resource.thumbnail_id',
+                ];
+
+                // Separate resource fields from property fields.
+                $requestedFields = array_keys($fields);
+                $resourceFields = array_intersect($requestedFields, array_keys($resourceTableFields));
+                $propertyFields = array_diff($requestedFields, array_keys($resourceTableFields));
+
+                $resourcesById = [];
+                if ($allResourceIds) {
+                    // Always need o:id for indexing.
+                    $needsId = !in_array('o:id', $resourceFields);
+
+                    // 1. Fetch resource table fields via SQL.
+                    if ($resourceFields || $needsId) {
+                        $columns = array_intersect_key($resourceTableFields, $fields);
+                        if ($needsId) {
+                            $columns = ['o:id' => 'resource.id'] + $columns;
+                        }
+                        $selectParts = [];
+                        foreach ($columns as $alias => $column) {
+                            $selectParts[] = $column . ' AS `' . $alias . '`';
+                        }
+                        $sql = 'SELECT ' . implode(', ', $selectParts) . ' FROM resource WHERE id IN (:ids)';
+                        $stmt = $this->connection->executeQuery($sql, ['ids' => $allResourceIds], ['ids' => Connection::PARAM_INT_ARRAY]);
+                        $rows = $stmt->fetchAllAssociative();
+                        foreach ($rows as $row) {
+                            $resourceData = [];
+                            foreach ($row as $key => $value) {
+                                // Skip o:id if not explicitly requested.
+                                if ($key === 'o:id' && $needsId && !isset($fields['o:id'])) {
+                                    continue;
+                                }
+                                // Convert FK fields to nested object with o:id.
+                                if (in_array($key, ['o:resource_class', 'o:resource_template', 'o:owner', 'o:thumbnail'])) {
+                                    $resourceData[$key] = $value ? ['o:id' => (int) $value] : null;
+                                } elseif ($key === 'o:id') {
+                                    $resourceData[$key] = (int) $value;
+                                } elseif ($key === 'o:is_public') {
+                                    $resourceData[$key] = (bool) $value;
+                                } else {
+                                    $resourceData[$key] = $value;
+                                }
+                            }
+                            $resourcesById[(int) $row['o:id']] = $resourceData;
+                        }
+                    }
+
+                    // 2. Fetch property values via SQL.
+                    if ($propertyFields) {
+                        // Get property IDs from terms using easyMeta (cached).
+                        $propertyIds = $this->easyMeta->propertyIds($propertyFields);
+                        // Build reverse map: property_id => term.
+                        $propertyIdToTerm = array_flip($propertyIds);
+
+                        // Initialize empty arrays for each property on each resource.
+                        foreach ($allResourceIds as $id) {
+                            if (!isset($resourcesById[$id])) {
+                                $resourcesById[$id] = [];
+                            }
+                            foreach ($propertyFields as $term) {
+                                $resourcesById[$id][$term] = [];
+                            }
+                        }
+
+                        // Skip query if no valid properties found.
+                        $valueRows = [];
+                        if ($propertyIds) {
+                            $sql = <<<'SQL'
+                                SELECT
+                                    v.resource_id,
+                                    v.property_id,
+                                    v.type,
+                                    v.value,
+                                    v.lang,
+                                    v.uri,
+                                    v.value_resource_id
+                                FROM `value` v
+                                WHERE v.resource_id IN (:ids)
+                                AND v.property_id IN (:property_ids)
+                                AND v.is_public = 1
+                                ORDER BY v.resource_id, v.id
+                                SQL;
+                            $stmt = $this->connection->executeQuery(
+                                $sql,
+                                ['ids' => $allResourceIds, 'property_ids' => array_values($propertyIds)],
+                                ['ids' => Connection::PARAM_INT_ARRAY, 'property_ids' => Connection::PARAM_INT_ARRAY]
+                            );
+                            $valueRows = $stmt->fetchAllAssociative();
+                        }
+
+                        foreach ($valueRows as $row) {
+                            $resourceId = (int) $row['resource_id'];
+                            $propertyId = (int) $row['property_id'];
+                            $term = $propertyIdToTerm[$propertyId] ?? null;
+                            if ($term === null) {
+                                continue;
+                            }
+                            $valueData = [
+                                'type' => $row['type'],
+                                '@value' => $row['value'],
+                            ];
+                            if ($row['lang']) {
+                                $valueData['@language'] = $row['lang'];
+                            }
+                            if ($row['uri']) {
+                                $valueData['@id'] = $row['uri'];
+                            }
+                            if ($row['value_resource_id']) {
+                                $valueData['value_resource_id'] = (int) $row['value_resource_id'];
+                            }
+                            $resourcesById[$resourceId][$term][] = $valueData;
+                        }
+                    }
+                }
+
+                // Distribute fetched resources back to their reference values.
+                $result = array_map(function ($v) use ($resourcesById) {
                     if (empty($v['resources'])) {
                         return $v;
                     }
-                    // Search resources is not available.
-                    if ($this->optionsCurrent['resource_name'] === 'resource') {
-                        $v['resources'] = array_map(function ($title, $id) use ($fields) {
-                            try {
-                                return array_intersect_key(
-                                    $this->api->read('resources', ['id' => $id])->getContent()->jsonSerialize(),
-                                    $fields
-                                );
-                            } catch (\Omeka\Api\Exception\NotFoundException $e) {
-                                // May not be possible, except with weird rights.
-                                // return array_intersect_key(['o:id' => $id, 'o:title' => $title], $fields);
-                                return [];
-                            }
-                        }, $v['resources'], array_keys($v['resources']));
-                    } else {
-                        $resources = $this->api->search($this->optionsCurrent['resource_name'], ['id' => array_keys($v['resources']), 'sort_by' => 'title', 'sort_order' => 'asc'])->getContent();
-                        $v['resources'] = array_map(fn ($r) => array_intersect_key($r->jsonSerialize(), $fields), $resources);
-                    }
+                    $v['resources'] = array_filter(array_map(
+                        fn ($id) => $resourcesById[(int) $id] ?? [],
+                        array_keys($v['resources'])
+                    ));
                     return $v;
                 }, $result);
             }
