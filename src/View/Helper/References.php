@@ -3,8 +3,8 @@
 namespace Reference\View\Helper;
 
 use Laminas\View\Helper\AbstractHelper;
-use Reference\Mvc\Controller\Plugin\ReferenceTree;
 use Reference\Stdlib\References as ReferencesService;
+use Reference\Stdlib\ReferenceTree;
 
 class References extends AbstractHelper
 {
@@ -14,7 +14,7 @@ class References extends AbstractHelper
     protected $references;
 
     /**
-     * @var \Reference\Mvc\Controller\Plugin\ReferenceTree
+     * @var \Reference\Stdlib\ReferenceTree
      */
     protected $referenceTree;
 

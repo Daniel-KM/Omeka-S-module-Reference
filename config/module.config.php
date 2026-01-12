@@ -13,6 +13,7 @@ return [
     'service_manager' => [
         'factories' => [
             'Reference\References' => Service\Stdlib\ReferencesFactory::class,
+            'Reference\ReferenceTree' => Service\Stdlib\ReferenceTreeFactory::class,
             // Override theme factory to inject module pages and block templates.
             // Copied in BlockPlus, Reference, Timeline.
             'Omeka\Site\ThemeManager' => Service\ThemeManagerFactory::class,

@@ -1,17 +1,17 @@
 <?php declare(strict_types=1);
 
-namespace Reference\Service\ControllerPlugin;
+namespace Reference\Service\Stdlib;
 
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use Reference\Mvc\Controller\Plugin\ReferenceTree;
+use Reference\Stdlib\ReferenceTree;
 
 class ReferenceTreeFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $name, array $options = null)
     {
         return new ReferenceTree(
-            $services->get('Reference\ReferenceTree')
+            $services->get('Reference\References')
         );
     }
 }
