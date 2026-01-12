@@ -2551,7 +2551,7 @@ class References
         // Used dbal queries instead of orm to get some columns.
         // See doctrine/orm#5961 or doctrine/orm#5980).
 
-        // TODO Check visibilities with DBAL.
+        // The check of visibility is done manually with DBAL, unlike ORM.
 
         /** @var \Doctrine\DBAL\Query\QueryBuilder $qb */
         $qb = $this->connection->createQueryBuilder();
@@ -2564,7 +2564,6 @@ class References
             )
             ->distinct()
             ->from('value', 'value')
-            // This join allows to check visibility automatically too.
             ->innerJoin('value', 'resource', 'resource', $expr->eq('resource.id', 'value.resource_id'))
             ->andWhere($expr->in('value.property_id', ':properties'))
             ->setParameter('properties', $propertyIds, Connection::PARAM_INT_ARRAY)
@@ -2573,6 +2572,7 @@ class References
 
         $this
             ->filterByResourceType($qb)
+            ->filterByVisibility($qb, 'properties')
             ->searchQuery($qb);
 
         return (int) $qb->execute()->fetchOne();
@@ -2604,6 +2604,7 @@ class References
 
         $this
             ->filterByResourceType($qb)
+            ->filterByVisibility($qb, 'resource_classes')
             ->searchQuery($qb);
 
         return (int) $qb->execute()->fetchOne();
@@ -2635,6 +2636,7 @@ class References
 
         $this
             ->filterByResourceType($qb)
+            ->filterByVisibility($qb, 'resource_templates')
             ->searchQuery($qb);
 
         return (int) $qb->execute()->fetchOne();
@@ -2670,7 +2672,9 @@ class References
             ->innerJoin('res', 'item_item_set', 'item_set', $expr->in('item_set.item_set_id', ':item_sets'))
             ->setParameter('item_sets', $itemSetIds, Connection::PARAM_INT_ARRAY);
 
-        $this->searchQuery($qb);
+        $this
+            ->filterByVisibility($qb, 'item_sets')
+            ->searchQuery($qb);
 
         return (int) $qb->execute()->fetchOne();
     }
@@ -3127,6 +3131,7 @@ class References
     {
         if ($this->itemSetsByTitlesAndIds === null) {
             $qb = $this->connection->createQueryBuilder();
+            $expr = $qb->expr();
             $qb
                 ->select(
                     '"o:ItemSet" AS "@type"',
@@ -3140,11 +3145,22 @@ class References
                 ->distinct()
                 ->from('resource', 'resource')
                 ->innerJoin('resource', 'item_set', 'item_set', 'resource.id = item_set.id')
-                // TODO Improve return of private item sets.
-                ->where('resource.is_public', '1')
                 ->orderBy('resource.id', 'asc')
                 ->addGroupBy('resource.id')
             ;
+            // Apply visibility filter based on user permissions.
+            if ($this->acl->userIsAllowed(\Omeka\Entity\Resource::class, 'view-all')) {
+                // Admin: no visibility filter.
+            } elseif ($this->user) {
+                $qb
+                    ->andWhere($expr->or(
+                        'resource.is_public = 1',
+                        'resource.owner_id = :user_id'
+                    ))
+                    ->setParameter('user_id', (int) $this->user->getId(), ParameterType::INTEGER);
+            } else {
+                $qb->andWhere('resource.is_public = 1');
+            }
             $results = $this->connection->executeQuery($qb)->fetchAllAssociative();
             $this->itemSetsByTitlesAndIds = [];
             foreach ($results as $result) {
@@ -3179,6 +3195,7 @@ class References
     {
         if ($this->ownersByNameAndIds === null) {
             $qb = $this->connection->createQueryBuilder();
+            $expr = $qb->expr();
             $qb
                 ->select(
                     '"o:User" AS "@type"',
@@ -3188,12 +3205,23 @@ class References
                 )
                 ->distinct()
                 ->from('user', 'user')
-                ->innerJoin('user', 'resource', 'resource', 'resource.user_id = user.id')
-                // TODO Improve return of private resource for owners.
-                ->where('resource.is_public', '1')
+                ->innerJoin('user', 'resource', 'resource', 'resource.owner_id = user.id')
                 ->orderBy('user.id', 'asc')
                 ->addGroupBy('user.id')
             ;
+            // Apply visibility filter based on user permissions.
+            if ($this->acl->userIsAllowed(\Omeka\Entity\Resource::class, 'view-all')) {
+                // Admin: no visibility filter.
+            } elseif ($this->user) {
+                $qb
+                    ->andWhere($expr->or(
+                        'resource.is_public = 1',
+                        'resource.owner_id = :user_id'
+                    ))
+                    ->setParameter('user_id', (int) $this->user->getId(), ParameterType::INTEGER);
+            } else {
+                $qb->andWhere('resource.is_public = 1');
+            }
             $results = $this->connection->executeQuery($qb)->fetchAllAssociative();
             $this->ownersByNameAndIds = [];
             foreach ($results as $result) {
@@ -3228,6 +3256,7 @@ class References
     {
         if ($this->sitesBySlugAndIds === null) {
             $qb = $this->connection->createQueryBuilder();
+            $expr = $qb->expr();
             $qb
                 ->select(
                     // Labels are not unique.
@@ -3239,11 +3268,22 @@ class References
                 )
                 ->distinct()
                 ->from('site', 'site')
-                // TODO Improve return of private sites.
-                ->where('site.is_public', '1')
                 ->orderBy('site.id', 'asc')
                 ->addGroupBy('site.id')
             ;
+            // Apply visibility filter based on user permissions.
+            if ($this->acl->userIsAllowed(\Omeka\Entity\Site::class, 'view-all')) {
+                // Admin: no visibility filter.
+            } elseif ($this->user) {
+                $qb
+                    ->andWhere($expr->or(
+                        'site.is_public = 1',
+                        'site.owner_id = :user_id'
+                    ))
+                    ->setParameter('user_id', (int) $this->user->getId(), ParameterType::INTEGER);
+            } else {
+                $qb->andWhere('site.is_public = 1');
+            }
             $results = $this->connection->executeQuery($qb)->fetchAllAssociative();
             $this->sitesBySlugAndIds = [];
             foreach ($results as $result) {
