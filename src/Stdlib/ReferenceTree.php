@@ -128,6 +128,7 @@ class ReferenceTree
             'resource_name' => 'items',
             'branch' => false,
             'first' => false,
+            'link_to_single' => false,
         ];
         $options = $options ? $options + $default : $default;
         $options['initial'] = false;
