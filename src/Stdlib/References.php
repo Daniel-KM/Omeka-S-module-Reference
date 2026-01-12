@@ -2434,7 +2434,34 @@ class References
                         // Skip query if no valid properties found.
                         $valueRows = [];
                         if ($propertyIds) {
-                            $sql = <<<'SQL'
+                            // Build visibility condition based on user permissions.
+                            // @see filterByVisibility()
+                            if ($this->acl->userIsAllowed(\Omeka\Entity\Resource::class, 'view-all')) {
+                                // Admin: no visibility filter.
+                                $visibilityCondition = '1 = 1';
+                                $params = ['ids' => $allResourceIds, 'property_ids' => array_values($propertyIds)];
+                                $types = ['ids' => Connection::PARAM_INT_ARRAY, 'property_ids' => Connection::PARAM_INT_ARRAY];
+                            } elseif ($this->user) {
+                                // Logged-in user: public values or own resources.
+                                $visibilityCondition = '(v.is_public = 1 OR r.owner_id = :user_id)';
+                                $params = [
+                                    'ids' => $allResourceIds,
+                                    'property_ids' => array_values($propertyIds),
+                                    'user_id' => (int) $this->user->getId(),
+                                ];
+                                $types = [
+                                    'ids' => Connection::PARAM_INT_ARRAY,
+                                    'property_ids' => Connection::PARAM_INT_ARRAY,
+                                    'user_id' => ParameterType::INTEGER,
+                                ];
+                            } else {
+                                // Anonymous: public values only.
+                                $visibilityCondition = 'v.is_public = 1';
+                                $params = ['ids' => $allResourceIds, 'property_ids' => array_values($propertyIds)];
+                                $types = ['ids' => Connection::PARAM_INT_ARRAY, 'property_ids' => Connection::PARAM_INT_ARRAY];
+                            }
+
+                            $sql = <<<SQL
                                 SELECT
                                     v.resource_id,
                                     v.property_id,
@@ -2444,16 +2471,13 @@ class References
                                     v.uri,
                                     v.value_resource_id
                                 FROM `value` v
+                                INNER JOIN `resource` r ON r.id = v.resource_id
                                 WHERE v.resource_id IN (:ids)
                                 AND v.property_id IN (:property_ids)
-                                AND v.is_public = 1
+                                AND $visibilityCondition
                                 ORDER BY v.resource_id, v.id
                                 SQL;
-                            $stmt = $this->connection->executeQuery(
-                                $sql,
-                                ['ids' => $allResourceIds, 'property_ids' => array_values($propertyIds)],
-                                ['ids' => Connection::PARAM_INT_ARRAY, 'property_ids' => Connection::PARAM_INT_ARRAY]
-                            );
+                            $stmt = $this->connection->executeQuery($sql, $params, $types);
                             $valueRows = $stmt->fetchAllAssociative();
                         }
 
