@@ -149,6 +149,9 @@ class References
             'end' => [],
         ],
         // Output options.
+        // Extract and aggregate by first digits (year from dates).
+        // When true, values like "2014-10-12" are grouped as "2014".
+        'first_digits' => false,
         'first' => false,
         'list_by_max' => 0,
         'fields' => [],
@@ -834,6 +837,8 @@ class References
             }
         }
 
+        $firstDigits = !empty($options['first_digits']);
+
         $options = [
             // Options to filter, limit and sort results (used for sql).
             'resource_name' => $resourceName,
@@ -843,6 +848,7 @@ class References
             'per_page' => !is_numeric($options['per_page']) || !(int) $options['per_page'] ? $defaultOptions['per_page'] : (int) $options['per_page'],
             'filters' => $options['filters'],
             // Output options.
+            'first_digits' => $firstDigits,
             'first' => $first,
             'list_by_max' => $listByMax,
             'fields' => $fields,
@@ -853,7 +859,7 @@ class References
             'include_without_meta' => !empty($options['include_without_meta']),
             'single_reference_format' => !empty($options['single_reference_format']),
             'locale' => $locales,
-            'output' => in_array($options['output'], ['associative', 'values']) && !$first && !$listByMax && !$initial && !$distinct && !$dataType && !$lang
+            'output' => in_array($options['output'], ['associative', 'values']) && !$first && !$listByMax && !$initial && !$distinct && !$dataType && !$lang && !$firstDigits
                 ? $options['output']
                 : 'list',
         ];
@@ -1017,6 +1023,35 @@ class References
                             ? "ANY_VALUE(UPPER(LEFT($mainTypesString, {$this->optionsCurrent['_initials']}))) AS val"
                             : "UPPER(LEFT($mainTypesString, {$this->optionsCurrent['_initials']})) AS val"
                     )
+                ;
+            }
+        } elseif (!empty($this->optionsCurrent['first_digits'])) {
+            // Extract first digits (year) from values like "2014-10-12" -> "2014".
+            // For negative years like "-500-10-12", we need special handling since
+            // SUBSTRING_INDEX("-500-10-12", "-", 1) returns empty string.
+            // Filter to only include values starting with digits or minus sign.
+            $firstDigitsExpr = "CASE WHEN $mainTypesString LIKE '-%' "
+                . "THEN -1 * CAST(SUBSTRING_INDEX(SUBSTRING($mainTypesString, 2), '-', 1) AS SIGNED) "
+                . "ELSE CAST(SUBSTRING_INDEX($mainTypesString, '-', 1) AS SIGNED) END";
+            if ($this->optionsCurrent['locale']) {
+                $qb
+                    ->select(
+                        $val = $this->supportAnyValue
+                            ? "ANY_VALUE($firstDigitsExpr) AS val"
+                            : "$firstDigitsExpr AS val"
+                    )
+                    ->andWhere($expr->in('value.lang', ':locales'))
+                    ->andWhere("$mainTypesString REGEXP '^-?[0-9]'")
+                    ->setParameter('locales', $this->optionsCurrent['locale'], Connection::PARAM_STR_ARRAY)
+                ;
+            } else {
+                $qb
+                    ->select(
+                        $val = $this->supportAnyValue
+                            ? "ANY_VALUE($firstDigitsExpr) AS val"
+                            : "$firstDigitsExpr AS val"
+                    )
+                    ->andWhere("$mainTypesString REGEXP '^-?[0-9]'")
                 ;
             }
         } else {
