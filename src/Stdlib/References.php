@@ -2532,7 +2532,7 @@ class References
             return array_values($result);
         }
 
-        return array_filter($result, fn ($v): array => $v['val'] !== ''
+        return array_filter($result, fn ($v): bool => $v['val'] !== ''
                 || $v['type'] === 'uri'
                 || strpos($v['type'], 'resource') === 0);
     }
