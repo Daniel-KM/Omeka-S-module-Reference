@@ -27,6 +27,11 @@
             "Reference\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "ReferenceTest\\": "tests/ReferenceTest/"
+        }
+    },
     "extra": {
         "installer-name": "Reference"
     }
