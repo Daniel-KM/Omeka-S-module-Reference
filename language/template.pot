@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-02 00:00+0000\n"
+"POT-Creation-Date: 2026-01-12 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: data/scripts/upgrade.php:34 Module.php:56
+#: data/scripts/upgrade.php:34 Module.php:55
 #, php-format
 msgid "The module %1$s should be upgraded to version %2$s or later."
 msgstr ""
@@ -125,7 +125,7 @@ msgstr ""
 msgid "It is possible now to get translated linked resource."
 msgstr ""
 
-#: data/scripts/upgrade.php:418 Module.php:75
+#: data/scripts/upgrade.php:418
 msgid "Translated linked resource metadata should be indexed in main settings."
 msgstr ""
 
@@ -202,78 +202,21 @@ msgstr ""
 msgid "A template has been added to display references as list/grid (mansory)."
 msgstr ""
 
-#: Module.php:71
-msgid "The translated and linked resource metadata are currently indexing."
+#: data/scripts/upgrade.php:760
+msgid ""
+"The references with single or fallback locales was removed for now due to "
+"complex maintainability. The listing of existing references may be different "
+"when values have multiple languages. The feature could be reimplemented in a "
+"future version."
 msgstr ""
 
-#: Module.php:82
+#: Module.php:69
 msgid ""
 "The php extension \"intl\" is recommended to fix issues with diacritic "
 "letters."
 msgstr ""
 
-#: Module.php:255
-msgid ""
-"Another job is running for the same process (job {link_job}#{job_id}"
-"{link_end} ({link_log}logs{link_end})."
-msgstr ""
-
-#: Module.php:275
-msgid ""
-"Indexing translated and linked resource metadata in background (job "
-"{link_job}#{job_id}{link_end} ({link_log}logs{link_end})."
-msgstr ""
-
-#: Module.php:396
-msgid "Reference: Index fields"
-msgstr ""
-
-#: src/Mvc/Controller/Plugin/CurrentReferenceMetadata.php:180
-msgid "Resource #{resource_id} has a recursive title."
-msgstr ""
-
-#: src/Mvc/Controller/Plugin/References.php:433
-msgid ""
-"This output format is deprecated. Set a string key to metadata to use the "
-"new format or append option \"single_reference_format\" to remove this "
-"warning."
-msgstr ""
-
-#: src/Mvc/Controller/Plugin/References.php:923
-msgid ""
-"The order for facets is \"by a list of values\", but no values are defined."
-msgstr ""
-
-#: src/Mvc/Controller/Plugin/References.php:2549
-msgid "Owners"
-msgstr ""
-
-#: src/Mvc/Controller/Plugin/References.php:2551
-msgid "Access"
-msgstr ""
-
-#: src/Job/UpdateReferenceMetadata.php:46
-msgid "Starting creation of reference metadata."
-msgstr ""
-
-#: src/Job/UpdateReferenceMetadata.php:53
-msgid "No resource to process."
-msgstr ""
-
-#: src/Job/UpdateReferenceMetadata.php:73
-msgid "{processed}/{total} resources processed."
-msgstr ""
-
-#: src/Job/UpdateReferenceMetadata.php:78
-msgid "The job was stopped."
-msgstr ""
-
-#: src/Job/UpdateReferenceMetadata.php:110
-msgid "End of process: {processed}/{total} processed."
-msgstr ""
-
-#: src/Form/SiteSettingsFieldset.php:15 src/Form/SettingsFieldset.php:13
-#: src/Site/BlockLayout/Reference.php:35
+#: src/Form/SiteSettingsFieldset.php:15 src/Site/BlockLayout/Reference.php:35
 msgid "Reference"
 msgstr ""
 
@@ -319,14 +262,6 @@ msgstr ""
 msgid ""
 "Reference pages for selected classes and properties [deprecated: use page "
 "block]"
-msgstr ""
-
-#: src/Form/SettingsFieldset.php:29
-msgid "Index reference metadata"
-msgstr ""
-
-#: src/Form/SettingsFieldset.php:30
-msgid "To use some features of module Reference, an index is required."
 msgstr ""
 
 #: src/Form/ReferenceTreeFieldset.php:35 src/Form/ReferenceFieldset.php:40
@@ -515,10 +450,30 @@ msgid ""
 "classes."
 msgstr ""
 
-#: config/module.config.php:40
+#: src/Stdlib/References.php:433
+msgid ""
+"This output format is deprecated. Set a string key to metadata to use the "
+"new format or append option \"single_reference_format\" to remove this "
+"warning."
+msgstr ""
+
+#: src/Stdlib/References.php:926
+msgid ""
+"The order for facets is \"by a list of values\", but no values are defined."
+msgstr ""
+
+#: src/Stdlib/References.php:2785
+msgid "Owners"
+msgstr ""
+
+#: src/Stdlib/References.php:2787
+msgid "Access"
+msgstr ""
+
+#: config/module.config.php:36
 msgid "Reference grid"
 msgstr ""
 
-#: config/module.config.php:41
+#: config/module.config.php:37
 msgid "Reference (index)"
 msgstr ""
