@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-12 00:00+0000\n"
+"POT-Creation-Date: 2026-02-02 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: data/scripts/upgrade.php:34 Module.php:55
+#: config/module.config.php:185
+msgid "References"
+msgstr ""
+
+#: data/scripts/upgrade.php:34 Module.php:60
 #, php-format
 msgid "The module %1$s should be upgraded to version %2$s or later."
 msgstr ""
@@ -83,8 +87,31 @@ msgstr ""
 msgid "Browse %s"
 msgstr ""
 
+#: view/reference/admin/reference/browse.phtml:29
+msgid "Count"
+msgstr ""
+
+#: view/reference/admin/reference/browse.phtml:77
 #: view/reference/site/reference/browse.phtml:28
 msgid "No references available."
+msgstr ""
+
+#: view/reference/admin/reference/show.phtml:29
+#, php-format
+msgid "%d references"
+msgstr ""
+
+#: view/reference/admin/reference/show.phtml:36
+#, php-format
+msgid "There are no references for \"%s\"."
+msgstr ""
+
+#: view/reference/admin/reference/values.phtml:29
+msgid "No values."
+msgstr ""
+
+#: view/reference/admin/reference/values.phtml:32
+msgid "View all values"
 msgstr ""
 
 #: view/reference/site/reference/browse.phtml:58
@@ -210,7 +237,7 @@ msgid ""
 "future version."
 msgstr ""
 
-#: Module.php:69
+#: Module.php:74
 msgid ""
 "The php extension \"intl\" is recommended to fix issues with diacritic "
 "letters."
@@ -457,16 +484,16 @@ msgid ""
 "warning."
 msgstr ""
 
-#: src/Stdlib/References.php:926
+#: src/Stdlib/References.php:931
 msgid ""
 "The order for facets is \"by a list of values\", but no values are defined."
 msgstr ""
 
-#: src/Stdlib/References.php:2785
+#: src/Stdlib/References.php:2800
 msgid "Owners"
 msgstr ""
 
-#: src/Stdlib/References.php:2787
+#: src/Stdlib/References.php:2802
 msgid "Access"
 msgstr ""
 

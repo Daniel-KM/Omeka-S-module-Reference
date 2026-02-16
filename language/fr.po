@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Reference\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-12 00:00+0000\n"
-"PO-Revision-Date: 2026-01-12 00:00+0000\n"
+"POT-Creation-Date: 2026-02-02 00:00+0000\n"
+"PO-Revision-Date: 2026-02-02 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -17,7 +17,11 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: Poedit 3.6\n"
 
-#: data/scripts/upgrade.php:34 Module.php:55
+#: config/module.config.php:185
+msgid "References"
+msgstr "Références"
+
+#: data/scripts/upgrade.php:34 Module.php:60
 #, php-format
 msgid "The module %1$s should be upgraded to version %2$s or later."
 msgstr "Le module %1$s doit être mis à niveau à la version %2$s ou supérieure."
@@ -86,9 +90,32 @@ msgstr "%s (%d)"
 msgid "Browse %s"
 msgstr "Parcourir %s"
 
+#: view/reference/admin/reference/browse.phtml:29
+msgid "Count"
+msgstr "Nombre"
+
+#: view/reference/admin/reference/browse.phtml:77
 #: view/reference/site/reference/browse.phtml:28
 msgid "No references available."
 msgstr "Aucune référence disponible."
+
+#: view/reference/admin/reference/show.phtml:29
+#, php-format
+msgid "%d references"
+msgstr "%d références"
+
+#: view/reference/admin/reference/show.phtml:36
+#, php-format
+msgid "There are no references for \"%s\"."
+msgstr "Il n’y a aucune référence pour \"%s\"."
+
+#: view/reference/admin/reference/values.phtml:29
+msgid "No values."
+msgstr "Pas de valeurs."
+
+#: view/reference/admin/reference/values.phtml:32
+msgid "View all values"
+msgstr "Voir toutes les valeurs"
 
 #: view/reference/site/reference/browse.phtml:58
 msgid "Main types"
@@ -262,7 +289,7 @@ msgstr ""
 "valeurs avec plusieurs langues peuvent désormais être différentes. La "
 "fonctionnalité sera réintroduite dans une version ultérieure."
 
-#: Module.php:69
+#: Module.php:74
 msgid ""
 "The php extension \"intl\" is recommended to fix issues with diacritic "
 "letters."
@@ -551,18 +578,18 @@ msgstr ""
 "utiliser pour utiliser le nouveau format ou ajouter l’option "
 "\"single_reference_format\" pour supprimer cet avertissement."
 
-#: src/Stdlib/References.php:926
+#: src/Stdlib/References.php:931
 msgid ""
 "The order for facets is \"by a list of values\", but no values are defined."
 msgstr ""
 "Le tri des facettes est « par liste de valeurs », mais aucune valeur n’est "
 "définie."
 
-#: src/Stdlib/References.php:2785
+#: src/Stdlib/References.php:2800
 msgid "Owners"
 msgstr "Propriétaires"
 
-#: src/Stdlib/References.php:2787
+#: src/Stdlib/References.php:2802
 msgid "Access"
 msgstr "Accès"
 
@@ -927,9 +954,6 @@ msgstr "Références (index)"
 
 #~ msgid "Some slugs are not single."
 #~ msgstr "Certains identifiants ne sont pas uniques."
-
-#~ msgid "References"
-#~ msgstr "Références"
 
 #~ msgid "Browse References"
 #~ msgstr "Parcourir les références"
