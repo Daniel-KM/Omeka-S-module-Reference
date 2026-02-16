@@ -837,7 +837,12 @@ class References
             }
         }
 
-        $firstDigits = !empty($options['first_digits']);
+        $rawFirstDigits = $options['first_digits'] ?? false;
+        if (is_numeric($rawFirstDigits) && (int) $rawFirstDigits >= 1) {
+            $firstDigits = (int) $rawFirstDigits;
+        } else {
+            $firstDigits = !empty($rawFirstDigits);
+        }
 
         $options = [
             // Options to filter, limit and sort results (used for sql).
@@ -1026,9 +1031,19 @@ class References
             // For negative years like "-500-10-12", we need special handling since
             // SUBSTRING_INDEX("-500-10-12", "-", 1) returns empty string.
             // Filter to only include values starting with digits or minus sign.
-            $firstDigitsExpr = "CASE WHEN $mainTypesString LIKE '-%' "
+            $yearExpr = "CASE WHEN $mainTypesString LIKE '-%' "
                 . "THEN -1 * CAST(SUBSTRING_INDEX(SUBSTRING($mainTypesString, 2), '-', 1) AS SIGNED) "
                 . "ELSE CAST(SUBSTRING_INDEX($mainTypesString, '-', 1) AS SIGNED) END";
+            $firstDigitsN = is_int($this->optionsCurrent['first_digits'])
+                ? $this->optionsCurrent['first_digits'] : 0;
+            if ($firstDigitsN >= 1) {
+                // Truncate to N leading digits, preserving sign for negative years.
+                $firstDigitsExpr = "CASE WHEN ($yearExpr) < 0 "
+                    . "THEN -1 * CAST(LEFT(CAST(-1 * ($yearExpr) AS CHAR), $firstDigitsN) AS SIGNED) "
+                    . "ELSE CAST(LEFT(CAST(($yearExpr) AS CHAR), $firstDigitsN) AS SIGNED) END";
+            } else {
+                $firstDigitsExpr = $yearExpr;
+            }
             if ($this->optionsCurrent['locale']) {
                 $qb
                     ->select(
