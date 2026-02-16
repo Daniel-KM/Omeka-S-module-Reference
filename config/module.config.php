@@ -55,6 +55,7 @@ return [
     ],
     'controllers' => [
         'invokables' => [
+            Controller\Admin\ReferenceController::class => Controller\Admin\ReferenceController::class,
             Controller\Site\ReferenceController::class => Controller\Site\ReferenceController::class,
         ],
         'factories' => [
@@ -69,6 +70,55 @@ return [
     ],
     'router' => [
         'routes' => [
+            'admin' => [
+                'child_routes' => [
+                    'reference' => [
+                        'type' => \Laminas\Router\Http\Literal::class,
+                        'options' => [
+                            'route' => '/reference',
+                            'defaults' => [
+                                '__NAMESPACE__' => 'Reference\Controller\Admin',
+                                'controller' => Controller\Admin\ReferenceController::class,
+                                'action' => 'browse',
+                            ],
+                        ],
+                        'may_terminate' => true,
+                        'child_routes' => [
+                            'show' => [
+                                'type' => \Laminas\Router\Http\Segment::class,
+                                'options' => [
+                                    'route' => '/:prefix/:local',
+                                    'constraints' => [
+                                        'prefix' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                                        'local' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                                    ],
+                                    'defaults' => ['action' => 'show'],
+                                ],
+                                'may_terminate' => true,
+                                'child_routes' => [
+                                    'values' => [
+                                        'type' => \Laminas\Router\Http\Literal::class,
+                                        'options' => [
+                                            'route' => '/values',
+                                            'defaults' => ['action' => 'values'],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                            'show-term' => [
+                                'type' => \Laminas\Router\Http\Segment::class,
+                                'options' => [
+                                    'route' => '/:term',
+                                    'constraints' => [
+                                        'term' => '[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+',
+                                    ],
+                                    'defaults' => ['action' => 'show'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
             'site' => [
                 'child_routes' => [
                     'reference' => [
@@ -126,6 +176,17 @@ return [
                         ],
                     ],
                 ],
+            ],
+        ],
+    ],
+    'navigation' => [
+        'AdminModule' => [
+            'reference' => [
+                'label' => 'References', // @translate
+                'route' => 'admin/reference',
+                'resource' => 'Omeka\Controller\Admin\Module',
+                'privilege' => 'browse',
+                'class' => 'o-icon- fa-sort-alpha-down',
             ],
         ],
     ],

@@ -1,0 +1,81 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var array $references
+ * @var string $sortBy
+ * @var string $sortOrder
+ */
+
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+$url = $this->plugin('url');
+
+$this->htmlElement('body')->appendAttribute('class', 'references browse');
+$this->headLink()->appendStylesheet($this->assetUrl('css/reference-admin.css', 'Reference'));
+?>
+
+<?php echo $this->pageTitle($translate('References')); ?>
+
+<div class="browse-controls">
+    <?php echo $this->pagination(); ?>
+</div>
+
+<?php if (count($references) > 0): ?>
+<table class="tablesaw" data-tablesaw-mode="stack">
+    <thead>
+        <tr>
+            <th><?php echo $translate('Label'); ?></th>
+            <th><?php echo $translate('Term'); ?></th>
+            <th><?php echo $translate('Type'); ?></th>
+            <th><?php echo $translate('Count'); ?></th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($references as $ref): ?>
+        <?php
+            [$prefix, $local] = explode(':', $ref['term']);
+            $showUrl = $url('admin/reference/show-term', ['term' => $ref['term']]);
+            $valuesUrl = $url('admin/reference/show/values', ['prefix' => $prefix, 'local' => $local]);
+        ?>
+        <tr>
+            <td>
+                <?php echo $escape($translate($ref['label'])); ?>
+                <ul class="actions">
+                    <li><?php echo $this->hyperlink('', $showUrl, [
+                        'class' => 'o-icon- fa-sort-alpha-down',
+                        'title' => $translate('View values'), // @translate
+                    ]); ?></li>
+                    <li><?php echo $this->hyperlink('', '#', [
+                        'data-sidebar-content-url' => $valuesUrl,
+                        'class' => 'o-icon-more sidebar-content',
+                        'title' => $translate('Details'),
+                    ]); ?></li>
+                </ul>
+            </td>
+            <td><?php echo $escape($ref['term']); ?></td>
+            <td><?php echo $ref['type'] === 'resource_classes' ? $translate('Class') : $translate('Property'); ?></td>
+            <td><?php echo (int) $ref['count']; ?></td>
+        </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+
+<div class="browse-controls">
+    <?php echo $this->pagination(); ?>
+</div>
+
+<div class="sidebar">
+    <?php echo $this->hyperlink('', '#', [
+        'class' => 'sidebar-close o-icon-close',
+        'title' => $translate('Close'),
+    ]); ?>
+    <div class="sidebar-content"></div>
+</div>
+
+<?php else: ?>
+
+<div class="no-resources">
+    <p><?php echo $translate('No references available.'); ?></p>
+</div>
+
+<?php endif; ?>

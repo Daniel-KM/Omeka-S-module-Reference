@@ -1,0 +1,32 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var string $term
+ * @var string $label
+ * @var string $type
+ * @var array $values
+ */
+
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+?>
+
+<h3><?php echo $escape($translate($label)); ?></h3>
+<div class="meta-group">
+    <h4><?php echo $translate('Term'); ?></h4>
+    <div class="value"><?php echo $escape($term); ?></div>
+</div>
+<div class="meta-group">
+    <h4><?php echo $translate('Type'); ?></h4>
+    <div class="value"><?php echo $type === 'resource_classes' ? $translate('Class') : $translate('Property'); ?></div>
+</div>
+<div class="meta-group">
+    <h4><?php echo $translate('Values'); ?></h4>
+    <?php if (!empty($values)): ?>
+    <?php foreach ($values as $data): ?>
+    <div class="value"><?php echo $escape((string) $data['val']); ?> (<?php echo (int) $data['total']; ?>)</div>
+    <?php endforeach; ?>
+    <?php else: ?>
+    <div class="value"><?php echo $translate('No values.'); ?></div>
+    <?php endif; ?>
+</div>

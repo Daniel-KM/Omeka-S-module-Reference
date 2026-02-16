@@ -34,6 +34,18 @@ class Module extends AbstractModule
 
         $this->getServiceLocator()->get('Omeka\Acl')
             ->allow(
+                [
+                    \Omeka\Permissions\Acl::ROLE_RESEARCHER,
+                    \Omeka\Permissions\Acl::ROLE_AUTHOR,
+                    \Omeka\Permissions\Acl::ROLE_REVIEWER,
+                    \Omeka\Permissions\Acl::ROLE_EDITOR,
+                    \Omeka\Permissions\Acl::ROLE_SITE_ADMIN,
+                    \Omeka\Permissions\Acl::ROLE_GLOBAL_ADMIN,
+                ],
+                [\Reference\Controller\Admin\ReferenceController::class],
+                ['browse', 'show', 'values']
+            )
+            ->allow(
                 null,
                 [\Reference\Controller\Site\ReferenceController::class],
                 ['browse', 'list']

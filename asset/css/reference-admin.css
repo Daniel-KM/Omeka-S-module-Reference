@@ -1,0 +1,6 @@
+/* Icon for admin navigation and headings. */
+header nav .reference::before,
+.references .subhead::before,
+.references .no-resources::before {
+    content: "\f15d"; /* fa-sort-alpha-down */
+}

@@ -1,0 +1,96 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var string $term
+ * @var string $label
+ * @var string $type
+ * @var int $total
+ * @var int $fieldId
+ * @var array $references
+ */
+
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+$url = $this->plugin('url');
+
+$this->htmlElement('body')->appendAttribute('class', 'references show');
+$this->headLink()
+    ->appendStylesheet($this->assetUrl('css/reference.css', 'Reference'))
+    ->appendStylesheet($this->assetUrl('css/reference-admin.css', 'Reference'));
+?>
+
+<?php echo $this->pageTitle($escape($translate($label)), 1, $translate('References')); ?>
+
+<p><strong><?php echo $translate('Term:'); ?></strong> <?php echo $escape($term); ?><br>
+<strong><?php echo $translate('Type:'); ?></strong> <?php echo $type === 'resource_classes' ? $translate('Class') : $translate('Property'); ?><br>
+<strong><?php echo $translate('Total:'); ?></strong> <?php echo sprintf($translate('%d references'), $total); ?></p>
+
+<?php if ($total): ?>
+
+<?php $paginationList = $this->partial('common/reference-skiplinks'); ?>
+<div id="reference-skiplinks" class="pagination reference-pagination pagination-top">
+    <?= $paginationList ?>
+</div>
+
+<?php
+// Build the URL template once with a placeholder, then replace per reference.
+$placeholder = '__reference_placeholder__';
+if ($type === 'properties') {
+    $browseQuery = [
+        'property' => [[
+            'joiner' => 'and',
+            'property' => $term,
+            'type' => 'eq',
+            'text' => $placeholder,
+        ]],
+    ];
+} else {
+    $browseQuery = [
+        'resource_class_id' => [$fieldId],
+    ];
+}
+$templateUrl = $url('admin/default', ['controller' => 'item', 'action' => 'browse'], ['query' => $browseQuery]);
+// Encode the placeholder as it appears in the query string.
+$templateUrl = str_replace(rawurlencode($placeholder), '{reference}', $templateUrl);
+
+$templateHeading = '<h3 class="reference-heading" id="{heading_id}"><a href="#reference-skiplinks">{heading_text}</a></h3>' . PHP_EOL;
+$templateRecord = '<li class="reference-record"><a href="{reference_url}"><span class="reference-label">{reference_text}</span></a>{reference_total}</li>' . PHP_EOL;
+$templateTotal = ' <span class="reference-total"> (%d)</span>';
+?>
+
+<ul id="reference-headings" class="references-list">
+    <?php
+    $currentHeading = '';
+    foreach ($references as $referenceData):
+        $referenceValue = $referenceData['val'] === null ? $translate('[Untitled]') : (string) $referenceData['val'];
+        $reference = (string) $referenceData['val'];
+
+        // Heading.
+        $char = $referenceData['initial'] ?? mb_strtoupper(mb_substr($reference, 0, 1));
+        if (!strlen($char) || preg_match('/\W|\d/u', $char)) {
+            $char = '0-9';
+        }
+        if ($currentHeading !== $char):
+            $currentHeading = $char;
+            echo strtr($templateHeading, ['{heading_id}' => $currentHeading, '{heading_text}' => $currentHeading]);
+        endif;
+
+        $replace = [
+            '{reference_url}' => ($type === 'properties')
+                ? strtr($templateUrl, ['{reference}' => rawurlencode($reference)])
+                : $templateUrl,
+            '{reference_text}' => $escape($referenceValue),
+            '{reference_total}' => $referenceData['total'] ? sprintf($templateTotal, (int) $referenceData['total']) : '',
+        ];
+        echo strtr($templateRecord, $replace);
+    endforeach;
+    ?>
+</ul>
+
+<div id="reference-skiplinks-bottom" class="pagination reference-pagination pagination-bottom">
+    <?= $paginationList ?>
+</div>
+
+<?php else: ?>
+<p><?php echo $escape(sprintf($translate('There are no references for "%s".'), $label)); ?></p>
+<?php endif; ?>
