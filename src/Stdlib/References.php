@@ -2702,7 +2702,7 @@ class References
 
         $sql = $qb->getSQL();
         $params = $qb->getParameters();
-        $key = serialize([$sql, $params]);
+        $key = serialize([$sql, $params, $this->query, $type]);
         if (!isset($sqlToIds[$key])) {
             $mainQuery = $this->query;
 
