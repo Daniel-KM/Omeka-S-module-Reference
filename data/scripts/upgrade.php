@@ -34,7 +34,8 @@ if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActi
         $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
         'Common', '3.4.79'
     );
-    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+    $messenger->addError($message);
+    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
 }
 
 if (version_compare($oldVersion, '3.4.7', '<')) {
@@ -760,4 +761,17 @@ if (version_compare($oldVersion, '3.4.55', '<')) {
         'The references with single or fallback locales was removed for now due to complex maintainability. The listing of existing references may be different when values have multiple languages. The feature could be reimplemented in a future version.' // @translate
     );
     $messenger->addWarning($message);
+}
+
+if (version_compare($oldVersion, '3.4.58', '<')) {
+    $url = $services->get('ViewHelperManager')->get('url');
+    $message = new PsrMessage(
+        'A new {link}admin page{link_end} is available to browse all references (properties and classes) with their counts and values.', // @translate
+        [
+            'link' => sprintf('<a href="%s">', $url('admin') . '/reference'),
+            'link_end' => '</a>',
+        ]
+    );
+    $message->setEscapeHtml(false);
+    $messenger->addSuccess($message);
 }
