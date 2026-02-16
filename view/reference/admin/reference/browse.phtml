@@ -5,6 +5,7 @@
  * @var string $sortBy
  * @var string $sortOrder
  * @var string $filterType
+ * @var bool $hasCounts
  */
 
 $translate = $this->plugin('translate');
@@ -39,7 +40,7 @@ $filterUrl = $url('admin/reference');
             <th><?php echo $translate('Label'); ?></th>
             <th><?php echo $translate('Term'); ?></th>
             <th><?php echo $translate('Type'); ?></th>
-            <th><?php echo $translate('Count'); ?></th>
+            <?php if ($hasCounts): ?><th><?php echo $translate('Count'); ?></th><?php endif; ?>
         </tr>
     </thead>
     <tbody>
@@ -66,7 +67,7 @@ $filterUrl = $url('admin/reference');
             </td>
             <td><?php echo $escape($ref['term']); ?></td>
             <td><?php echo $ref['type'] === 'resource_classes' ? $translate('Class') : $translate('Property'); ?></td>
-            <td><?php echo (int) $ref['count']; ?></td>
+            <?php if ($hasCounts): ?><td><?php echo (int) ($ref['count'] ?? 0); ?></td><?php endif; ?>
         </tr>
         <?php endforeach; ?>
     </tbody>

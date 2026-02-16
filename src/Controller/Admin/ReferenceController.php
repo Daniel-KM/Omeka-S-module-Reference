@@ -13,55 +13,62 @@ class ReferenceController extends AbstractActionController
         $easyMeta = $this->easyMeta();
         $conn = $services->get('Omeka\Connection');
 
-        // Get all used property terms => ids and labels.
+        // Get all used property terms => ids and labels (cached, fast).
         $propertyIdsUsed = $easyMeta->propertyIdsUsed();
         $propertyLabels = $easyMeta->propertyLabels();
 
-        // Get all used resource class terms => ids and labels.
+        // Get all used resource class terms => ids and labels (cached, fast).
         $classIdsUsed = $easyMeta->resourceClassIdsUsed();
         $classLabels = $easyMeta->resourceClassLabels();
 
-        // Count distinct values per property.
-        $propertyCounts = [];
-        if ($propertyIdsUsed) {
-            $ids = array_values($propertyIdsUsed);
-            $sql = 'SELECT property_id, COUNT(DISTINCT value) AS total FROM value WHERE property_id IN (' . implode(',', $ids) . ') GROUP BY property_id';
-            $stmt = $conn->executeQuery($sql);
-            $rows = $stmt->fetchAllAssociative();
-            foreach ($rows as $row) {
-                $propertyCounts[(int) $row['property_id']] = (int) $row['total'];
-            }
-        }
+        // Count references only for small bases (< 10000 resources).
+        $totalResources = (int) $conn->executeQuery('SELECT COUNT(id) FROM resource')->fetchOne();
+        $hasCounts = $totalResources < 10000;
 
-        // Count resources per class.
+        $propertyCounts = [];
         $classCounts = [];
-        if ($classIdsUsed) {
-            $ids = array_values($classIdsUsed);
-            $sql = 'SELECT resource_class_id, COUNT(id) AS total FROM resource WHERE resource_class_id IN (' . implode(',', $ids) . ') GROUP BY resource_class_id';
-            $stmt = $conn->executeQuery($sql);
-            $rows = $stmt->fetchAllAssociative();
-            foreach ($rows as $row) {
-                $classCounts[(int) $row['resource_class_id']] = (int) $row['total'];
+        if ($hasCounts) {
+            if ($propertyIdsUsed) {
+                $ids = array_values($propertyIdsUsed);
+                $sql = 'SELECT property_id, COUNT(DISTINCT value) AS total FROM value WHERE property_id IN (' . implode(',', $ids) . ') GROUP BY property_id';
+                $rows = $conn->executeQuery($sql)->fetchAllAssociative();
+                foreach ($rows as $row) {
+                    $propertyCounts[(int) $row['property_id']] = (int) $row['total'];
+                }
+            }
+            if ($classIdsUsed) {
+                $ids = array_values($classIdsUsed);
+                $sql = 'SELECT resource_class_id, COUNT(id) AS total FROM resource WHERE resource_class_id IN (' . implode(',', $ids) . ') GROUP BY resource_class_id';
+                $rows = $conn->executeQuery($sql)->fetchAllAssociative();
+                foreach ($rows as $row) {
+                    $classCounts[(int) $row['resource_class_id']] = (int) $row['total'];
+                }
             }
         }
 
         // Build references list.
         $references = [];
         foreach ($propertyIdsUsed as $term => $id) {
-            $references[] = [
+            $ref = [
                 'term' => $term,
                 'label' => $propertyLabels[$term] ?? $term,
                 'type' => 'properties',
-                'count' => $propertyCounts[$id] ?? 0,
             ];
+            if ($hasCounts) {
+                $ref['count'] = $propertyCounts[$id] ?? 0;
+            }
+            $references[] = $ref;
         }
         foreach ($classIdsUsed as $term => $id) {
-            $references[] = [
+            $ref = [
                 'term' => $term,
                 'label' => $classLabels[$term] ?? $term,
                 'type' => 'resource_classes',
-                'count' => $classCounts[$id] ?? 0,
             ];
+            if ($hasCounts) {
+                $ref['count'] = $classCounts[$id] ?? 0;
+            }
+            $references[] = $ref;
         }
 
         // Filter by type.
@@ -98,6 +105,7 @@ class ReferenceController extends AbstractActionController
             'sortBy' => $sortBy,
             'sortOrder' => $sortOrder,
             'filterType' => $filterType,
+            'hasCounts' => $hasCounts,
         ]);
     }
 
