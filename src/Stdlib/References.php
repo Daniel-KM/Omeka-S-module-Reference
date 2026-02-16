@@ -978,12 +978,8 @@ class References
             $qb
                 ->innerJoin('value', 'resource', 'resource', $expr->eq('resource.id', 'value.resource_id'))
                 ->innerJoin('value', $table, 'vrs', $expr->eq('vrs.id', 'value.resource_id'))
-                // It is not possible to use two left joins here.
-                ->leftJoin('value', 'resource', 'value_resource', $expr->and(
-                    $expr->eq('value_resource.id', 'value.value_resource_id'),
-                    $expr->eq('value_resource.resource_type', ':entity_class')
-                ))
-                ->setParameter('entity_class', $entityClass, ParameterType::STRING);
+                // The linked resource may be of any type (item, item set, media).
+                ->leftJoin('value', 'resource', 'value_resource', $expr->eq('value_resource.id', 'value.value_resource_id'));
         }
 
         // This filter is used by properties only and normally already included
