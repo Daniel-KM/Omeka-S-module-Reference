@@ -4,3 +4,20 @@ header nav .reference::before,
 .references .no-resources::before {
     content: "\f15d"; /* fa-sort-alpha-down */
 }
+
+/* Filter radios. */
+.references .filter-type fieldset {
+    display: inline-flex;
+    gap: 1em;
+    align-items: center;
+    border: 0;
+    padding: 0;
+    margin: 0 0 1em;
+}
+.references .filter-type .field-label {
+    font-weight: bold;
+    margin-right: 0.5em;
+}
+.references .filter-type label {
+    cursor: pointer;
+}

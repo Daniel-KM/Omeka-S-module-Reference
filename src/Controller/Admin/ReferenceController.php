@@ -64,6 +64,14 @@ class ReferenceController extends AbstractActionController
             ];
         }
 
+        // Filter by type.
+        $filterType = $this->params()->fromQuery('filter_type', '');
+        if ($filterType === 'properties') {
+            $references = array_filter($references, fn($r) => $r['type'] === 'properties');
+        } elseif ($filterType === 'resource_classes') {
+            $references = array_filter($references, fn($r) => $r['type'] === 'resource_classes');
+        }
+
         // Sort.
         $sortBy = $this->params()->fromQuery('sort_by', 'term');
         $sortOrder = $this->params()->fromQuery('sort_order', 'asc');
@@ -89,6 +97,7 @@ class ReferenceController extends AbstractActionController
             'references' => $references,
             'sortBy' => $sortBy,
             'sortOrder' => $sortOrder,
+            'filterType' => $filterType,
         ]);
     }
 

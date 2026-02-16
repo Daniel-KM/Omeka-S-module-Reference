@@ -4,6 +4,7 @@
  * @var array $references
  * @var string $sortBy
  * @var string $sortOrder
+ * @var string $filterType
  */
 
 $translate = $this->plugin('translate');
@@ -15,6 +16,17 @@ $this->headLink()->appendStylesheet($this->assetUrl('css/reference-admin.css', '
 ?>
 
 <?php echo $this->pageTitle($translate('References')); ?>
+
+<?php
+$filterUrl = $url('admin/reference');
+?>
+<form class="filter-type" action="<?php echo $escape($filterUrl); ?>" method="get">
+    <fieldset>
+        <label><input type="radio" name="filter_type" value=""<?php echo $filterType === '' ? ' checked' : ''; ?> onchange="this.form.submit()"> <?php echo $translate('All'); ?></label>
+        <label><input type="radio" name="filter_type" value="resource_classes"<?php echo $filterType === 'resource_classes' ? ' checked' : ''; ?> onchange="this.form.submit()"> <?php echo $translate('Classes'); ?></label>
+        <label><input type="radio" name="filter_type" value="properties"<?php echo $filterType === 'properties' ? ' checked' : ''; ?> onchange="this.form.submit()"> <?php echo $translate('Properties'); ?></label>
+    </fieldset>
+</form>
 
 <div class="browse-controls">
     <?php echo $this->pagination(); ?>
