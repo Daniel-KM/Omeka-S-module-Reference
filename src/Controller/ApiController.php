@@ -145,7 +145,7 @@ class ApiController extends \Omeka\Controller\ApiController
         );
     }
 
-    protected function returnError($message, $statusCode = Response::STATUS_CODE_400, array $errors = null)
+    protected function returnError($message, $statusCode = Response::STATUS_CODE_400, ?array $errors = null)
     {
         $response = $this->getResponse();
         $response->setStatusCode($statusCode);

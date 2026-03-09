@@ -8,7 +8,7 @@ use Reference\Mvc\Controller\Plugin\References;
 
 class ReferencesFactory implements FactoryInterface
 {
-    public function __invoke(ContainerInterface $services, $name, array $options = null)
+    public function __invoke(ContainerInterface $services, $name, ?array $options = null)
     {
         return new References(
             $services->get('Reference\References')

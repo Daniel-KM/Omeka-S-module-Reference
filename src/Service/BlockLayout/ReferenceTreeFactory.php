@@ -13,7 +13,7 @@ class ReferenceTreeFactory implements FactoryInterface
      *
      * @return ReferenceTree
      */
-    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
         $controllerPluginManager = $services->get('ControllerPluginManager');
         return new ReferenceTree(

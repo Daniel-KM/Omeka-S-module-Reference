@@ -13,7 +13,7 @@ use Reference\Stdlib\ReferenceTree as ReferenceTreeService;
  * @method array convertTreeToLevels(string $dashTree)
  * @method string convertLevelsToTree(array $levels)
  * @method string convertFlatLevelsToTree(array $levels)
- * @method array getTree($referenceLevels, array $query = null, array $options = null)
+ * @method array getTree($referenceLevels, ?array $query = null, ?array $options = null)
  */
 class ReferenceTree extends AbstractPlugin
 {

@@ -8,7 +8,7 @@ use Reference\Mvc\Controller\Plugin\ReferenceTree;
 
 class ReferenceTreeFactory implements FactoryInterface
 {
-    public function __invoke(ContainerInterface $services, $name, array $options = null)
+    public function __invoke(ContainerInterface $services, $name, ?array $options = null)
     {
         return new ReferenceTree(
             $services->get('Reference\ReferenceTree')

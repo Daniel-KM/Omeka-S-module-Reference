@@ -110,7 +110,7 @@ class ReferenceTree
      * - first (bool): Get the first value.
      * @return array.
      */
-    public function getTree($referenceLevels, array $query = null, array $options = null): array
+    public function getTree($referenceLevels, ?array $query = null, ?array $options = null): array
     {
         if (!is_array($referenceLevels)) {
             $referenceLevels = $this->convertTreeToLevels($referenceLevels);

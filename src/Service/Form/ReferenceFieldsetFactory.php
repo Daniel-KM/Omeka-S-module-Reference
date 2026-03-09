@@ -9,7 +9,7 @@ use Reference\Form\ReferenceTreeFieldset;
 
 class ReferenceFieldsetFactory implements FactoryInterface
 {
-    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
         /**
          * @see \AdvancedSearch\Service\Form\SearchingFormFieldsetFactory

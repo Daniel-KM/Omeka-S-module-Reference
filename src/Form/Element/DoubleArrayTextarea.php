@@ -77,7 +77,7 @@ class DoubleArrayTextarea extends ArrayTextarea
      * @param array|null $secondLevelKeys If null, keep it as string.
      * @return self
      */
-    public function setSecondLevelKeys(array $secondLevelKeys = null)
+    public function setSecondLevelKeys(?array $secondLevelKeys = null)
     {
         $this->secondLevelKeys = $secondLevelKeys;
         return $this;
