@@ -743,7 +743,8 @@ class References
         // Normalize initials: a "É" (when first reference is "Éxxx") should be
         // converted into a "E".
         if (extension_loaded('intl')) {
-            $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+            static $transliterator;
+            $transliterator ??= \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
             foreach ($result as &$resultData) {
                 $initials = [];
                 foreach ($resultData['o:references'] as $initial => $total) {
@@ -2311,7 +2312,8 @@ class References
         $first = reset($result);
         if ($this->optionsCurrent['initial']) {
             if (extension_loaded('intl')) {
-                $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+                static $transliterator;
+                $transliterator ??= \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
                 $result = array_map(function ($v) use ($transliterator) {
                     $v['total'] = (int) $v['total'];
                     $v['initial'] = $transliterator->transliterate((string) $v['initial']);
