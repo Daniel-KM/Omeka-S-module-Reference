@@ -2,7 +2,7 @@
 
 namespace Reference\Service\ControllerPlugin;
 
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Reference\Mvc\Controller\Plugin\ReferenceTree;
 

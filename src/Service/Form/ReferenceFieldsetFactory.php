@@ -2,7 +2,7 @@
 
 namespace Reference\Service\Form;
 
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Reference\Form\ReferenceFieldset;
 use Reference\Form\ReferenceTreeFieldset;

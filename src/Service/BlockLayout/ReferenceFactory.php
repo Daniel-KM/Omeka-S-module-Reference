@@ -2,7 +2,7 @@
 
 namespace Reference\Service\BlockLayout;
 
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Reference\Site\BlockLayout\Reference;
 
