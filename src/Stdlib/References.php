@@ -972,21 +972,6 @@ class References
             ->groupBy('val')
         ;
 
-        // The values should be distinct for each type.
-        $table = $this->getTableDerivateResource($this->optionsCurrent['resource_name']);
-        if (empty($table)) {
-            $qb
-                ->innerJoin('value', 'resource', 'resource', $expr->eq('resource.id', 'value.resource_id'))
-                ->leftJoin('value', 'resource', 'value_resource', $expr->eq('value_resource.id', 'value.value_resource_id'));
-        } else {
-            $entityClass = $this->easyMeta->entityClass($this->optionsCurrent['resource_name']);
-            $qb
-                ->innerJoin('value', 'resource', 'resource', $expr->eq('resource.id', 'value.resource_id'))
-                ->innerJoin('value', $table, 'vrs', $expr->eq('vrs.id', 'value.resource_id'))
-                // The linked resource may be of any type (item, item set, media).
-                ->leftJoin('value', 'resource', 'value_resource', $expr->eq('value_resource.id', 'value.value_resource_id'));
-        }
-
         // This filter is used by properties only and normally already included
         // in the select, but it allows to simplify it.
         $mainTypes = [
@@ -998,6 +983,27 @@ class References
         ];
         if ($this->optionsCurrent['filters']['main_types']) {
             $mainTypes = array_intersect_key($mainTypes, $this->optionsCurrent['filters']['main_types']);
+        }
+
+        // The values should be distinct for each type.
+        // Join resource only when needed: visibility filtering (non-admin) or
+        // resource type filtering.
+        $table = $this->getTableDerivateResource($this->optionsCurrent['resource_name']);
+        $needsResourceJoin = $table
+            || !$this->acl->userIsAllowed(\Omeka\Entity\Resource::class, 'view-all');
+        $needsLinkedJoin = isset($mainTypes['resource']);
+        if ($needsResourceJoin) {
+            $qb
+                ->innerJoin('value', 'resource', 'resource', $expr->eq('resource.id', 'value.resource_id'));
+            if ($table) {
+                $qb
+                    ->innerJoin('value', $table, 'vrs', $expr->eq('vrs.id', 'value.resource_id'));
+            }
+        }
+        if ($needsLinkedJoin) {
+            // The linked resource may be of any type.
+            $qb
+                ->leftJoin('value', 'resource', 'value_resource', $expr->eq('value_resource.id', 'value.value_resource_id'));
         }
         $mainTypesString = count($mainTypes) === 1
             ? reset($mainTypes)
@@ -1086,8 +1092,11 @@ class References
         }
 
         if ($this->optionsCurrent['output'] !== 'values') {
+            $countColumn = $needsResourceJoin
+                ? 'resource.id'
+                : 'value.resource_id';
             $qb
-                ->addSelect('COUNT(resource.id) AS total');
+                ->addSelect("COUNT($countColumn) AS total");
         }
 
         return $this
@@ -1718,17 +1727,13 @@ class References
     {
         $table = $this->getTableDerivateResource($this->optionsCurrent['resource_name']);
         if ($table) {
-            /*
             // A join is quicker, because column resource.resource_type is not
             // indexed by default until module Common version 3.4.62.
             // Anyway, even if implementations are the same, join is more readable.
             $qb
+                ->innerJoin('resource', $table, 'rs', $qb->expr()->eq('rs.id', 'resource.id'))
                 ->andWhere($qb->expr()->eq('resource.resource_type', ':entity_class'))
                 ->setParameter('entity_class', $this->easyMeta->entityClass($this->optionsCurrent['resource_name']), ParameterType::STRING);
-            }
-            */
-            $qb
-                ->innerJoin('resource', $table, 'rs', $qb->expr()->eq('rs.id', 'resource.id'));
         }
         return $this;
     }
