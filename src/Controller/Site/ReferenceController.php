@@ -3,6 +3,7 @@
 namespace Reference\Controller\Site;
 
 use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 
 class ReferenceController extends AbstractActionController
@@ -57,9 +58,6 @@ class ReferenceController extends AbstractActionController
 
         $query = ['site_id' => $this->currentSite()->id()];
 
-        $total = $this->references([$term], $query, ['resource_name' => $resourceName])->count();
-        $total = reset($total);
-
         $options = $settings->get('reference_options') ?: [];
         $options = array_fill_keys($options, true) + [
             'headings' => false,
@@ -73,6 +71,16 @@ class ReferenceController extends AbstractActionController
             'sort_by' => 'alphabetic',
             'sort_order' => 'ASC',
         ];
+
+        $output = $this->params('output');
+        if ($output === 'json') {
+            $result = $this->references([$term], $query, $options)
+                ->list();
+            return new JsonModel($result);
+        }
+
+        $total = $this->references([$term], $query, ['resource_name' => $resourceName])->count();
+        $total = reset($total);
 
         return new ViewModel([
             'site' => $this->currentSite(),
