@@ -172,7 +172,7 @@ class ApiController extends \Omeka\Controller\ApiController
             if ($siteSlug) {
                 try {
                     $query['site_id'] = $this->api->read('sites', ['slug' => $siteSlug], [], ['initialize' => false, 'finalize' => false])->getContent()->getId();
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                 }
             }
         }

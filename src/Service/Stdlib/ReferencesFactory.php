@@ -38,7 +38,7 @@ class ReferencesFactory implements FactoryInterface
         try {
             $connection->executeQuery($sql)->fetchOne();
             return true;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return false;
         }
     }
