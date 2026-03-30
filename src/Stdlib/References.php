@@ -1919,7 +1919,7 @@ class References
                     $firstFilter = reset($this->optionsCurrent['filters'][$filter]);
                     if ($firstFilter === '0-9') {
                         $qb
-                            ->andWhere("REGEXP($column, :filter_09) = false")
+                            ->andWhere("$column NOT REGEXP :filter_09")
                             ->setParameter('filter_09', $filter === 'begin' ? '^[[:alpha:]]' : '[[:alpha:]]$', ParameterType::STRING);
                     } else {
                         $qb
@@ -1946,7 +1946,7 @@ class References
                 } else {
                     $regexp = implode('|', array_map('preg_quote', $this->optionsCurrent['filters'][$filter]));
                     $qb
-                        ->andWhere("REGEXP($column, :filter_filter) = true")
+                        ->andWhere("$column REGEXP :filter_$filter")
                         ->setParameter("filter_$filter", $regexp, ParameterType::STRING);
                 }
             }
