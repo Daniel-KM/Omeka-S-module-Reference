@@ -2747,8 +2747,29 @@ class References
         }
 
         // There is no collision: the adapter query uses alias "omeka_" + index.
+        // The "resource" alias is not guaranteed: in listDataForProperties()
+        // the join on "resource" is conditional (visibility, derivate table).
+        // When absent, fall back on value.resource_id, always present since the
+        // base FROM is "value".
+        $resourceColumn = 'resource.id';
+        $fromParts = $qb->getQueryPart('from') ?: [];
+        $fromAliases = array_column($fromParts, 'alias');
+        if (!in_array('resource', $fromAliases, true)) {
+            $hasResourceJoin = false;
+            foreach ($qb->getQueryPart('join') ?: [] as $aliasJoins) {
+                foreach ($aliasJoins as $joinPart) {
+                    if (($joinPart['joinAlias'] ?? null) === 'resource') {
+                        $hasResourceJoin = true;
+                        break 2;
+                    }
+                }
+            }
+            if (!$hasResourceJoin && in_array('value', $fromAliases, true)) {
+                $resourceColumn = 'value.resource_id';
+            }
+        }
         $qb
-            ->andWhere($qb->expr()->in('resource.id', ':resource_ids'))
+            ->andWhere($qb->expr()->in($resourceColumn, ':resource_ids'))
             ->setParameter('resource_ids', $sqlToIds[$key], Connection::PARAM_INT_ARRAY);
 
         return $this;
