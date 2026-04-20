@@ -629,28 +629,33 @@ if (version_compare($oldVersion, '3.4.50', '<')) {
             }
             unset($data['template']);
 
-            // Make config of block reference flat.
-            if ($layout === 'reference' && isset($data['args'])) {
-                $heading = $data['options']['heading'] ?? '';
-                $order = empty($data['args']['order']) ? ['alphabetic' => 'ASC'] : $data['args']['order'];
+            // Make config of block reference flat. Trigger on any reference
+            // block that does not yet have the new top-level "fields" key, so
+            // blocks in a partial / halfway legacy state are migrated too, not
+            // only those still carrying an "args" sub-array.
+            if ($layout === 'reference' && !isset($data['fields'])) {
+                $args = $data['args'] ?? [];
+                $opts = $data['options'] ?? [];
+                $heading = $opts['heading'] ?? $data['heading'] ?? '';
+                $order = empty($args['order']) ? ['alphabetic' => 'ASC'] : $args['order'];
                 $sortBy = key($order) === 'alphabetic' ? 'alphabetic' : 'total';
                 $sortOrder = reset($order);
                 $data = [
-                    'fields' => $data['args']['fields'] ?? [],
-                    'type' => $data['args']['type'] ?? 'properties',
-                    'resource_name' => $data['args']['resource_name'] ?? 'items',
-                    'query' => $data['args']['query'] ?? [],
-                    'languages' => $data['args']['languages'] ?? [],
+                    'fields' => $args['fields'] ?? [],
+                    'type' => $args['type'] ?? 'properties',
+                    'resource_name' => $args['resource_name'] ?? 'items',
+                    'query' => $args['query'] ?? [],
+                    'languages' => $args['languages'] ?? [],
                     'sort_by' => $sortBy,
                     'sort_order' => $sortOrder,
-                    'by_initial' => !empty($data['options']['by_initial']),
-                    'link_to_single' => !empty($data['options']['link_to_single']),
-                    'custom_url' => !empty($data['options']['custom_url']),
-                    'skiplinks' => !empty($data['options']['skiplinks']),
-                    'headings' => !empty($data['options']['headings']),
-                    'total' => !empty($data['options']['total']),
-                    'list_by_max' => empty($data['options']['list_by_max']) ? 0 : (int) $data['options']['list_by_max'],
-                    'subject_property' => $data['options']['subject_property'] ?? null,
+                    'by_initial' => !empty($opts['by_initial']),
+                    'link_to_single' => !empty($opts['link_to_single']),
+                    'custom_url' => !empty($opts['custom_url']),
+                    'skiplinks' => !empty($opts['skiplinks']),
+                    'headings' => !empty($opts['headings']),
+                    'total' => !empty($opts['total']),
+                    'list_by_max' => empty($opts['list_by_max']) ? 0 : (int) $opts['list_by_max'],
+                    'subject_property' => $opts['subject_property'] ?? null,
                 ];
             } else {
                 $heading = $data['options']['heading'] ?? $data['heading'] ?? '';
@@ -739,4 +744,49 @@ if (version_compare($oldVersion, '3.4.58', '<')) {
     );
     $message->setEscapeHtml(false);
     $messenger->addSuccess($message);
+}
+
+if (version_compare($oldVersion, '3.4.61', '<')) {
+    // Some "reference" blocks may still hold the legacy structure
+    // {"args": {...}, "options": {...}} when the 3.4.50 migration did not
+    // process them (block created after upgrade with a stale form, partial
+    // migration, etc.). Re-scan all reference blocks and flatten any
+    // remaining legacy structure.
+    $blocksRepository = $entityManager->getRepository(\Omeka\Entity\SitePageBlock::class);
+    $migrated = 0;
+    foreach ($blocksRepository->findBy(['layout' => 'reference']) as $block) {
+        $data = $block->getData() ?: [];
+        if (isset($data['fields']) || (!isset($data['args']) && !isset($data['options']))) {
+            continue;
+        }
+        $args = $data['args'] ?? [];
+        $opts = $data['options'] ?? [];
+        $order = empty($args['order']) ? ['alphabetic' => 'ASC'] : $args['order'];
+        $newData = [
+            'fields' => $args['fields'] ?? [],
+            'type' => $args['type'] ?? 'properties',
+            'resource_name' => $args['resource_name'] ?? 'items',
+            'query' => $args['query'] ?? [],
+            'languages' => $args['languages'] ?? [],
+            'sort_by' => key($order) === 'alphabetic' ? 'alphabetic' : 'total',
+            'sort_order' => reset($order),
+            'by_initial' => !empty($opts['by_initial']),
+            'link_to_single' => !empty($opts['link_to_single']),
+            'custom_url' => !empty($opts['custom_url']),
+            'skiplinks' => !empty($opts['skiplinks']),
+            'headings' => !empty($opts['headings']),
+            'total' => !empty($opts['total']),
+            'list_by_max' => empty($opts['list_by_max']) ? 0 : (int) $opts['list_by_max'],
+            'subject_property' => $opts['subject_property'] ?? null,
+        ];
+        $block->setData($newData);
+        ++$migrated;
+    }
+    if ($migrated) {
+        $entityManager->flush();
+        $messenger->addSuccess(new PsrMessage(
+            'Flattened {count} reference block(s) still using the legacy "args"/"options" structure.', // @translate
+            ['count' => $migrated]
+        ));
+    }
 }
