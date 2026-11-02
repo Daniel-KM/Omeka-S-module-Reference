@@ -51,7 +51,7 @@ if (empty($initials['0-9'])) unset($initials['0-9']);
 if (!empty($options['by_initial'])) {
     $baseUrl = $this->url(null, [], true) . '?begin=';
     $initial = $this->params()->fromQuery('begin');
-    $active = $initial ? mb_strtolower($initial) : 'a';
+    $active = $initial ? mb_strtoupper($initial) : 'A';
 } else {
     $baseUrl = '#';
     $active = '';
