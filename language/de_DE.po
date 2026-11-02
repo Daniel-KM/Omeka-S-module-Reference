@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Reference\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-31 00:00+0000\n"
+"POT-Creation-Date: 2026-11-02 00:00+0000\n"
 "PO-Revision-Date: 2018-07-02 00:00+0200\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
@@ -17,340 +17,496 @@ msgstr ""
 "X-Generator: Poedit 2.0.8\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: Module.php:162
-msgid ""
-"It is recommended to create reference with the blocks of the site pages."
-msgstr ""
-
-#: Module.php:163
-msgid ""
-"So these options are used only to create global pages, that are not provided "
-"by Omeka yet."
-msgstr ""
-
-#: Module.php:166
-msgid "This config allows to create routed pages for all sites."
-msgstr ""
-
-#: Module.php:167
-msgid "References are limited by the pool of the site."
-msgstr ""
-
-#: src/Form/ConfigForm.php:84
-msgid ""
-"Print skip links at the top and bottom of each page, which link to the "
-"alphabetical headers."
-msgstr ""
-
-#: src/Form/ConfigForm.php:85
-msgid "Note that if headers are turned off, skiplinks do not work."
-msgstr ""
-
-#: src/Form/ConfigForm.php:112
+#: data/scripts/upgrade.php:37 Module.php:85
 #, php-format
-msgid ""
-"Enable the page and display the link \"%s\" to the hierarchical view in the "
-"navigation bar."
+msgid "The module %1$s should be upgraded to version %2$s or later."
 msgstr ""
 
-#: src/Form/ConfigForm.php:137 src/Form/ReferenceTreeBlockForm.php:41
-msgid ""
-"If any, write the hierarchy of all your references in order to display them "
-"in the \"Tree of references\" page."
+#: data/scripts/upgrade.php:41
+msgid "Missing requirement. Unable to upgrade."
 msgstr ""
 
-#: src/Form/ConfigForm.php:138 src/Form/ReferenceTreeBlockForm.php:42
-msgid ""
-"Format is: one reference by line, preceded by zero, one or more \"-\" to "
-"indicate the hierarchy level."
+#: src/Controller/ApiController.php:143
+msgid "Method Not Allowed"
 msgstr ""
 
-#: src/Form/ConfigForm.php:139 src/Form/ReferenceTreeBlockForm.php:43
-msgid ""
-"Separate the \"-\" and the reference with a space. Empty lines are not "
-"considered."
+#: src/Site/BlockLayout/Reference.php:131
+msgid "Choose one or more properties or one or more resource classes."
 msgstr ""
 
-#: src/Form/ConfigForm.php:140 src/Form/ReferenceTreeBlockForm.php:44
-msgid ""
-"Note: sql does case insensitive searches, so all references should be case-"
-"insensitively unique."
+#: src/Site/BlockLayout/Reference.php:132
+msgid "With the layout template \"Reference Index\", the pages for the selected terms should be created manually with the terms as slug, with the \":\" replaced by a \"-\"."
 msgstr ""
 
-#: view/common/block-layout/reference-tree.phtml:14
-#: view/common/block-layout/reference.phtml:14
+#: view/common/block-layout/reference-tree.phtml:20
+#: view/common/block-layout/reference.phtml:23
+#: view/common/block-template/reference-grid.phtml:23
+#: view/common/block-template/reference-index.phtml:16
 #, fuzzy
-#| msgid "There is no references for \"%s\"."
 msgid "There is no references."
 msgstr "Keine Referenzen für \"% s\"."
 
-#: view/reference/site/reference/browse.phtml:11
-msgid "No references available."
-msgstr "Keine Referenzen vorhanden."
+#: view/common/reference-grid.phtml:86 view/common/reference.phtml:74
+msgid "See all…"
+msgstr ""
 
-#: view/reference/site/reference/browse.phtml:21
-#: view/reference/site/reference/browse.phtml:50
+#: view/common/reference-grid.phtml:87 view/common/reference.phtml:75
+#, php-format
+msgid "And %d more."
+msgstr ""
+
+#: view/common/reference-grid.phtml:130
+msgid "See resources"
+msgstr ""
+
+#: view/common/reference-grid.phtml:136 view/common/reference-grid.phtml:146
+#, php-format
+msgid "(%d resources)"
+msgstr ""
+
+#: view/common/reference-grid.phtml:137 view/common/reference-grid.phtml:147
+#, php-format
+msgid "(%d resource)"
+msgstr ""
+
+#: view/common/reference-grid.phtml:251
+msgid "List"
+msgstr ""
+
+#: view/common/reference-index.phtml:30
+#, php-format
+msgid "%s (%d)"
+msgstr ""
+
+#: view/common/reference-index.phtml:34
+#: view/reference/site/reference/browse.phtml:38
+#: view/reference/site/reference/browse.phtml:67
 #, php-format
 msgid "Browse %s"
 msgstr "Durchsuchen %s"
 
-#: view/reference/site/reference/browse.phtml:42
+#: view/reference/admin/reference/browse.phtml:43
+msgid "Count"
+msgstr ""
+
+#: view/reference/admin/reference/browse.phtml:59
+msgid "View values"
+msgstr ""
+
+#: view/reference/admin/reference/browse.phtml:91
+#: view/reference/site/reference/browse.phtml:28
+msgid "No references available."
+msgstr "Keine Referenzen vorhanden."
+
+#: view/reference/admin/reference/show.phtml:24
+msgid "Term:"
+msgstr ""
+
+#: view/reference/admin/reference/show.phtml:25
+msgid "Type:"
+msgstr ""
+
+#: view/reference/admin/reference/show.phtml:26
+msgid "Total:"
+msgstr ""
+
+#: view/reference/admin/reference/show.phtml:26
+#, fuzzy, php-format
+msgid "%d references"
+msgstr "Referenzen"
+
+#: view/reference/admin/reference/show.phtml:95
+#, fuzzy, php-format
+msgid "There are no references for \"%s\"."
+msgstr "Keine Referenzen für \"% s\"."
+
+#: view/reference/admin/reference/values.phtml:30
+msgid "No values."
+msgstr ""
+
+#: view/reference/site/reference/browse.phtml:58
 msgid "Main types"
 msgstr ""
 
-#: view/reference/site/reference/list.phtml:5
+#: view/reference/site/reference/list.phtml:17
 #, fuzzy, php-format
-#| msgid "Browse Items By \"%s\" (%d Headings)"
 msgid "Browse items by \"%s\" (%d headings)"
 msgstr "Objekte nach \"%s\" (%d Einträge)"
 
-#: view/reference/site/reference/list.phtml:9
+#: view/reference/site/reference/list.phtml:21
 #, php-format
 msgid "There is no references for \"%s\"."
 msgstr "Keine Referenzen für \"% s\"."
 
-#: view/reference/site/reference/tree.phtml:5
-#, php-format
-msgid "Tree of references (%d total)"
+#: data/scripts/upgrade.php:186
+msgid "This release changed some features, so check your theme: the config has been moved to each site; the key \"o-module-reference:values\" is replaced by \"o:references\"; the helper $this->reference() is deprecated and is now an alias of $this->references()."
 msgstr ""
 
-#: view/reference/site/reference/tree.phtml:9
-#, fuzzy
-#| msgid "There is no references for \"%s\"."
-msgid "There is no list of references."
-msgstr "Keine Referenzen für \"% s\"."
-
-#: src/Form/ReferenceBlockForm.php:28 src/Form/ReferenceTreeBlockForm.php:27
-msgid "Property"
+#: data/scripts/upgrade.php:190
+msgid "If you want to keep old features, use release 3.4.22.3."
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:29 src/Form/ConfigForm.php:123
-#: src/Form/ReferenceTreeBlockForm.php:28
-msgid "Select a property…"
+#: data/scripts/upgrade.php:240
+msgid "The main tree of references (/reference-tree) is now available only as a page block, not as a special page."
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:42
-msgid "Select a resource class…"
+#: data/scripts/upgrade.php:245
+msgid "A new page with the tree of references (/page/reference-tree) has been added to {count} sites with the existing config."
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:58 src/Form/ConfigForm.php:38
-#: src/Form/ReferenceTreeBlockForm.php:71
-msgid "value_options"
+#: data/scripts/upgrade.php:372
+msgid "It is possible now to limit the list of references, for example only the of subjects starting with \"a\" with argument \"filters[begin]=a\"."
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:72
-msgid "Select order"
+#: data/scripts/upgrade.php:377
+msgid "It is possible now to list not only references, but resources by reference, for example all documents of an author or all items with each subject."
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:74
-msgid "Alphabetic ascendant"
+#: data/scripts/upgrade.php:384
+msgid "It is possible now to aggregate properties (api and helper)."
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:75
-msgid "Alphabetic descendant"
+#: data/scripts/upgrade.php:391
+msgid "It is possible now to filter references by data types."
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:76
-msgid "Count ascendant"
+#: data/scripts/upgrade.php:437
+msgid "It is possible now to aggregate properties in references, for example to get list of people from properties dcterms:creator and dcterms:contributor."
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:77
-msgid "Count descendant"
+#: data/scripts/upgrade.php:441
+msgid "Warning: the name of the source properties or classes \"term\" has been replace by \"fields\" in pages, so check your theme templates if you updated the default ones of the module."
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:85 src/Form/ReferenceTreeBlockForm.php:88
-msgid "Query to limit resources"
+#: data/scripts/upgrade.php:445
+msgid "It is possible now to get a specific number of initials, for example to get the list of years from standard dates."
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:86 src/Form/ReferenceTreeBlockForm.php:89
-msgid ""
-"Limit the reference to a particular subset of resources, for example a site, "
-"via an advanced search query."
+#: data/scripts/upgrade.php:452
+msgid "Many improvements were done to output references and facets a lot more quickly, in particular for big bases."
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:94 src/Form/ReferenceTreeBlockForm.php:97
-msgid "Display"
+#: data/scripts/upgrade.php:486
+msgid "Because of the integration of block templates in Omeka S v4.1, you should move custom templates before upgrading the module: move following files from directory \"view/common/block-layout/\" to \"view/common/block-template/\" of each theme, except the default files \"reference.phtml\" and \"reference-tree.phtml\". Then, you should add all templates from the directory \"view/common/block-template/\" at the bottom of the file \"config/theme.ini\" of each theme, for example `block_templates.reference.reference-index = \"Reference index custom\"`. Matching files: {json}"
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:103 src/Form/ReferenceTreeBlockForm.php:106
-msgid "Heading"
+#: data/scripts/upgrade.php:525
+msgid "The block Reference Index was replaced by a template layout of block Reference. You may check pages: {json}"
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:111 src/Form/ConfigForm.php:56
-#: src/Form/ReferenceTreeBlockForm.php:128
-msgid "Link to single records"
+#: data/scripts/upgrade.php:542
+msgid "The default heading is now <h2>. Check your theme if you customized it. You may check pages: {json}"
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:112 src/Form/ConfigForm.php:57
-#: src/Form/ReferenceTreeBlockForm.php:129
-msgid ""
-"When a reference has only one item, link to it directly instead of to the "
-"items/browse page."
+#: data/scripts/upgrade.php:591
+msgid "The option \"heading\" was removed from block Reference and replaced by a block Heading (if module Block Plus is present) or Html. Remove it in the following files before upgrade and automatic conversion: {json}"
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:119
-msgid "Add skiplinks above and below list"
+#: data/scripts/upgrade.php:700
+msgid "The setting \"template\" was moved to the new block layout settings available since Omeka S v4.1. You may check pages for styles: {json}"
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:126
-msgid "Add first letter as headings between references"
+#: data/scripts/upgrade.php:710
+msgid "The option \"heading\" was removed from block Reference. New block \"Heading\" (if module Block Plus is present) or \"Html\" was prepended to all blocks that had a filled heading. You may check pages for styles: {json}"
 msgstr ""
 
-#: src/Form/ReferenceBlockForm.php:133 src/Form/ReferenceTreeBlockForm.php:136
-msgid "Add the total of resources for each reference"
+#: data/scripts/upgrade.php:720
+msgid "A template has been added to display references as list/grid (mansory)."
 msgstr ""
 
-#: src/Form/ConfigForm.php:27
-msgid "General options"
+#: data/scripts/upgrade.php:736
+msgid "The references with single or fallback locales was removed for now due to complex maintainability. The listing of existing references may be different when values have multiple languages. The feature could be reimplemented in a future version."
 msgstr ""
 
-#: src/Form/ConfigForm.php:36
-msgid "Resources to link"
+#: data/scripts/upgrade.php:743
+msgid "A new {link}admin page{link_end} is available to browse all references (properties and classes) with their counts and values."
 msgstr ""
 
-#: src/Form/ConfigForm.php:37
-msgid "Currently, only item sets and items are managed in public front-end."
+#: data/scripts/upgrade.php:792
+msgid "Flattened {count} reference block(s) still using the legacy \"args\"/\"options\" structure."
 msgstr ""
 
-#: src/Form/ConfigForm.php:65
-msgid "Print total"
+#: Module.php:99
+msgid "The php extension \"intl\" is recommended to fix issues with diacritic letters."
 msgstr ""
 
-#: src/Form/ConfigForm.php:66
-msgid "Print the total of resources for each reference."
-msgstr ""
-
-#: src/Form/ConfigForm.php:74
-#, fuzzy
-#| msgid "References Indexes"
-msgid "Reference indexes options"
-msgstr "Index der Referenzen"
-
-#: src/Form/ConfigForm.php:83
-msgid "Print skip links"
-msgstr ""
-
-#: src/Form/ConfigForm.php:93
-msgid "Print headings"
-msgstr ""
-
-#: src/Form/ConfigForm.php:94
-msgid "Print headers for each section (#0-9 and symbols, A, B, etc.)."
-msgstr ""
-
-#: src/Form/ConfigForm.php:102 src/Site/BlockLayout/ReferenceTree.php:58
-#, fuzzy
-#| msgid "Reference"
-msgid "Reference tree"
-msgstr "Referenz"
-
-#: src/Form/ConfigForm.php:111
-msgid "Enable tree view"
-msgstr ""
-
-#: src/Form/ConfigForm.php:121
-msgid "Property for the tree"
-msgstr ""
-
-#: src/Form/ConfigForm.php:122
-msgid "The references will use this property to create links."
-msgstr ""
-
-#: src/Form/ConfigForm.php:136 src/Form/ReferenceTreeBlockForm.php:40
-msgid "Static tree of references"
-msgstr ""
-
-#: src/Form/ConfigForm.php:163 src/Form/ReferenceTreeBlockForm.php:150
-msgid "Managed as branch"
-msgstr ""
-
-#: src/Form/ConfigForm.php:164 src/Form/ReferenceTreeBlockForm.php:151
-msgid ""
-"Check this box if the tree is managed as branch (the path is saved with "
-"\" :: \" between each branch)."
-msgstr ""
-
-#: src/Form/ConfigForm.php:172 src/Form/ReferenceTreeBlockForm.php:116
-msgid "Query type"
-msgstr ""
-
-#: src/Form/ConfigForm.php:173
-msgid "The type of query defines how elements are searched."
-msgstr ""
-
-#: src/Form/ConfigForm.php:175 src/Form/ReferenceTreeBlockForm.php:119
-msgid "Is Exactly"
-msgstr ""
-
-#: src/Form/ConfigForm.php:176 src/Form/ReferenceTreeBlockForm.php:120
-msgid "Contains"
-msgstr ""
-
-#: src/Form/ConfigForm.php:185
-msgid "Expand tree"
-msgstr ""
-
-#: src/Form/ConfigForm.php:186
-msgid ""
-"Check this box to display the tree expanded. This option can be overridden "
-"by the theme."
-msgstr ""
-
-#: src/Form/ConfigForm.php:212
-#, fuzzy
-#| msgid "References Indexes"
-msgid "Reference indexes"
-msgstr "Index der Referenzen"
-
-#: src/Form/ConfigForm.php:219
-#, fuzzy
-#| msgid "References Indexes"
-msgid "Reference indexes: Resource classes"
-msgstr "Index der Referenzen"
-
-#: src/Form/ConfigForm.php:223
-#, fuzzy
-#| msgid "References Indexes"
-msgid "Reference indexes: Properties"
-msgstr "Index der Referenzen"
-
-#: src/Form/ConfigForm.php:233 src/Form/ConfigForm.php:245
-msgid "label"
-msgstr ""
-
-#: src/Form/ConfigForm.php:256
-msgid "data-term"
-msgstr ""
-
-#: src/Form/ReferenceTreeBlockForm.php:117
-msgid ""
-"The type of query defines how elements are regrouped (see the advanced "
-"search)."
-msgstr ""
-
-#: src/Form/ReferenceTreeBlockForm.php:143
-msgid "Expand the tree"
-msgstr ""
-
-#: src/Site/BlockLayout/Reference.php:58
+#: src/Form/SiteSettingsFieldset.php:15 src/Site/BlockLayout/Reference.php:35
 msgid "Reference"
 msgstr "Referenz"
 
-#: src/Site/BlockLayout/Reference.php:145
+#: src/Form/SiteSettingsFieldset.php:31
+msgid "Title of the page [deprecated: use page block]"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:43
+msgid "Resources to link [deprecated: use page block]"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:44 src/Form/ReferenceTreeFieldset.php:71
+#: src/Form/ReferenceFieldset.php:69
+msgid "value_options"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:51 src/Form/ReferenceTreeFieldset.php:78
+#: src/Form/ReferenceFieldset.php:76
+msgid "Digital objects"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:64
+msgid "Display [deprecated: use page block]"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:67
+msgid "Headings"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:68
+msgid "Skip links"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:69
+msgid "Individual total"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:70
+msgid "Link to single records"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:71 src/Form/ReferenceTreeFieldset.php:152
+#: src/Form/ReferenceFieldset.php:202
+msgid "Custom url for single records"
+msgstr ""
+
+#: src/Form/SiteSettingsFieldset.php:85
+msgid "Reference pages for selected classes and properties [deprecated: use page block]"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:35 src/Form/ReferenceFieldset.php:40
+msgid "Select properties…"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:42
+msgid "Static tree of references"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:43
 msgid ""
-"To create references, there must be a property, a resource class or a tree."
+"Format is: one reference by line, preceded by zero, one or more \"-\" to indicate the hierarchy level.\n"
+"Separate the \"-\" and the reference with a space. Empty lines are not considered.\n"
+"Note: sql does case insensitive searches, so all references should be case-insensitively unique."
 msgstr ""
 
-#: config/module.config.php:129
-msgid "Subjects"
+#: src/Form/ReferenceTreeFieldset.php:52
+msgid ""
+"Europe\n"
+"- France\n"
+"-- Paris\n"
+"- United Kingdom\n"
+"-- England\n"
+"--- London\n"
+"Asia\n"
+"- Japan\n"
 msgstr ""
 
-#: config/module.config.php:145
-msgid "Tree of subjects"
+#: src/Form/ReferenceTreeFieldset.php:70 src/Form/ReferenceFieldset.php:68
+msgid "Browse links are available only for item sets and items."
 msgstr ""
 
-#~ msgid "References"
-#~ msgstr "Referenzen"
+#: src/Form/ReferenceTreeFieldset.php:91 src/Form/ReferenceFieldset.php:89
+msgid "Search pool query"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:92 src/Form/ReferenceFieldset.php:90
+msgid "Restrict references to a particular subset of resources, for example a site."
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:107
+msgid "The type of query defines how elements are regrouped (see the advanced search)."
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:109
+msgid "Is Exactly"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:110
+msgid "Contains"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:123 src/Form/ReferenceFieldset.php:171
+msgid "Link to browse or search engine"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:124 src/Form/ReferenceFieldset.php:172
+msgid "This option is useful when the module Advanced Search is used."
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:126 src/Form/ReferenceFieldset.php:174
+msgid "Search config of the site"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:138 src/Form/ReferenceFieldset.php:187
+msgid "Direct link for single records"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:139 src/Form/ReferenceFieldset.php:188
+msgid "When a reference has only one item, link to it directly instead of to the items/browse page."
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:153 src/Form/ReferenceFieldset.php:203
+msgid "May be set with modules such Clean Url or Ark. May slow the display when there are many single references."
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:166 src/Form/ReferenceFieldset.php:245
+msgid "Add the total of resources for each reference"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:179 src/Form/ReferenceFieldset.php:259
+msgid "Append \"reference\" as argument to query urls for themes"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:192 src/Form/ReferenceFieldset.php:273
+msgid "Add the thumbnail of the first resource"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:203
+msgid "Expand the tree"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:216
+msgid "Managed as branch"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:217
+msgid "Check this box if the tree is managed as branch (the path is saved with \" :: \" between each branch)."
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:48
+#, fuzzy
+msgid "Resource classes"
+msgstr "Index der Referenzen"
+
+#: src/Form/ReferenceFieldset.php:57
+#, fuzzy
+msgid "Select resource classes…"
+msgstr "Index der Referenzen"
+
+#: src/Form/ReferenceFieldset.php:103
+msgid "Filter by language"
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:104
+msgid "Limit the results to the specified languages. Use \"|\" to separate multiple languages. Use \"||\" for values without language."
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:120
+msgid "Alphabetic"
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:121
+msgid "Total"
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:156
+msgid "One page by initial"
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:157
+msgid "This option is recommended for big lists."
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:217
+msgid "Add skiplinks above and below list"
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:231
+msgid "Add first letter as headings between references"
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:285
+msgid "Maximum resources to display by reference"
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:286
+msgid "For example, display the items by subject. Let 0 to display a simple list. Maximum is 1024."
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:303
+msgid "Subject values"
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:304
+msgid "Allow to list related resources. For example, in a library where there are items of types \"Authors\" and \"Documents\", and if the creator of the documents are linked resources, then select \"Creator\" to see the list of documents by author. This option is skipped when option \"max by reference\" is used."
+msgstr ""
+
+#: src/Form/ReferenceFieldset.php:312
+msgid "Select a property…"
+msgstr ""
+
+#: src/Site/BlockLayout/ReferenceTree.php:35
+#, fuzzy
+msgid "Reference tree"
+msgstr "Referenz"
+
+#: src/Site/BlockLayout/Reference.php:54
+msgid "To create references, there must be one or more properties or resource classes."
+msgstr ""
+
+#: src/Stdlib/References.php:433
+msgid "This output format is deprecated. Set a string key to metadata to use the new format or append option \"single_reference_format\" to remove this warning."
+msgstr ""
+
+#: src/Stdlib/References.php:781
+msgid "To get references, to pass the option \"values\" as main key is deprecated. it should be set as a sub-key of filters."
+msgstr ""
+
+#: src/Stdlib/References.php:788
+msgid "To get references, to pass the option \"data\" as main key is deprecated in favor of \"data_type\"."
+msgstr ""
+
+#: src/Stdlib/References.php:795
+msgid "To get references, to pass the option \"datatypes\" in filters is deprecated in favor of \"data_types\"."
+msgstr ""
+
+#: src/Stdlib/References.php:889
+msgid "To get references, the empty string as option for languages is deprecated in favor of null or the string \"null\"."
+msgstr ""
+
+#: src/Stdlib/References.php:932
+msgid "The order for facets is \"by a list of values\", but no values are defined."
+msgstr ""
+
+#: src/Stdlib/References.php:2845
+msgid "Owners"
+msgstr ""
+
+#: src/Stdlib/References.php:2847
+msgid "Access"
+msgstr ""
+
+#: config/module.config.php:37
+#, fuzzy
+msgid "Reference grid"
+msgstr "Referenz"
+
+#: config/module.config.php:38
+#, fuzzy
+msgid "Reference (index)"
+msgstr "Index der Referenzen"
+
+#, fuzzy
+#~| msgid "There is no references for \"%s\"."
+#~ msgid "There is no list of references."
+#~ msgstr "Keine Referenzen für \"% s\"."
+
+#, fuzzy
+#~| msgid "References Indexes"
+#~ msgid "Reference indexes options"
+#~ msgstr "Index der Referenzen"
+
+#, fuzzy
+#~| msgid "References Indexes"
+#~ msgid "Reference indexes: Properties"
+#~ msgstr "Index der Referenzen"
 
 #~ msgid "Browse References"
 #~ msgstr "Ressourcen durchsuchen"

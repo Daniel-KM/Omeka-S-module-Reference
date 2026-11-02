@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-31 00:00+0000\n"
+"POT-Creation-Date: 2026-11-02 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,12 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: data/scripts/upgrade.php:34 Module.php:85
+#: data/scripts/upgrade.php:37 Module.php:85
 #, php-format
 msgid "The module %1$s should be upgraded to version %2$s or later."
 msgstr ""
 
-#: data/scripts/upgrade.php:38
+#: data/scripts/upgrade.php:41
 msgid "Missing requirement. Unable to upgrade."
 msgstr ""
 
@@ -140,52 +140,76 @@ msgstr ""
 msgid "There is no references for \"%s\"."
 msgstr ""
 
-#: data/scripts/upgrade.php:369
+#: data/scripts/upgrade.php:186
+msgid ""
+"This release changed some features, so check your theme: the config has been "
+"moved to each site; the key \"o-module-reference:values\" is replaced by "
+"\"o:references\"; the helper $this->reference() is deprecated and is now an "
+"alias of $this->references()."
+msgstr ""
+
+#: data/scripts/upgrade.php:190
+msgid "If you want to keep old features, use release 3.4.22.3."
+msgstr ""
+
+#: data/scripts/upgrade.php:240
+msgid ""
+"The main tree of references (/reference-tree) is now available only as a "
+"page block, not as a special page."
+msgstr ""
+
+#: data/scripts/upgrade.php:245
+msgid ""
+"A new page with the tree of references (/page/reference-tree) has been added "
+"to {count} sites with the existing config."
+msgstr ""
+
+#: data/scripts/upgrade.php:372
 msgid ""
 "It is possible now to limit the list of references, for example only the of "
 "subjects starting with \"a\" with argument \"filters[begin]=a\"."
 msgstr ""
 
-#: data/scripts/upgrade.php:374
+#: data/scripts/upgrade.php:377
 msgid ""
 "It is possible now to list not only references, but resources by reference, "
 "for example all documents of an author or all items with each subject."
 msgstr ""
 
-#: data/scripts/upgrade.php:381
+#: data/scripts/upgrade.php:384
 msgid "It is possible now to aggregate properties (api and helper)."
 msgstr ""
 
-#: data/scripts/upgrade.php:388
+#: data/scripts/upgrade.php:391
 msgid "It is possible now to filter references by data types."
 msgstr ""
 
-#: data/scripts/upgrade.php:434
+#: data/scripts/upgrade.php:437
 msgid ""
 "It is possible now to aggregate properties in references, for example to get "
 "list of people from properties dcterms:creator and dcterms:contributor."
 msgstr ""
 
-#: data/scripts/upgrade.php:438
+#: data/scripts/upgrade.php:441
 msgid ""
 "Warning: the name of the source properties or classes \"term\" has been "
 "replace by \"fields\" in pages, so check your theme templates if you updated "
 "the default ones of the module."
 msgstr ""
 
-#: data/scripts/upgrade.php:442
+#: data/scripts/upgrade.php:445
 msgid ""
 "It is possible now to get a specific number of initials, for example to get "
 "the list of years from standard dates."
 msgstr ""
 
-#: data/scripts/upgrade.php:449
+#: data/scripts/upgrade.php:452
 msgid ""
 "Many improvements were done to output references and facets a lot more "
 "quickly, in particular for big bases."
 msgstr ""
 
-#: data/scripts/upgrade.php:483
+#: data/scripts/upgrade.php:486
 msgid ""
 "Because of the integration of block templates in Omeka S v4.1, you should "
 "move custom templates before upgrading the module: move following files from "
@@ -197,43 +221,43 @@ msgid ""
 "\"Reference index custom\"`. Matching files: {json}"
 msgstr ""
 
-#: data/scripts/upgrade.php:522
+#: data/scripts/upgrade.php:525
 msgid ""
 "The block Reference Index was replaced by a template layout of block "
 "Reference. You may check pages: {json}"
 msgstr ""
 
-#: data/scripts/upgrade.php:539
+#: data/scripts/upgrade.php:542
 msgid ""
 "The default heading is now <h2>. Check your theme if you customized it. You "
 "may check pages: {json}"
 msgstr ""
 
-#: data/scripts/upgrade.php:588
+#: data/scripts/upgrade.php:591
 msgid ""
 "The option \"heading\" was removed from block Reference and replaced by a "
 "block Heading (if module Block Plus is present) or Html. Remove it in the "
 "following files before upgrade and automatic conversion: {json}"
 msgstr ""
 
-#: data/scripts/upgrade.php:697
+#: data/scripts/upgrade.php:700
 msgid ""
 "The setting \"template\" was moved to the new block layout settings "
 "available since Omeka S v4.1. You may check pages for styles: {json}"
 msgstr ""
 
-#: data/scripts/upgrade.php:707
+#: data/scripts/upgrade.php:710
 msgid ""
 "The option \"heading\" was removed from block Reference. New block "
 "\"Heading\" (if module Block Plus is present) or \"Html\" was prepended to "
 "all blocks that had a filled heading. You may check pages for styles: {json}"
 msgstr ""
 
-#: data/scripts/upgrade.php:717
+#: data/scripts/upgrade.php:720
 msgid "A template has been added to display references as list/grid (mansory)."
 msgstr ""
 
-#: data/scripts/upgrade.php:733
+#: data/scripts/upgrade.php:736
 msgid ""
 "The references with single or fallback locales was removed for now due to "
 "complex maintainability. The listing of existing references may be different "
@@ -241,13 +265,13 @@ msgid ""
 "future version."
 msgstr ""
 
-#: data/scripts/upgrade.php:741
+#: data/scripts/upgrade.php:743
 msgid ""
 "A new {link}admin page{link_end} is available to browse all references "
 "(properties and classes) with their counts and values."
 msgstr ""
 
-#: data/scripts/upgrade.php:790
+#: data/scripts/upgrade.php:792
 msgid ""
 "Flattened {count} reference block(s) still using the legacy \"args\"/"
 "\"options\" structure."
@@ -340,6 +364,10 @@ msgid ""
 "--- London\n"
 "Asia\n"
 "- Japan\n"
+msgstr ""
+
+#: src/Form/ReferenceTreeFieldset.php:70 src/Form/ReferenceFieldset.php:68
+msgid "Browse links are available only for item sets and items."
 msgstr ""
 
 #: src/Form/ReferenceTreeFieldset.php:91 src/Form/ReferenceFieldset.php:89
@@ -534,11 +562,11 @@ msgid ""
 "The order for facets is \"by a list of values\", but no values are defined."
 msgstr ""
 
-#: src/Stdlib/References.php:2837
+#: src/Stdlib/References.php:2845
 msgid "Owners"
 msgstr ""
 
-#: src/Stdlib/References.php:2839
+#: src/Stdlib/References.php:2847
 msgid "Access"
 msgstr ""
 
