@@ -1668,7 +1668,7 @@ class References
         $expr = $qb->expr();
 
         /*
-        SELECT access_status.level AS val, MIN(resource.id) AS val2, COUNT(resource.id) AS total
+        SELECT COALESCE(access_status.level, 'free') AS val, MIN(resource.id) AS val2, COUNT(resource.id) AS total
         FROM resource resource
         INNER JOIN item item ON item.id = resource.id
         LEFT JOIN access_status ON access_status.id = resource.id
@@ -1679,12 +1679,12 @@ class References
         if ($this->process === 'initials') {
             $qb
                 ->select(
-                    "UPPER(LEFT(access_status.level, {$this->optionsCurrent['_initials']})) AS val"
+                    "UPPER(LEFT(COALESCE(access_status.level, 'free'), {$this->optionsCurrent['_initials']})) AS val"
                 );
         } else {
             $qb
                 ->select(
-                    'access_status.level AS val'
+                    "COALESCE(access_status.level, 'free') AS val"
                 );
         }
 
@@ -1696,7 +1696,8 @@ class References
         $qb
             ->distinct()
             ->from('resource', 'resource')
-            ->innerJoin('resource', 'access_status', 'access_status', $expr->eq('access_status.id', 'resource.id'))
+            // A resource without access status is free.
+            ->leftJoin('resource', 'access_status', 'access_status', $expr->eq('access_status.id', 'resource.id'))
             ->groupBy('val')
         ;
 
@@ -1986,8 +1987,8 @@ class References
                 ->addSelect(
                     // 'CONVERT(UPPER(LEFT(COALESCE(access_status.level, {$this->optionsCurrent['initial']}), 1)) USING latin1) AS initial',
                     $this->supportAnyValue
-                        ? "ANY_VALUE(UPPER(LEFT(access_status.level, {$this->optionsCurrent['initial']}))) AS initial"
-                        : "UPPER(LEFT(access_status.level, {$this->optionsCurrent['initial']})) AS initial"
+                        ? "ANY_VALUE(UPPER(LEFT(COALESCE(access_status.level, 'free'), {$this->optionsCurrent['initial']}))) AS initial"
+                        : "UPPER(LEFT(COALESCE(access_status.level, 'free'), {$this->optionsCurrent['initial']})) AS initial"
                 );
         }
 
@@ -2212,7 +2213,7 @@ class References
                     break;
                 case 'access':
                     $qb
-                        ->andWhere($expr->in('access_status.level', ':values'))
+                        ->andWhere($expr->in("COALESCE(access_status.level, 'free')", ':values'))
                         ->setParameter('values', $this->optionsCurrent['filters']['values'], Connection::PARAM_STR_ARRAY);
                     break;
                 default:
