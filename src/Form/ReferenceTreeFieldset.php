@@ -67,7 +67,7 @@ Asia
                 'type' => Element\Select::class,
                 'options' => [
                     'label' => 'Select resource', // @translate
-                    'info' => 'Browse links are available only for item sets and items.',
+                    'info' => 'Browse links are available only for item sets and items.', // @translate
                     'value_options' => [
                         // TODO Manage the list of reference separately.
                         // '' => 'All resources (separately)', // @translate

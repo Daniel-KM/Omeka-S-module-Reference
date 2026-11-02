@@ -180,11 +180,11 @@ if (version_compare($oldVersion, '3.4.16', '<')) {
 
 if (version_compare($oldVersion, '3.4.23.3', '<')) {
     $message = new PsrMessage(
-        'This release changed some features, so check your theme: the config has been moved to each site; the key "o-module-reference:values" is replaced by "o:references"; the helper $this->reference() is deprecated and is now an alias of $this->references().'
+        'This release changed some features, so check your theme: the config has been moved to each site; the key "o-module-reference:values" is replaced by "o:references"; the helper $this->reference() is deprecated and is now an alias of $this->references().' // @translate
     );
     $messenger->addWarning($message);
     $message = new PsrMessage(
-        'If you want to keep old features, use release 3.4.22.3.'
+        'If you want to keep old features, use release 3.4.22.3.' // @translate
     );
     $messenger->addWarning($message);
 
@@ -234,12 +234,12 @@ if (version_compare($oldVersion, '3.4.23.3', '<')) {
             }
 
             $message = new PsrMessage(
-                'The main tree of references (/reference-tree) is now available only as a page block, not as a special page.'
+                'The main tree of references (/reference-tree) is now available only as a page block, not as a special page.' // @translate
             );
             $messenger->addWarning($message);
             if (count($sites)) {
                 $message = new PsrMessage(
-                    'A new page with the tree of references (/page/reference-tree) has been added to {count} sites with the existing config.',
+                    'A new page with the tree of references (/page/reference-tree) has been added to {count} sites with the existing config.', // @translate
                     ['count' => count($sites)]
                 );
                 $messenger->addSuccess($message);
