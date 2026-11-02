@@ -11,6 +11,7 @@ use Common\Stdlib\PsrMessage;
  * @var string $oldVersion
  *
  * @var \Omeka\Api\Manager $api
+ * @var \Omeka\View\Helper\Url $url
  * @var \Laminas\Log\Logger $logger
  * @var \Omeka\Settings\Settings $settings
  * @var \Doctrine\DBAL\Connection $connection
@@ -18,6 +19,8 @@ use Common\Stdlib\PsrMessage;
  * @var \Omeka\Mvc\Controller\Plugin\Messenger $messenger
  */
 $plugins = $services->get('ControllerPluginManager');
+$helpers = $services->get('ViewHelperManager');
+$url = $helpers->get('url');
 $api = $plugins->get('api');
 $logger = $services->get('Omeka\Logger');
 $settings = $services->get('Omeka\Settings');
@@ -736,7 +739,6 @@ if (version_compare($oldVersion, '3.4.55', '<')) {
 }
 
 if (version_compare($oldVersion, '3.4.58', '<')) {
-    $url = $services->get('ViewHelperManager')->get('url');
     $message = new PsrMessage(
         'A new {link}admin page{link_end} is available to browse all references (properties and classes) with their counts and values.', // @translate
         [
