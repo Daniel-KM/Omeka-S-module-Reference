@@ -286,7 +286,7 @@ TODO
 - [x] Display values other than literal.
 - [ ] Manage pagination by letter and by number of references.
 - [ ] Create automatically the pages related to the block index in order to remove the global pages.
-- [ ] Fix initials for some letters ([#2](https://gitlab.com/Daniel-KM/Omeka-S-module-Reference/-/issues/2)) via a custom DQL function for `convert`.
+- [ ] Fix initials for some letters ([#2](https://gitlab.com/Daniel-KM/Omeka-S-module-Reference/-/work_items/2)) via a custom DQL function for `convert`.
 - [ ] Manage references inside admin board.
 - [ ] Manage advanced search reference by site and in admin board.
 - [ ] Make the reference recursive (two levels currently).
@@ -366,6 +366,7 @@ Performance fixes were made for Article 19.
 [Reference plugin]: https://gitlab.com/Daniel-KM/Omeka-plugin-Reference
 [Reference.zip]: https://gitlab.com/Daniel-KM/Omeka-S-module-Reference/-/releases
 [installing a module]: https://omeka.org/s/docs/user-manual/modules/#installing-modules
+[Common]: https://gitlab.com/Daniel-KM/Omeka-S-module-Common
 [Api Info]: https://gitlab.com/Daniel-KM/Omeka-S-module-ApiInfo
 [Bulk Edit]: https://gitlab.com/Daniel-KM/Omeka-S-module-BulkEdit
 [Bulk Check]: https://gitlab.com/Daniel-KM/Omeka-S-module-BulkCheck
