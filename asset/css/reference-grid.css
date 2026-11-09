@@ -7,8 +7,8 @@
         padding-bottom: 15px;
         border-bottom: 7px solid rgb(198, 198, 198);
 
-        button.mode-list,
-        button.mode-grid {
+        & button.mode-list,
+        & button.mode-grid {
             display: inline-block;
             width: 32px;
             height: 32px;
@@ -20,11 +20,11 @@
             }
         }
 
-        button.mode-list {
+        & button.mode-list {
             background: url(../img/list.svg) center / 32px auto no-repeat;
         }
 
-        button.mode-grid {
+        & button.mode-grid {
             background: url(../img/mosaic.svg) center / 32px auto no-repeat;
         }
     }
@@ -46,7 +46,7 @@
             break-inside: avoid;
             margin-bottom: 30px;
 
-            a {
+            & a {
                 display: block;
                 width: 100%;
 
@@ -86,7 +86,7 @@
                 padding-bottom: 15px;
                 border-bottom: 1px solid #000000;
 
-                a img {
+                & a img {
                     display: none;
                 }
             }
@@ -118,7 +118,7 @@
         padding-top: 12px;
         border-top: 7px solid #c6c6c6;
 
-        button.mode-list {
+        & button.mode-list {
             position: relative;
 
             &::after {
@@ -148,13 +148,13 @@
 
         & > li.reference-record {
 
-            a > span.reference-label {
+            & a > span.reference-label {
                 font-size: 25px;
                 margin-bottom: 0;
             }
 
-            a > span.reference-see,
-            a > span.reference-total {
+            & a > span.reference-see,
+            & a > span.reference-total {
                 font-size: 16px;
                 margin-bottom: 0;
             }

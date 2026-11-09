@@ -11,40 +11,42 @@
     height: auto;
     width: auto;
 }
-.reference-pagination ul.pagination-list {
+.reference-pagination {
+  & ul.pagination-list {
     height: auto;
     margin: auto;
     padding: 0;
     list-style: none;
     cursor: default;
-}
-.reference-pagination li.pagination-range {
+  }
+  & li.pagination-range {
     height: auto;
     line-height: initial;
     display: initial;
     margin-right: 2px;
-}
-.reference-pagination li.pagination-range a,
-.reference-pagination li.pagination-range span {
-    display: inline-block;
-    margin-right: 0px;
-    padding: 0.375em 9px;
-    vertical-align: top;
-}
-.reference-pagination li.pagination-range a {
-    border: 1px solid #000000;
-    text-decoration: none;
-}
-.reference-pagination li.pagination-range span {
-    border: 1px solid transparent;
-}
-.reference-pagination li.pagination-range a:hover {
-    background-color: #CCCCCC;
-    color: #000;
-    text-decoration: none;
-}
-.reference-pagination li.pagination-range.active a {
-    background-color: #DDDDDD;
+    & a,
+    & span {
+      display: inline-block;
+      margin-right: 0px;
+      padding: 0.375em 9px;
+      vertical-align: top;
+    }
+    & a {
+      border: 1px solid #000000;
+      text-decoration: none;
+    }
+    & span {
+      border: 1px solid transparent;
+    }
+    & a:hover {
+      background-color: #CCCCCC;
+      color: #000;
+      text-decoration: none;
+    }
+    &.active a {
+      background-color: #DDDDDD;
+    }
+  }
 }
 
 ul.references {
@@ -70,18 +72,18 @@ ul.references li {
 
 /* Use flexbox when there is a thumbnail. */
 .reference-record {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-.reference-record a {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  & a {
     display: inline-flex;
     align-items: center;
-}
-.reference-record a img {
-    height: auto;
-    width: 36px;
-    margin-right: 6px;
+    & img {
+      height: auto;
+      width: 36px;
+      margin-right: 6px;
+    }
+  }
 }
 
 /* Recursive list */
@@ -89,38 +91,42 @@ ul.references li {
     padding-left: 0;
     list-style: none;
 }
-.recursive-list .resource-link {
+.recursive-list {
+  & .resource-link {
     display: inline-flex;
     align-items: center;
     max-width: 100%;
     min-width: 0;
-}
-.recursive-list .resource-link img {
-    height: 36px;
-    margin-right: 6px;
-}
-.recursive-list .resource-link .resource-name {
-    flex: 1;
-    min-width: 0;
-}
-.recursive-list .see-all {
+    & img {
+      height: 36px;
+      margin-right: 6px;
+    }
+    & .resource-name {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+  & .see-all {
     font-style: italic;
     list-style: none;
+  }
 }
 
 /* Grid */
 .reference-grid {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 12px;
+  & .reference-record {
+    & a {
       display: flex;
       flex-direction: column;
-      flex-wrap: wrap;
-      gap: 12px;
-}
-.reference-grid .reference-record a {
-    display: flex;
-    flex-direction: column;
-    align-items: initial;
-}
-.reference-grid .reference-record a img {
-    height: auto;
-    width: 200px;
+      align-items: initial;
+      & img {
+        height: auto;
+        width: 200px;
+      }
+    }
+  }
 }
