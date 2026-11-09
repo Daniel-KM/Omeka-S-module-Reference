@@ -91,7 +91,7 @@ $isRecursive = $listByMax || $hasSubjectProperty;
 $options['raw_sub'] = $options['raw_sub'] || !$isRecursive;
 $searchConfigSlug = $options['search_config'] ?? null;
 
-$querySource = $query;
+$querySource = $searchConfigSlug ? array_diff_key($query, ['site_id' => null]) : $query;
 
 // Normally, field types should not be mixed currently.
 $fieldTypes = [
@@ -164,7 +164,7 @@ if ($options['raw']) {
                     $hasEmptyFieldProperty = true;
                     if ($searchConfigSlug) {
                         $query['filter'][] = ['join' => 'or', 'field' => 'dcterms:title', 'type' => 'eq', 'val' => '__temp_placeholder__'];
-                        $queryEmpty['property'][] = ['join' => 'and', 'field' => 'dcterms:title', 'type' => 'nex'];
+                        $queryEmpty['filter'][] = ['join' => 'and', 'field' => 'dcterms:title', 'type' => 'nex'];
                     } else {
                         $query['property'][] = ['joiner' => 'or', 'property' => 'dcterms:title', 'type' => 'eq', 'text' => '__temp_placeholder__'];
                         $queryEmpty['property'][] = ['joiner' => 'and', 'property' => 'dcterms:title', 'type' => 'nex'];
